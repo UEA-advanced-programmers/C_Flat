@@ -17,7 +17,7 @@ Go to the repository page, click 'Code' -> 'Open with GitHub desktop' -> clone
 
 Once you've cloned the rpeository, you should be able to open the project in your IDE of choice.
 
-##Solution Structure:
+## Solution Structure:
 ### Overall description
 In this solution there are 3 projects: `C_Flat_GUI`, `C_Flat_Interpreter` and `C_Flat_Tests`. Each being used as their name suggests. This approach has the benefit of allowing for better parallel-programming resulting in less merge-conflicts. It also simplifies cross-project imports. As the 'GUI' will require access to the 'Interpreter' project, however will not need the 'Tests' project. Additionally, due to WPF only supporting Windows, it is better to store the majority of the non-GUI code in a regular `.Net6` project. Which allows for compilation and subsequent Continuous Integration, on other platforms such as Linux. (Which is used by GitHub Actions for automated testing).  
 
