@@ -18,7 +18,9 @@ jobs:
         dotnet-version: 6.0.x
     - name: Restore dependencies
       run: dotnet restore
-    - name: Build
-      run: dotnet build --no-restore
+    #Only build test project as WPF cannot be built on Ubuntu (test relies on interpreter which is also built)
+    - name: Build Test Project
+      run: dotnet build --no-restore ./C_Flat_Tests/C_Flat_Tests.csproj
+    #Only run tests on test project for obvious reasons
     - name: Test
-      run: dotnet test --no-build --verbosity normal
+      run: dotnet test --no-build --verbosity normal ./C_Flat_Tests/C_Flat_Tests.csproj
