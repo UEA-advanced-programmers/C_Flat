@@ -2,7 +2,7 @@
 
 public class Lexer
 {
-    public bool Lexed;
+    public bool lexed;
 
     public Lexer(bool lexed)
     {
