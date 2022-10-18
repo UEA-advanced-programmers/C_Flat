@@ -5,6 +5,11 @@
         <TargetFramework>net6.0-windows</TargetFramework>
         <Nullable>enable</Nullable>
         <UseWPF>true</UseWPF>
+        <RootNamespace>C_Flat</RootNamespace>
     </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\C_Flat_Interpreter\C_Flat_Interpreter.csproj" />
+    </ItemGroup>
 
 </Project>
