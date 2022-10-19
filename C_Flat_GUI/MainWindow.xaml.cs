@@ -24,5 +24,12 @@ namespace C_Flat
         {
             InitializeComponent();
         }
+        
+        private void ButtonInterpret_Click(object sender, RoutedEventArgs e)
+        {
+            Output.Text = SourceInput.Text;
+            var test = SourceInput.Text.ToCharArray();
+            SourceInput.Clear();
+        }
     }
 }

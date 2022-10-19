@@ -6,7 +6,39 @@
         xmlns:local="clr-namespace:C_Flat"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
-    <Grid>
+    <Grid Margin="10">
+        
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        
+        <Label>C__Flat source input</Label>
+        <TextBox Grid.Row="1" Margin="0,10,0,10"
+                 Name="SourceInput"
+                 TextWrapping="NoWrap"
+                 AcceptsReturn="True"
+                 AcceptsTab="True"
+                 VerticalScrollBarVisibility="Visible"
+        />
+        
+        <Button Grid.Row="2" x:Name="btnInterpret" Margin="0,0,0,0" Click="ButtonInterpret_Click">Interpret Code</Button>
+        
+        <Label Grid.Row="3">C__Flat interpreter output</Label>
+        <TextBox Grid.Row="4" Margin="0,10,0,0"
+                 Name="Output"
+                 TextWrapping="NoWrap"
+                 VerticalScrollBarVisibility="Visible"
+                 IsReadOnly="True"
+        />
 
     </Grid>
 </Window>
