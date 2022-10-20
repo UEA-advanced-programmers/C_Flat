@@ -1,5 +1,4 @@
-﻿using C_Flat_Interpreter.Common;
-using C_Flat_Interpreter.Common.Enums;
+﻿using C_Flat_Interpreter.Common.Enums;
 using C_Flat_Interpreter.Lexer;
 using NUnit.Framework;
 
@@ -7,41 +6,91 @@ namespace C_Flat_Tests.Tests_Unit;
 
 public class LexerUnit
 {
-    private string _input;
-    private Lexer _lexer;
-    private string _tokens;
-    private List<Token> _tokenList;
-        
-    [SetUp]
-    public void Setup()
+    [Test]
+    public void Lexer_Tokenise_AllTokens_16Tokens()
     {
-        _input = "1+2";
-        _lexer = new Lexer(_input);
-        _lexer.Tokenise();
-        _tokens = "";
-        _tokenList = new List<Token>();
-            
-        for (int i = 0; i < _input.Length; i++)
+        const string input = " +*()-/0123456789";
+        Lexer lexer = new Lexer(input);
+        lexer.Tokenise();
+        Assert.That(lexer.GetTokens().Count, Is.EqualTo(input.Length - 1));
+    }
+    
+    //Note - Magic numbers are used in these tests, however their disruption, if changed, is minimal - resulting in an
+    //error in only one single test for each. I had considered avoid this by having one test that iterated through the
+    //sting and each number case. However, I decided that splitting this into multiple tests made it easier to identify
+    //what was failing and why. Therefore, I believe that having multiple, clear tests with magic numbers is better than
+    //having one big test without them.
+    
+    [Test]
+    public void Lexer_Tokenise_Add_TokenIsAdd()
+    {
+        const string input = " +*()-/0123456789";
+        Lexer lexer = new Lexer(input);
+        lexer.Tokenise();
+        Assert.That(lexer.GetFromTokenList(0).Type, Is.EqualTo(TokenType.Add));
+        Assert.That(lexer.GetFromTokenList(0).Value, Is.EqualTo('+'));
+    }
+    
+    [Test]
+    public void Lexer_Tokenise_Multi_TokenIsMulti()
+    {
+        const string input = " +*()-/0123456789";
+        Lexer lexer = new Lexer(input);
+        lexer.Tokenise();
+        Assert.That(lexer.GetFromTokenList(1).Type, Is.EqualTo(TokenType.Multi));
+        Assert.That(lexer.GetFromTokenList(1).Value, Is.EqualTo('*'));
+    }
+    
+    [Test]
+    public void Lexer_Tokenise_LeftParam_TokenIsLeftParam()
+    {
+        const string input = " +*()-/0123456789";
+        Lexer lexer = new Lexer(input);
+        lexer.Tokenise();
+        Assert.That(lexer.GetFromTokenList(2).Type, Is.EqualTo(TokenType.LeftParam));
+        Assert.That(lexer.GetFromTokenList(2).Value, Is.EqualTo('('));
+    }
+    
+    [Test]
+    public void Lexer_Tokenise_RightParam_TokenIsRightParam()
+    {
+        const string input = " +*()-/0123456789";
+        Lexer lexer = new Lexer(input);
+        lexer.Tokenise();
+        Assert.That(lexer.GetFromTokenList(3).Type, Is.EqualTo(TokenType.RightParam));
+        Assert.That(lexer.GetFromTokenList(3).Value, Is.EqualTo(')'));
+    }
+    
+    [Test]
+    public void Lexer_Tokenise_Sub_TokenIsSub()
+    {
+        const string input = " +*()-/0123456789";
+        Lexer lexer = new Lexer(input);
+        lexer.Tokenise();
+        Assert.That(lexer.GetFromTokenList(4).Type, Is.EqualTo(TokenType.Sub));
+        Assert.That(lexer.GetFromTokenList(4).Value, Is.EqualTo('-'));
+    }
+    
+    [Test]
+    public void Lexer_Tokenise_Divide_TokenIsDivide()
+    {
+        const string input = " +*()-/0123456789";
+        Lexer lexer = new Lexer(input);
+        lexer.Tokenise();
+        Assert.That(lexer.GetFromTokenList(5).Value, Is.EqualTo('/'));
+        Assert.That(lexer.GetFromTokenList(5).Type, Is.EqualTo(TokenType.Divide));
+    }
+    
+    [Test]
+    public void Lexer_Tokenise_Number_TokenIsANumber()
+    {
+        const string input = " +*()-/0123456789";
+        Lexer lexer = new Lexer(input);
+        lexer.Tokenise();
+        for (int i = 6; i < lexer.GetTokens().Count; i++)
         {
-            var testToken = _lexer.GetFromTokenList(i);
-                
-            _tokens += testToken.Value;
-            _tokenList.Add(testToken);
+            Assert.That(lexer.GetFromTokenList(i).Value, Is.EqualTo(input[i + 1]));
+            Assert.That(lexer.GetFromTokenList(i).Type, Is.EqualTo(TokenType.Num));
         }
-    }
-
-    [Test]
-    public void LexerUnitTestOne()
-    {
-        Assert.AreEqual(_tokens, _input);
-        //Assert.That(_tokens, Is.EqualTo(_input));
-    }
-        
-    [Test]
-    public void LexerUnitTestTwo()
-    {
-        Assert.That(_tokenList[0].Type, Is.EqualTo(TokenType.Num));
-        Assert.That(_tokenList[1].Type, Is.EqualTo(TokenType.Add));
-        Assert.That(_tokenList[2].Type, Is.EqualTo(TokenType.Num));
     }
 }
