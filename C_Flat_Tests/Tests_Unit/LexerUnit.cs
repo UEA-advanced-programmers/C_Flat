@@ -16,10 +16,10 @@ public class LexerUnit
     }
     
     //Note - Magic numbers are used in these tests, however their disruption, if changed, is minimal - resulting in an
-    //error in only one single test for each. I had considered avoid this by having one test that iterated through the
-    //sting and each number case. However, I decided that splitting this into multiple tests made it easier to identify
-    //what was failing and why. Therefore, I believe that having multiple, clear tests with magic numbers is better than
-    //having one big test without them.
+    //error in only the respective test. I had considered avoiding this by having one test and taking an iterative
+    //approach. However, I decided that splitting this into multiple tests made it easier to identify what was failing
+    //and why. Therefore, I believe that having multiple, clear tests with magic numbers is better than having one big
+    //test without them.
     
     [Test]
     public void Lexer_Tokenise_Add_TokenIsAdd()
