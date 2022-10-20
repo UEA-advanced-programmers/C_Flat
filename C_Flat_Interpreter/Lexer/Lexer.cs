@@ -1,4 +1,7 @@
-﻿namespace C_Flat_Interpreter.Lexer;
+﻿using C_Flat_Interpreter.Common;
+using C_Flat_Interpreter.Common.Enums;
+
+namespace C_Flat_Interpreter.Lexer;
 using System.Collections.Generic;
 
 /*
@@ -22,24 +25,7 @@ public class Lexer
     private readonly string _input;
     private readonly List<Token> _tokens = new List<Token>(); //TODO - define max with the group
     private int _tokenCount = 0;
-    
-    ////////// Token setup here //////////
-    public enum TokenTypes { //will be added to later, names not final
-        Add,
-        Multi,
-        LeftParam,
-        RightParam,
-        Num		
-    }
-    
-    public struct Token
-    {
-        public TokenTypes Type;
-        public char Value;
-    }
-    
-    ////////// End of Token Setup //////////
-    
+
     //constructor
     public Lexer(string input)
     {
@@ -59,9 +45,9 @@ public class Lexer
 
     public int Tokenise() //TODO - think about if this needs to return an int
     {
-        var newToken = new Token();
         foreach(char c in _input)
         {
+            var newToken  = new Token();
             switch(c)
             {
                 case ' ' :
@@ -69,29 +55,29 @@ public class Lexer
                     return 0;
                 case '+' :
                     _tokenCount++; //todo - do I need this?
-                    newToken.Type = TokenTypes.Add;
+                    newToken.Type = TokenType.Add;
                     newToken.Value = c;
                     break;
                 case '*' :
                     _tokenCount++; //todo - do I need this?
-                    newToken.Type = TokenTypes.Multi;
+                    newToken.Type = TokenType.Multi;
                     newToken.Value = c;
                     break;
                 case '(' :
                     _tokenCount++; //todo - do I need this?
-                    newToken.Type = TokenTypes.LeftParam;
+                    newToken.Type = TokenType.LeftParam;
                     newToken.Value = c;
                     break;
                 case ')' :
                     _tokenCount++; //todo - do I need this?
-                    newToken.Type = TokenTypes.RightParam;
+                    newToken.Type = TokenType.RightParam;
                     newToken.Value = c;
                     break;
                 default :
                     if (char.IsDigit(c))
                     {
                         _tokenCount++;
-                        newToken.Type = TokenTypes.Num;
+                        newToken.Type = TokenType.Num;
                         newToken.Value = c;
                     }
                     else
