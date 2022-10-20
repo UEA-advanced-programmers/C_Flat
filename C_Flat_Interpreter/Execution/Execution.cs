@@ -8,7 +8,9 @@ public class Execution : InterpreterLogger
     public enum TokenType //will be replaced by an enumerator created by the work on lex
     {
         PLUS,
+        MINUS,
         STAR,
+        DIVIDE,
         L_PAR,
         R_PAR,
         NUMBER,
@@ -47,18 +49,20 @@ public class Execution : InterpreterLogger
             {
                 case TokenType.NUMBER:
                     _outStack.Push(Tokens[count].value); //Put numbers straight into out stack
-                    _logger.LogInformation("Pushed {output} to operator stack", _outStack.Peek());
+                    _logger.LogInformation("Pushed {output} to output stack", _outStack.Peek());
                     break;
                 case TokenType.PLUS:
+                case TokenType.MINUS:
                     while (_opStack.Count > 0 && _opStack.Peek() != TokenType.L_PAR) //assert stack is not empty and top is not (
                         Evaluate();
-                    _opStack.Push(TokenType.PLUS); //push + to op stack
+                    _opStack.Push(Tokens[count].type); //push + to op stack
                     _logger.LogInformation("Pushed {operator} to operator stack", _opStack.Peek());
                     break;
                 case TokenType.STAR:
-                    while (_opStack.Count > 0 && (_opStack.Peek() != TokenType.L_PAR && _opStack.Peek() != TokenType.PLUS)) //assert stack is not empty and top is not ( or +
+                case TokenType.DIVIDE:
+                    while (_opStack.Count > 0 && (_opStack.Peek() != TokenType.L_PAR && _opStack.Peek() != TokenType.PLUS && _opStack.Peek() != TokenType.MINUS)) //assert stack is not empty and top is not ( or + or -
                         Evaluate();
-                    _opStack.Push(TokenType.STAR); //push * to op stack
+                    _opStack.Push(Tokens[count].type); //push * to op stack
                     _logger.LogInformation("Pushed {operator} to operator stack", _opStack.Peek());
                     break;
                 case TokenType.L_PAR:
@@ -92,10 +96,21 @@ public class Execution : InterpreterLogger
                 _logger.LogInformation("Adding {op1} and {op2}", _op1, _op2);
                 _outStack.Push(_op1 + _op2);
                 break;
+            case TokenType.MINUS: //if minus subtract op1 from op2
+                _logger.LogInformation("Subtracting {op1} from {op2}", _op1, _op2);
+                _outStack.Push(_op2 - _op1);
+                break;
             case TokenType.STAR: //if star multiply op1 and op2
                 _logger.LogInformation("Multiplying {op1} and {op2}", _op1, _op2);
                 _outStack.Push(_op1 * _op2);
                 break;
+            case TokenType.DIVIDE: //if divide, divide op2 by op1
+                _logger.LogInformation("Dividing {op2} by {op1}", _op2, _op1);
+                _outStack.Push(_op2 / _op1);
+                break;
+            default:
+                _logger.LogError("Unknown Operator, throwing exception");
+                throw new ArgumentException("Unknown Operator");
         }
         _logger.LogInformation("Pushed result {result} to output stack \n", _outStack.Peek());
     }
