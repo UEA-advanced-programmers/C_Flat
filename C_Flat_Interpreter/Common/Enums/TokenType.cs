@@ -5,8 +5,8 @@ public enum TokenType //will be added to later, names not final
 {
     Add,
     Multi,
-    LeftParam,
-    RightParam,
+    LeftParen,
+    RightParen,
     Num,
     Divide,
     Sub

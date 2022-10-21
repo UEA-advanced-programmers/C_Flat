@@ -47,7 +47,7 @@ public class LexerUnit
         const string input = " +*()-/0123456789";
         Lexer lexer = new Lexer(input);
         lexer.Tokenise();
-        Assert.That(lexer.GetFromTokenList(2).Type, Is.EqualTo(TokenType.LeftParam));
+        Assert.That(lexer.GetFromTokenList(2).Type, Is.EqualTo(TokenType.LeftParen));
         Assert.That(lexer.GetFromTokenList(2).Value, Is.EqualTo('('));
     }
     
@@ -57,7 +57,7 @@ public class LexerUnit
         const string input = " +*()-/0123456789";
         Lexer lexer = new Lexer(input);
         lexer.Tokenise();
-        Assert.That(lexer.GetFromTokenList(3).Type, Is.EqualTo(TokenType.RightParam));
+        Assert.That(lexer.GetFromTokenList(3).Type, Is.EqualTo(TokenType.RightParen));
         Assert.That(lexer.GetFromTokenList(3).Value, Is.EqualTo(')'));
     }
     

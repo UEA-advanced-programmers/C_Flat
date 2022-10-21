@@ -47,7 +47,7 @@ public class Lexer : InterpreterLogger
         return _tokens[placeToSearch];
     }
 
-    public int Tokenise() //TODO - think about if this needs to return an int
+    public List<Token> Tokenise() //TODO - think about if this needs to return an int
     {
         foreach(char c in _input)
         {
@@ -67,11 +67,11 @@ public class Lexer : InterpreterLogger
                     newToken.Value = c;
                     break;
                 case '(' :
-                    newToken.Type = TokenType.LeftParam;
+                    newToken.Type = TokenType.LeftParen;
                     newToken.Value = c;
                     break;
                 case ')' :
-                    newToken.Type = TokenType.RightParam;
+                    newToken.Type = TokenType.RightParen;
                     newToken.Value = c;
                     break;
                 case '-' :
@@ -91,7 +91,11 @@ public class Lexer : InterpreterLogger
                     else
                     {
                         //TODO - need an error message here!
-                        return 0;
+                        
+                        //Due to an error, this method returns early with the list of tokens it was able to create,
+                        //meaning it may not have been able to make it through the whole input, however en error will
+                        //logged if this is the case
+                        return _tokens;
                     }
                     break;
             }
@@ -101,6 +105,6 @@ public class Lexer : InterpreterLogger
                 _tokens.Add(newToken);
             }
         }
-        return 0;
+        return _tokens;
     }
 }
