@@ -28,7 +28,7 @@ public class LexerUnit
         Lexer lexer = new Lexer(input);
         lexer.Tokenise();
         Assert.That(lexer.GetFromTokenList(0).Type, Is.EqualTo(TokenType.Add));
-        Assert.That(lexer.GetFromTokenList(0).Value, Is.EqualTo('+'));
+        Assert.That(lexer.GetFromTokenList(0).Word, Is.EqualTo('+'));
     }
     
     [Test]
@@ -38,7 +38,7 @@ public class LexerUnit
         Lexer lexer = new Lexer(input);
         lexer.Tokenise();
         Assert.That(lexer.GetFromTokenList(1).Type, Is.EqualTo(TokenType.Multi));
-        Assert.That(lexer.GetFromTokenList(1).Value, Is.EqualTo('*'));
+        Assert.That(lexer.GetFromTokenList(1).Word, Is.EqualTo('*'));
     }
     
     [Test]
@@ -48,7 +48,7 @@ public class LexerUnit
         Lexer lexer = new Lexer(input);
         lexer.Tokenise();
         Assert.That(lexer.GetFromTokenList(2).Type, Is.EqualTo(TokenType.LeftParen));
-        Assert.That(lexer.GetFromTokenList(2).Value, Is.EqualTo('('));
+        Assert.That(lexer.GetFromTokenList(2).Word, Is.EqualTo('('));
     }
     
     [Test]
@@ -58,7 +58,7 @@ public class LexerUnit
         Lexer lexer = new Lexer(input);
         lexer.Tokenise();
         Assert.That(lexer.GetFromTokenList(3).Type, Is.EqualTo(TokenType.RightParen));
-        Assert.That(lexer.GetFromTokenList(3).Value, Is.EqualTo(')'));
+        Assert.That(lexer.GetFromTokenList(3).Word, Is.EqualTo(')'));
     }
     
     [Test]
@@ -68,7 +68,7 @@ public class LexerUnit
         Lexer lexer = new Lexer(input);
         lexer.Tokenise();
         Assert.That(lexer.GetFromTokenList(4).Type, Is.EqualTo(TokenType.Sub));
-        Assert.That(lexer.GetFromTokenList(4).Value, Is.EqualTo('-'));
+        Assert.That(lexer.GetFromTokenList(4).Word, Is.EqualTo('-'));
     }
     
     [Test]
@@ -77,7 +77,7 @@ public class LexerUnit
         const string input = " +*()-/0123456789";
         Lexer lexer = new Lexer(input);
         lexer.Tokenise();
-        Assert.That(lexer.GetFromTokenList(5).Value, Is.EqualTo('/'));
+        Assert.That(lexer.GetFromTokenList(5).Word, Is.EqualTo('/'));
         Assert.That(lexer.GetFromTokenList(5).Type, Is.EqualTo(TokenType.Divide));
     }
     
@@ -89,7 +89,7 @@ public class LexerUnit
         lexer.Tokenise();
         for (int i = 6; i < lexer.GetTokens().Count; i++)
         {
-            Assert.That(lexer.GetFromTokenList(i).Value, Is.EqualTo(input[i + 1]));
+            Assert.That(lexer.GetFromTokenList(i).Word, Is.EqualTo(input[i + 1]));
             Assert.That(lexer.GetFromTokenList(i).Type, Is.EqualTo(TokenType.Num));
         }
     }

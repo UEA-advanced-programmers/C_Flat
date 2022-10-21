@@ -5,5 +5,11 @@ namespace C_Flat_Interpreter.Common;
 public class Token
 {
     public TokenType Type;
-    public char Value;
+    public object? Value;
+    public char Word;
+    public Token(TokenType type = default, object? value = null)
+    {
+        Type = type;
+        Value = value;
+    }
 }

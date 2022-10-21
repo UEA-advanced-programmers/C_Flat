@@ -60,33 +60,33 @@ public class Lexer : InterpreterLogger
                     break;
                 case '+' :
                     newToken.Type = TokenType.Add;
-                    newToken.Value = c;
+                    newToken.Word = c;
                     break;
                 case '*' :
                     newToken.Type = TokenType.Multi;
-                    newToken.Value = c;
+                    newToken.Word = c;
                     break;
                 case '(' :
                     newToken.Type = TokenType.LeftParen;
-                    newToken.Value = c;
+                    newToken.Word = c;
                     break;
                 case ')' :
                     newToken.Type = TokenType.RightParen;
-                    newToken.Value = c;
+                    newToken.Word = c;
                     break;
                 case '-' :
                     newToken.Type = TokenType.Sub;
-                    newToken.Value = c;
+                    newToken.Word = c;
                     break;
                 case '/' :
                     newToken.Type = TokenType.Divide;
-                    newToken.Value = c;
+                    newToken.Word = c;
                     break;
                 default :
                     if (char.IsDigit(c))
                     {
                         newToken.Type = TokenType.Num;
-                        newToken.Value = c;
+                        newToken.Word = c;
                     }
                     else
                     {
