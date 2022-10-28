@@ -22,7 +22,7 @@ public class TranspilerUnit : TestLogger
         
         //Act
         _transpiler.Transpile(testInput);
-        var testOutput = File.ReadAllLines("../../../../C_Flat_Output/Program.cs");
+        var testOutput = File.ReadAllLines(_transpiler.GetProgramPath());
 
         //Assert
         Assert.That(testInput, Is.EqualTo(testOutput[0]));
@@ -32,16 +32,6 @@ public class TranspilerUnit : TestLogger
     public void TearDown()
     {
         //Recreate Program.cs with just a simple WriteLine to prevent build errors
-        string[] defaultProgramFile = {
-            "// See https://aka.ms/new-console-template for more information",
-            @"Console.WriteLine(""Hello, World!"");",
-        };
-        
-        var writer = File.CreateText("../../../../C_Flat_Output/Program.cs");
-        foreach (var line in defaultProgramFile)
-        {
-            writer.WriteLine(line);
-        }
-        writer.Close();
+        _transpiler.ResetOutput();
     }
 }
