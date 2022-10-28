@@ -30,8 +30,9 @@ namespace C_Flat
             SourceInput.Clear();
         }
 
-        private void ButtonTranspileAndRun_Click(object sender, RoutedEventArgs e)
+        private async void ButtonTranspileAndRun_Click(object sender, RoutedEventArgs e)
         {
+            ExecutionOutput.Text = "Executing transpiled code!!";
             var proc = new Process
             {
                 StartInfo = new ProcessStartInfo
@@ -47,8 +48,8 @@ namespace C_Flat
             };
 
             proc.Start();
-            var output = proc.StandardOutput.ReadToEnd(); 
-            proc.WaitForExit(60000);
+            var output = await proc.StandardOutput.ReadToEndAsync();
+            await proc.WaitForExitAsync();
             ExecutionOutput.Text = output;
         }
 
