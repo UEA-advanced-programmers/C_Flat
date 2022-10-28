@@ -5,13 +5,15 @@ using System.IO;
 using System.Windows;
 using C_Flat_Interpreter.Transpiler;
 using Microsoft.Win32;
+using Wpf.Ui.Controls;
+using MessageBox = System.Windows.MessageBox;
 
 namespace C_Flat
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class MainWindow : UiWindow
     {
         private readonly Transpiler _transpiler;
         private bool _programChanged;
@@ -24,12 +26,11 @@ namespace C_Flat
         private void ButtonTranspile_Click(object sender, RoutedEventArgs e)
         {
             _programChanged = true;
-            Output.Text = SourceInput.Text;
             _transpiler.Transpile(SourceInput.Text);
-            Output.Text = $"> Transpiled input source. See the transpiled C# code in: {_transpiler.GetProgramPath()}";
+            TranspilerOutput.Text = $"> Transpiled input source. See the transpiled C# code in: {_transpiler.GetProgramPath()}";
             SourceInput.Clear();
         }
-
+        
         private async void ButtonTranspileAndRun_Click(object sender, RoutedEventArgs e)
         {
             ExecutionOutput.Text = "Executing transpiled code!!";
