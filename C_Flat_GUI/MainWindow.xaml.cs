@@ -7,7 +7,6 @@ using C_Flat_Interpreter.Transpiler;
 using Microsoft.Win32;
 using Wpf.Ui.Controls;
 using MessageBox = System.Windows.MessageBox;
-
 namespace C_Flat
 {
     /// <summary>
@@ -47,7 +46,6 @@ namespace C_Flat
                     WorkingDirectory = @"../../../../C_Flat_Output/"
                 }
             };
-
             proc.Start();
             var output = await proc.StandardOutput.ReadToEndAsync();
             await proc.WaitForExitAsync();
