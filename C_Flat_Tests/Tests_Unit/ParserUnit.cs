@@ -1,5 +1,6 @@
 ﻿using System.Data;
-using C_Flat_Interpreter.Lexer;
+using C_Flat_Interpreter.Common;
+using C_Flat_Interpreter.Common.Enums;
 using C_Flat_Interpreter.Parser;
 using NUnit.Framework;
 
@@ -10,8 +11,14 @@ public class ParserUnit
     [Test]
     public void Parser_Parse_DoubleMulti_ThrowsException()
     {
-        Lexer lexer = new Lexer("1**2");
-        Parser parser = new Parser(lexer.Tokenise());
+        List<Token> tokens = new List<Token>
+        {
+            new Token(TokenType.Num, 1),
+            new Token(TokenType.Multi),
+            new Token(TokenType.Multi),
+            new Token(TokenType.Num, 2),
+        };
+        Parser parser = new Parser(tokens);
 
         Assert.Throws(Is.TypeOf<SyntaxErrorException>().And.Message.Contains("Number expected"),
         delegate { parser.Parse(); });
@@ -20,8 +27,14 @@ public class ParserUnit
     [Test]
     public void Parser_Parse_NoRightParam_ThrowsException()
     {
-        Lexer lexer = new Lexer("1*(2");
-        Parser parser = new Parser(lexer.Tokenise());
+        List<Token> tokens = new List<Token>
+        {
+            new Token(TokenType.Num, 1),
+            new Token(TokenType.Multi),
+            new Token(TokenType.LeftParen),
+            new Token(TokenType.Num, 2),
+        };
+        Parser parser = new Parser(tokens);
 
         Assert.Throws(Is.TypeOf<SyntaxErrorException>().And.Message.Contains("Mismatched parentheses"),
             delegate { parser.Parse(); });
@@ -30,8 +43,14 @@ public class ParserUnit
     [Test]
     public void Parser_Parse_NoLeftParam_ThrowsException()
     {
-        Lexer lexer = new Lexer("1*)2");
-        Parser parser = new Parser(lexer.Tokenise());
+        List<Token> tokens = new List<Token>
+        {
+            new Token(TokenType.Num, 1),
+            new Token(TokenType.Multi),
+            new Token(TokenType.RightParen),
+            new Token(TokenType.Num, 2),
+        };
+        Parser parser = new Parser(tokens);
         
         Assert.Throws(Is.TypeOf<SyntaxErrorException>().And.Message.Contains("Number expected"),
             delegate { parser.Parse(); });
