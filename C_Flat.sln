@@ -1,5 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.1.32421.90
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "C_Flat_GUI", "C_Flat_GUI\C_Flat_GUI.csproj", "{4C0862E5-8B58-4096-8CF5-F961740CBFCB}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "C_Flat_Tests", "C_Flat_Tests\C_Flat_Tests.csproj", "{4E714823-0A95-4B54-812E-952F73332FC8}"
@@ -30,5 +33,11 @@ Global
 		{4C7713DD-CFB9-40DD-A7F9-5CD7C4A31BD0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4C7713DD-CFB9-40DD-A7F9-5CD7C4A31BD0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4C7713DD-CFB9-40DD-A7F9-5CD7C4A31BD0}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {3E4E8E5D-3840-4A52-BA9E-2A08B3A565B6}
 	EndGlobalSection
 EndGlobal
