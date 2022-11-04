@@ -17,10 +17,17 @@ public class Transpiler : InterpreterLogger
         _logger = GetLogger("Transpiler");
     }
 
-    public void Transpile(string input)
+    public void Transpile(List<Token> tokens)
     {
+        //Retrieve program.cs file
         var writer = File.CreateText(GetProgramPath());
-        writer.Write(input);
+        string prog = $@"Console.Out.WriteLine(";
+        foreach (var tok in tokens)
+        {
+            prog += (tok.Value ?? tok.Word);
+        }
+        prog += @");";
+        writer.Write(prog);
         writer.Close();
     }
 

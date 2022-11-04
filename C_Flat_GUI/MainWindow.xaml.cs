@@ -3,6 +3,8 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
+using C_Flat_Interpreter.Lexer;
+using C_Flat_Interpreter.Parser;
 using C_Flat_Interpreter.Transpiler;
 using Microsoft.Win32;
 using Wpf.Ui.Controls;
@@ -14,18 +16,25 @@ namespace C_Flat
     /// </summary>
     public partial class MainWindow : UiWindow
     {
+        private readonly Lexer _lexer;
+        private readonly Parser _parser;
         private readonly Transpiler _transpiler;
+        
         private bool _programChanged;
         public MainWindow()
         {
             InitializeComponent();
+            _lexer = new();
+            _parser = new();
             _transpiler = new();
         }
 
         private void ButtonTranspile_Click(object sender, RoutedEventArgs e)
         {
             _programChanged = true;
-            _transpiler.Transpile(SourceInput.Text);
+            var tokens = _lexer.Tokenise(SourceInput.Text);
+            _parser.Parse(tokens);
+            _transpiler.Transpile(tokens);
             TranspilerOutput.Text = $"> Transpiled input source. See the transpiled C# code in: {_transpiler.GetProgramPath()}";
             SourceInput.Clear();
         }
