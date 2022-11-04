@@ -12,4 +12,8 @@
       <ProjectReference Include="..\C_Flat_Interpreter\C_Flat_Interpreter.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="WPF-UI" Version="2.0.3" />
+    </ItemGroup>
+
 </Project>
