@@ -1,4 +1,5 @@
 ﻿using C_Flat_Interpreter.Common;
+using C_Flat_Interpreter.Common.Enums;
 using Microsoft.Extensions.Logging;
 
 namespace C_Flat_Interpreter.Transpiler;
@@ -24,6 +25,9 @@ public class Transpiler : InterpreterLogger
         string prog = $@"Console.Out.WriteLine(";
         foreach (var tok in tokens)
         {
+            //TODO: Refactor this if needed
+            if (tok.Type is TokenType.Sub && prog.EndsWith('-'))
+                prog += ' ';
             prog += (tok.Value ?? tok.Word);
         }
         prog += @");";
