@@ -18,10 +18,10 @@ public class ParserUnit
             new Token(TokenType.Multi),
             new Token(TokenType.Num, 2),
         };
-        Parser parser = new Parser(tokens);
+        Parser parser = new Parser();
 
         Assert.Throws(Is.TypeOf<SyntaxErrorException>().And.Message.Contains("Number expected"),
-        delegate { parser.Parse(); });
+        delegate { parser.Parse(tokens); });
     }
     
     [Test]
@@ -34,10 +34,10 @@ public class ParserUnit
             new Token(TokenType.LeftParen),
             new Token(TokenType.Num, 2),
         };
-        Parser parser = new Parser(tokens);
+        Parser parser = new Parser();
 
         Assert.Throws(Is.TypeOf<SyntaxErrorException>().And.Message.Contains("Mismatched parentheses"),
-            delegate { parser.Parse(); });
+            delegate { parser.Parse(tokens); });
     }
     
     [Test]
@@ -50,9 +50,9 @@ public class ParserUnit
             new Token(TokenType.RightParen),
             new Token(TokenType.Num, 2),
         };
-        Parser parser = new Parser(tokens);
+        Parser parser = new Parser();
         
         Assert.Throws(Is.TypeOf<SyntaxErrorException>().And.Message.Contains("Number expected"),
-            delegate { parser.Parse(); });
+            delegate { parser.Parse(tokens); });
     }
 }

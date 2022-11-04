@@ -85,6 +85,17 @@ public class Lexer : InterpreterLogger
                         var numberString = c.ToString();
                         newToken.Type = TokenType.Num;
                         bool isDecimal = false;
+                        //If there's a minus immediately preceding the digit check for negative value
+                        if (i > 0 && input[i - 1] == '-')
+                        {
+                            //If there's no token before minus or it isn't a number or right parentheses e.g. 1-1 or (1+2)-1
+                            if (_tokens.Count == 1 || _tokens[^2].Type is not (TokenType.Num or TokenType.RightParen))
+                            {
+                                //prepend minus to number string and remove previous subtract token
+                                numberString = '-' + numberString;
+                                _tokens.RemoveAt(_tokens.Count-1);
+                            }
+                        }
                         while (i+1 < input.Length)
                         {
                             if (Char.IsDigit(input[i+1]))

@@ -11,7 +11,7 @@ public class LexerUnit
     {
         _lexer = new Lexer();
     }
-
+    
     //Note - Magic numbers are used in these tests, however their disruption, if changed, is minimal - resulting in an
     //error in only the respective test. I had considered avoiding this by having one test and taking an iterative
     //approach. However, I decided that splitting this into multiple tests made it easier to identify what was failing

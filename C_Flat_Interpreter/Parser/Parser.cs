@@ -17,15 +17,13 @@ public class Parser : InterpreterLogger
 {
 	private TokenType _tokenType;
 	private int _currentIndex;
-	private readonly int _totalTokens;
-	private readonly List<Token> _tokens; //TODO - define max with the group
+	private int _totalTokens;
+	private List<Token> _tokens; //TODO - define max with the group
 	private readonly ILogger _logger;
 
 	//constructor
-	public Parser(List<Token> tokens)
+	public Parser()
 	{
-		_tokens = tokens;
-		_totalTokens = _tokens.Count;
 		_logger = GetLogger("Parser");
 	}
 
@@ -59,8 +57,10 @@ public class Parser : InterpreterLogger
 	
 	//End Helper Functions
 
-	public List<Token> Parse()
+	public List<Token> Parse(List<Token> tokens)
 	{
+		_tokens = tokens;
+		_totalTokens = tokens.Count;
 		_currentIndex = 0;
 		_tokenType = TokenType.Null;
 		Expression(0);
@@ -103,6 +103,11 @@ public class Parser : InterpreterLogger
 		if (Match(TokenType.Num))
 		{
 			Advance(level + 1);
+		}
+		else if (Match(TokenType.Sub))
+		{
+			Advance(level+1);
+			Factor(level+1);
 		}
 		else if (Match(TokenType.LeftParen))
 		{
