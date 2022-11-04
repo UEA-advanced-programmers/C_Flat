@@ -84,8 +84,8 @@ public class Lexer : InterpreterLogger
                     {
                         var numberString = c.ToString();
                         newToken.Type = TokenType.Num;
-                        bool isDecimal = false, invalidNumber = false;
-                        while (i+1 < input.Length && input[i+1] != ' ')
+                        bool isDecimal = false;
+                        while (i+1 < input.Length)
                         {
                             if (Char.IsDigit(input[i+1]))
                             {
@@ -99,15 +99,8 @@ public class Lexer : InterpreterLogger
                             }
                             else
                             {
-                                invalidNumber = true;
-                                numberString += input[++i];
+                                break;
                             }
-                        }
-                        if (invalidNumber)
-                        {
-                            newToken = null;
-                            _logger.LogWarning("Invalid number encountered, disregarding: {invalidToken}", numberString);
-                            break;
                         }
                         newToken.Word = numberString;
                         newToken.Value = double.Parse(numberString);
