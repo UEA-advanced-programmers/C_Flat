@@ -3,6 +3,7 @@
 //TODO - Finalise enum names
 public enum TokenType //will be added to later, names not final
 {
+    Null,
     Add,
     Multi,
     LeftParen,

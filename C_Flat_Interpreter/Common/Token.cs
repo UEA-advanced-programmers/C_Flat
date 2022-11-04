@@ -6,7 +6,7 @@ public class Token
 {
     public TokenType Type;
     public object? Value;
-    public char Word;
+    public string Word;
     public Token(TokenType type = default, object? value = null)
     {
         Type = type;
