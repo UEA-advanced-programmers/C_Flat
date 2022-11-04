@@ -78,13 +78,6 @@ public class Parser : InterpreterLogger
 		expression_p(level + 1);
 	}
 
-	private void Term(int level)
-	{
-		_logger.LogInformation( "term() called at level {level} ", level);
-		Factor(level + 1);
-		term_p(level + 1);
-	}
-
 	private void expression_p(int level)
 	{
 		while (true)
@@ -96,7 +89,23 @@ public class Parser : InterpreterLogger
 			level = level + 1;
 		}
 	}
+	
+	private void Term(int level)
+	{
+		_logger.LogInformation( "term() called at level {level} ", level);
+		Factor(level + 1);
+		term_p(level + 1);
+	}
 
+	private void term_p(int level)
+	{
+		_logger.LogInformation("term_p() called at level {level}", level);
+		if (!Match(TokenType.Multi) && !Match(TokenType.Divide)) return; //this is terminal
+		Advance(level + 1);
+		Factor(level + 1);
+		term_p(level + 1);
+	}
+	
 	private void Factor(int level)
 	{
 		_logger.LogInformation( "factor() called at level {level}", level);
@@ -124,15 +133,6 @@ public class Parser : InterpreterLogger
 			throw new SyntaxErrorException("SYNTAX ERROR: Number expected at token " + _currentIndex);
 		}
 		//todo - include negative numbers
-	}
-
-	private void term_p(int level)
-	{
-		_logger.LogInformation("term_p() called at level {level}", level);
-		if (!Match(TokenType.Multi) && !Match(TokenType.Divide)) return; //this is terminal
-		Advance(level + 1);
-		Factor(level + 1);
-		term_p(level + 1);
 	}
 	//EBNF Functions
 }
