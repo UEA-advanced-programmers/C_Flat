@@ -1,9 +1,18 @@
 /*
- *  <Expression>::= <Term> {('+'|'-') <Term>}
- *	<Term>::= <Value> {('*'|'/') <Value>}
- *	<Value>::= '('<Expression>')' | <Number> | '-'<Value>
- *	<Number>::= <Digit>*
- *	<Digit> ::= #'[0-9]'
+ *	Statements:
+ *	<statement>::=<Expression> | <Logic-Statement>
+
+ *	Numerical expressions:
+	 *  <Expression>::= <Term> {('+'|'-') <Term>}
+	 *	<Term>::= <Value> {('*'|'/') <Value>}
+	 *	<Value>::= '('<Expression>')' | <Number> | '-'<Value>
+
+ *	Logical expressions:
+	 *	<Logic-Statement>::= <Boolean> {<Condition>}
+	 *  <Condition>::= ('==' | '&' | '|') <Boolean>
+	 *	<Boolean>::= '!’<Logic-Statement> | 'true' | 'false' | <Expression-Query> | '('<Logic-Statement>')'
+	 *	<Expression-Query> ::= <Expression> ('=='|'>'|'<') <expression>
+ 
  * */
 
 using System.Data;
@@ -29,6 +38,13 @@ public class Parser : InterpreterLogger
 
 	//Helper Functions
 	
+	private void CheckBoolLiteral()
+	{
+		var word = _tokens[_currentIndex].Word;
+		if (!(word.Equals("true") || word.Equals("false")))
+			throw new SyntaxErrorException($"Syntax error! Expected boolean literal, actual: {word}");
+
+	}
 	private bool Match(TokenType tokenType)
 	{
 		if (_tokenType == TokenType.Null) //only on first call,  TODO - find better way to do this that means we don't need to set to null and/or we don't need this check
@@ -48,6 +64,11 @@ public class Parser : InterpreterLogger
 		return true;
 	}
 
+	private void Reset()
+	{
+		_currentIndex = 0;
+		_tokenType = TokenType.Null;
+	}
 	private void Advance(int level)
 	{
 		if (++_currentIndex == _totalTokens) return; //todo - might be able to find a way to exit everything else quicker when we're at the end - EOF token!
@@ -61,9 +82,8 @@ public class Parser : InterpreterLogger
 	{
 		_tokens = tokens;
 		_totalTokens = tokens.Count;
-		_currentIndex = 0;
-		_tokenType = TokenType.Null;
-		Expression(0);
+		Reset();
+		Statement(0);
 		if (_currentIndex >= _totalTokens) return _tokens;
 		throw new SyntaxErrorException("SYNTAX ERROR - token "+ _currentIndex+ " {current} is of type " +
 		                                            _tokens[_currentIndex].Type); //todo - Create test for this!
@@ -71,6 +91,14 @@ public class Parser : InterpreterLogger
 	
 	//EBNF Functions
 
+	private void Statement(int level)
+	{
+		_logger.LogInformation( "Statement() called at level {level}", level);
+		Expression(level+1);
+		Reset();
+		LogicStatement(level+1);
+
+	}
 	private void Expression(int level)
 	{
 		_logger.LogInformation( "expression() called at level {level}", level);
@@ -128,11 +156,84 @@ public class Parser : InterpreterLogger
 				throw new SyntaxErrorException("SYNTAX ERROR: Mismatched parentheses at token " + _currentIndex);
 			}
 		}
+	}
+
+	private void LogicStatement(int level)
+	{
+		_logger.LogInformation( "LogicStatement() called at level {level}", level);
+		Boolean(level+1);
+		LogicStatement_p(level+1);
+	}
+
+	private void LogicStatement_p(int level)
+	{
+		
+		_logger.LogInformation("LogicStatement_p() called at level {level}", level);
+		Boolean(level + 1);
+		Condition(level + 1);
+		level++;
+	}
+	
+	private void Boolean(int level)
+	{
+		_logger.LogInformation( "Boolean() called at level {level}", level);
+
+		if (Match(TokenType.Not))
+		{
+			Advance(level+1);
+			LogicStatement(level+1);
+		}
+		else if (Match(TokenType.String))
+		{
+			CheckBoolLiteral();
+			Advance(level+1);
+		}
+		else if (Match(TokenType.LeftParen))
+		{
+			Advance(level + 1);
+			LogicStatement(level + 1);
+			if (Match(TokenType.RightParen)) Advance(level + 1);
+			else
+			{
+				throw new SyntaxErrorException("SYNTAX ERROR: Mismatched parentheses at token " + _currentIndex);
+			}
+		}
 		else
 		{
-			throw new SyntaxErrorException("SYNTAX ERROR: Number expected at token " + _currentIndex);
+			ExpressionQuery(level+1);
 		}
-		//todo - include negative numbers
+	}
+
+	private void Condition(int level)
+	{
+		_logger.LogInformation( "Condition() called at level {level}", level);
+
+		if (!(Match(TokenType.Equals) || Match(TokenType.And) || Match(TokenType.Or)))
+			return;
+		if (Match(TokenType.Equals))
+		{
+			Advance(level);
+			if(!Match(TokenType.Equals))
+				throw new SyntaxErrorException("Mismatched equality operator!");
+		}
+		Advance(level+1);
+		Boolean(level+1);
+	}
+
+	private void ExpressionQuery(int level)
+	{
+		_logger.LogInformation( "ExpressionQuery() called at level {level}", level);
+		Expression(level+1);
+		if (!(Match(TokenType.Equals) || Match(TokenType.More) || Match(TokenType.Less)))
+			return;
+		if (Match(TokenType.Equals))
+		{
+			Advance(level);
+			if(!Match(TokenType.Equals))
+				throw new SyntaxErrorException("Mismatched equality operator!");
+		}
+		Advance(level+1);
+		Expression(level+1);
 	}
 	//EBNF Functions
 }

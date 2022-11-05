@@ -23,6 +23,7 @@ public class Lexer : InterpreterLogger
 {
     private readonly List<Token> _tokens = new(); //TODO - define max with the group
     private readonly ILogger _logger;
+    private string _input;
 
     //constructor
     public Lexer()
@@ -44,10 +45,11 @@ public class Lexer : InterpreterLogger
     public List<Token> Tokenise(string input)
     {
         _tokens.Clear();
+        _input = input;
         //TODO - Set fail flag to prevent parser from continuing
-        for(int i = 0; i < input.Length; i++)
+        for(int i = 0; i < _input.Length; i++)
         {
-            char c = input[i];
+            char c = _input[i];
             var newToken  = new Token();
             switch(c)
             {
@@ -79,39 +81,52 @@ public class Lexer : InterpreterLogger
                     newToken.Type = TokenType.Divide;
                     newToken.Word = c.ToString();
                     break;
+                case '!':
+                    newToken.Type = TokenType.Not;
+                    newToken.Word = c.ToString();
+                    break;
+                case '=':
+                    newToken.Type = TokenType.Equals;
+                    newToken.Word = c.ToString();
+                    break;
+                case '&':
+                    newToken.Type = TokenType.And;
+                    newToken.Word = c.ToString();
+                    break;
+                case '|':
+                    newToken.Type = TokenType.Or;
+                    newToken.Word = c.ToString();
+                    break;
+                case '<':
+                    newToken.Type = TokenType.Less;
+                    newToken.Word = c.ToString();
+                    break;
+                case '>':
+                    newToken.Type = TokenType.More;
+                    newToken.Word = c.ToString();
+                    break;
                 default :
                     if (char.IsDigit(c))
                     {
-                        var numberString = c.ToString();
                         newToken.Type = TokenType.Num;
-                        bool isDecimal = false;
-                        while (i+1 < input.Length)
-                        {
-                            if (Char.IsDigit(input[i+1]))
-                            {
-                                numberString += input[++i];    
-                            }
-                            else if (!isDecimal && input[i+1] == '.' && i+2 < input.Length && char.IsDigit(input[i+2]))
-                            {
-                                //if '.' ensure there's not already '.' and at least one digit afterwards
-                                isDecimal = true;
-                                numberString += input[++i];
-                            }
-                            else
-                            {
-                                break;
-                            }
-                        }
-                        newToken.Word = numberString;
-                        newToken.Value = double.Parse(numberString);
+                        newToken.Word = ParseNumber(i);
+                        i += newToken.Word.Length-1;
+                        newToken.Value = double.Parse(newToken.Word);
+                    }
+                    else if(char.IsLetter(c))
+                    {
+                        newToken.Type = TokenType.String;
+                        newToken.Word = ParseWord(i);
+                        i += newToken.Word.Length-1;
+                        newToken.Value = newToken.Word;
                     }
                     else
                     {
                         newToken = null;
                         var invalidToken = c.ToString();
-                        while (i + 1 < input.Length && input[i + 1] != ' ')
+                        while (i + 1 < _input.Length && _input[i + 1] != ' ')
                         {
-                            invalidToken += input[++i];
+                            invalidToken += _input[++i];
                         }
                         _logger.LogWarning("Invalid token encountered, disregarding: {invalidToken}", invalidToken);
                     }
@@ -125,4 +140,45 @@ public class Lexer : InterpreterLogger
         }
         return _tokens;
     }
+
+    private string ParseNumber(int index)
+    {
+        var numberString = _input[index].ToString();
+        bool isDecimal = false;
+        while (index+1 < _input.Length)
+        {
+            if (Char.IsDigit(_input[index+1]))
+            {
+                numberString += _input[++index];    
+            }
+            else if (!isDecimal && _input[index+1] == '.' && index+2 < _input.Length && char.IsDigit(_input[index+2]))
+            {
+                //if '.' ensure there's not already '.' and at least one digit afterwards
+                isDecimal = true;
+                numberString += _input[++index];
+            }
+            else
+            {
+                break;
+            }
+        }
+        return numberString;
+    }
+    private string ParseWord(int index)
+    {
+        var wordString = _input[index].ToString();
+        while (index+1 < _input.Length)
+        {
+            if (Char.IsLetter(_input[index+1]))
+            {
+                wordString += _input[++index];    
+            }
+            else
+            {
+                break;
+            }
+        }
+        return wordString.ToLower();
+    }
+
 }
