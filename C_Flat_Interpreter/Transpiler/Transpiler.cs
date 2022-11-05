@@ -1,12 +1,11 @@
 ﻿using C_Flat_Interpreter.Common;
 using C_Flat_Interpreter.Common.Enums;
-using Microsoft.Extensions.Logging;
+using Serilog;
 
 namespace C_Flat_Interpreter.Transpiler;
 
 public class Transpiler : InterpreterLogger
 {
-    private readonly ILogger _logger;
     private readonly string[] _defaultProgramString =
     {
         "// See https://aka.ms/new-console-template for more information",
@@ -15,7 +14,7 @@ public class Transpiler : InterpreterLogger
 
     public Transpiler()
     {
-        _logger = GetLogger("Transpiler");
+        GetLogger("Transpiler");
     }
 
     public void Transpile(List<Token> tokens)

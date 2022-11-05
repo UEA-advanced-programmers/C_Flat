@@ -18,7 +18,8 @@
 using System.Data;
 using C_Flat_Interpreter.Common;
 using C_Flat_Interpreter.Common.Enums;
-using Microsoft.Extensions.Logging;
+using Serilog;
+using Serilog.Sinks.InMemory;
 
 namespace C_Flat_Interpreter.Parser;
 
@@ -28,22 +29,21 @@ public class Parser : InterpreterLogger
 	private int _currentIndex;
 	private int _totalTokens;
 	private List<Token> _tokens; //TODO - define max with the group
-	private readonly ILogger _logger;
 
 	//constructor
 	public Parser()
 	{
-		_logger = GetLogger("Parser");
+		GetLogger("Parser");
 	}
 
 	//Helper Functions
 	
-	private void CheckBoolLiteral()
+	private bool CheckBoolLiteral()
 	{
 		var word = _tokens[_currentIndex].Word;
-		if (!(word.Equals("true") || word.Equals("false")))
-			throw new SyntaxErrorException($"Syntax error! Expected boolean literal, actual: {word}");
-
+		if (word.Equals("true") || word.Equals("false")) return true;
+		_logger.Error($"Bool parse error! Expected boolean literal, actual: \"{word}\"");
+		return false;
 	}
 	private bool Match(TokenType tokenType)
 	{
@@ -54,11 +54,11 @@ public class Parser : InterpreterLogger
 
 		if (tokenType == _tokenType)
 		{
-			_logger.LogInformation("Token[" + _currentIndex + "] matches {tokenType}", tokenType);
+			_logger.Information("Token at index {index} matches {tokenType}", _currentIndex, tokenType);
 		}
 		else
 		{
-			_logger.LogInformation("Token[" + _currentIndex + "] does NOT MATCH {tokenType}", tokenType);
+			_logger.Information("Token at index {index} does NOT MATCH {tokenType}", _currentIndex, tokenType);
 			return false;
 		}
 		return true;
@@ -73,35 +73,37 @@ public class Parser : InterpreterLogger
 	{
 		if (++_currentIndex == _totalTokens) return; //todo - might be able to find a way to exit everything else quicker when we're at the end - EOF token!
 		_tokenType = _tokens[_currentIndex].Type;
-		_logger.LogInformation("advance() called at level {level}. Next token is {tokenType}", level, _tokenType);
+		_logger.Information("advance() called at level {level}. Next token is {@token}", level, _tokens[_currentIndex]);
 	}
 	
 	//End Helper Functions
 
-	public List<Token> Parse(List<Token> tokens)
+	public int Parse(List<Token> tokens)
 	{
 		_tokens = tokens;
 		_totalTokens = tokens.Count;
 		Reset();
 		Statement(0);
-		if (_currentIndex >= _totalTokens) return _tokens;
-		throw new SyntaxErrorException("SYNTAX ERROR - token "+ _currentIndex+ " {current} is of type " +
-		                                            _tokens[_currentIndex].Type); //todo - Create test for this!
+		if (_currentIndex >= _totalTokens) return 0;
+		_logger.Error("Syntax error! Could not parse Token: {@token}", _tokens[_currentIndex]); //todo - Create test for this!
+		return 1;
 	}
 	
 	//EBNF Functions
 
 	private void Statement(int level)
 	{
-		_logger.LogInformation( "Statement() called at level {level}", level);
+		_logger.Information( "Statement() called at level {level}", level);
 		Expression(level+1);
+		if(_currentIndex >= _totalTokens) //if we've successfully parsed an expression early exit
+			return;
 		Reset();
 		LogicStatement(level+1);
 
 	}
 	private void Expression(int level)
 	{
-		_logger.LogInformation( "expression() called at level {level}", level);
+		_logger.Information( "expression() called at level {level}", level);
 		Term(level + 1);
 		expression_p(level + 1);
 	}
@@ -110,7 +112,7 @@ public class Parser : InterpreterLogger
 	{
 		while (true)
 		{
-			_logger.LogInformation("expression_p() called at level {level}", level);
+			_logger.Information("expression_p() called at level {level}", level);
 			if (!Match(TokenType.Add) && !Match(TokenType.Sub)) return; //this is terminal
 			Advance(level + 1);
 			Term(level + 1);
@@ -120,14 +122,14 @@ public class Parser : InterpreterLogger
 	
 	private void Term(int level)
 	{
-		_logger.LogInformation( "term() called at level {level} ", level);
+		_logger.Information( "term() called at level {level} ", level);
 		Factor(level + 1);
 		term_p(level + 1);
 	}
 
 	private void term_p(int level)
 	{
-		_logger.LogInformation("term_p() called at level {level}", level);
+		_logger.Information("term_p() called at level {level}", level);
 		if (!Match(TokenType.Multi) && !Match(TokenType.Divide)) return; //this is terminal
 		Advance(level + 1);
 		Factor(level + 1);
@@ -136,7 +138,7 @@ public class Parser : InterpreterLogger
 	
 	private void Factor(int level)
 	{
-		_logger.LogInformation( "factor() called at level {level}", level);
+		_logger.Information( "factor() called at level {level}", level);
 		if (Match(TokenType.Num))
 		{
 			Advance(level + 1);
@@ -153,30 +155,21 @@ public class Parser : InterpreterLogger
 			if (Match(TokenType.RightParen)) Advance(level + 1);
 			else
 			{
-				throw new SyntaxErrorException("SYNTAX ERROR: Mismatched parentheses at token " + _currentIndex);
+				_logger.Error("Syntax Error! Mismatched parentheses at token {index}", _currentIndex);
 			}
 		}
 	}
 
 	private void LogicStatement(int level)
 	{
-		_logger.LogInformation( "LogicStatement() called at level {level}", level);
+		_logger.Information( "LogicStatement() called at level {level}", level);
 		Boolean(level+1);
-		LogicStatement_p(level+1);
+		Condition(level + 1);
 	}
 
-	private void LogicStatement_p(int level)
-	{
-		
-		_logger.LogInformation("LogicStatement_p() called at level {level}", level);
-		Boolean(level + 1);
-		Condition(level + 1);
-		level++;
-	}
-	
 	private void Boolean(int level)
 	{
-		_logger.LogInformation( "Boolean() called at level {level}", level);
+		_logger.Information( "Boolean() called at level {level}", level);
 
 		if (Match(TokenType.Not))
 		{
@@ -185,8 +178,8 @@ public class Parser : InterpreterLogger
 		}
 		else if (Match(TokenType.String))
 		{
-			CheckBoolLiteral();
-			Advance(level+1);
+			if(CheckBoolLiteral())
+				Advance(level+1);
 		}
 		else if (Match(TokenType.LeftParen))
 		{
@@ -195,7 +188,7 @@ public class Parser : InterpreterLogger
 			if (Match(TokenType.RightParen)) Advance(level + 1);
 			else
 			{
-				throw new SyntaxErrorException("SYNTAX ERROR: Mismatched parentheses at token " + _currentIndex);
+				_logger.Error("Syntax Error! Mismatched parentheses at token {index}", _currentIndex);
 			}
 		}
 		else
@@ -206,15 +199,18 @@ public class Parser : InterpreterLogger
 
 	private void Condition(int level)
 	{
-		_logger.LogInformation( "Condition() called at level {level}", level);
+		_logger.Information( "Condition() called at level {level}", level);
 
 		if (!(Match(TokenType.Equals) || Match(TokenType.And) || Match(TokenType.Or)))
 			return;
 		if (Match(TokenType.Equals))
 		{
 			Advance(level);
-			if(!Match(TokenType.Equals))
-				throw new SyntaxErrorException("Mismatched equality operator!");
+			if (!Match(TokenType.Equals))
+			{
+				_logger.Error("Syntax Error! Mismatched equality operator, expected \"=\" actual: {@word} ", _tokens[_currentIndex].Word);
+				return;
+			}
 		}
 		Advance(level+1);
 		Boolean(level+1);
@@ -222,15 +218,18 @@ public class Parser : InterpreterLogger
 
 	private void ExpressionQuery(int level)
 	{
-		_logger.LogInformation( "ExpressionQuery() called at level {level}", level);
+		_logger.Information( "ExpressionQuery() called at level {level}", level);
 		Expression(level+1);
 		if (!(Match(TokenType.Equals) || Match(TokenType.More) || Match(TokenType.Less)))
 			return;
 		if (Match(TokenType.Equals))
 		{
 			Advance(level);
-			if(!Match(TokenType.Equals))
-				throw new SyntaxErrorException("Mismatched equality operator!");
+			if (!Match(TokenType.Equals))
+			{
+				_logger.Error("Syntax Error! Mismatched equality operator, expected \"=\" actual: {@word} ", _tokens[_currentIndex].Word);
+				return;
+			}
 		}
 		Advance(level+1);
 		Expression(level+1);

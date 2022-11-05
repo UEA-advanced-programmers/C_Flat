@@ -1,14 +1,30 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Serilog;
+using Serilog.Events;
+using Serilog.Sinks.InMemory;
 
 namespace C_Flat_Interpreter.Common;
 
 public abstract class InterpreterLogger
 {
-    public ILogger GetLogger(string category)
+    private InMemorySink memorySink;
+    protected ILogger _logger;
+    private string _category;
+    protected void GetLogger(string category)
     {
-        using ILoggerFactory loggerFactory =
-            LoggerFactory.Create(builder =>
-                builder.AddSimpleConsole());
-        return loggerFactory.CreateLogger(category);
+        _category = category;
+        _logger = new LoggerConfiguration().Destructure.ByTransforming<Token>(t => new {TokenType = t.Type, Word = t.Word, Value = t.Value}).WriteTo.Console(outputTemplate:
+            $"[{{Timestamp:HH:mm:ss}} {{Level:u3}}] {category}: {{Message:lj}}{{NewLine}}{{Exception}}").WriteTo.InMemory().CreateLogger();
+        memorySink = InMemorySink.Instance;
+    }
+
+    public IEnumerable<LogEvent> GetInMemoryLogs()
+    {
+        return memorySink.LogEvents;
+    }
+
+    public void ClearLogs()
+    {
+        memorySink.Dispose();
+        GetLogger(_category);
     }
 }

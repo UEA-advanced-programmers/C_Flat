@@ -2,7 +2,6 @@
 using C_Flat_Interpreter.Common.Enums;
 using C_Flat_Interpreter.Transpiler;
 using C_Flat_Tests.Common;
-using Microsoft.Extensions.Logging;
 using NUnit.Framework;
 
 namespace C_Flat_Tests.Tests_Unit;
@@ -10,10 +9,9 @@ namespace C_Flat_Tests.Tests_Unit;
 public class TranspilerUnit : TestLogger
 {
     private readonly Transpiler _transpiler = new();
-    private readonly ILogger _logger;
     public TranspilerUnit()
-    {
-        _logger = GetLogger("Execution Unit Tests");
+    { 
+        GetLogger("Execution Unit Tests");
     }
 
     [Test]

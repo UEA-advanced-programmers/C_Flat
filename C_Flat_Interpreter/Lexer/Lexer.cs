@@ -1,6 +1,6 @@
 ﻿using C_Flat_Interpreter.Common;
 using C_Flat_Interpreter.Common.Enums;
-using Microsoft.Extensions.Logging;
+using Serilog;
 
 namespace C_Flat_Interpreter.Lexer;
 using System.Collections.Generic;
@@ -22,13 +22,13 @@ This will be changed but is assumed now in order to create a simple starting lex
 public class Lexer : InterpreterLogger
 {
     private readonly List<Token> _tokens = new(); //TODO - define max with the group
-    private readonly ILogger _logger;
     private string _input;
+    private bool failed;
 
     //constructor
     public Lexer()
     {
-        _logger = GetLogger("Lexer");
+        GetLogger("Lexer");
     }
 
     public List<Token> GetTokens()
@@ -42,11 +42,11 @@ public class Lexer : InterpreterLogger
         return _tokens[placeToSearch];
     }
 
-    public List<Token> Tokenise(string input)
+    public int Tokenise(string input)
     {
+        failed = false;
         _tokens.Clear();
         _input = input;
-        //TODO - Set fail flag to prevent parser from continuing
         for(int i = 0; i < _input.Length; i++)
         {
             char c = _input[i];
@@ -128,7 +128,9 @@ public class Lexer : InterpreterLogger
                         {
                             invalidToken += _input[++i];
                         }
-                        _logger.LogWarning("Invalid token encountered, disregarding: {invalidToken}", invalidToken);
+                        
+                        _logger.Error("Invalid lexeme encountered! Disregarding: {invalidToken}", invalidToken);
+                        failed = true;
                     }
                     break;
             }
@@ -138,7 +140,7 @@ public class Lexer : InterpreterLogger
                 _tokens.Add(newToken);
             }
         }
-        return _tokens;
+        return failed ? 1 : 0;
     }
 
     private string ParseNumber(int index)

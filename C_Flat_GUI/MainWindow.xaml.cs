@@ -2,11 +2,13 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Windows;
 using C_Flat_Interpreter.Lexer;
 using C_Flat_Interpreter.Parser;
 using C_Flat_Interpreter.Transpiler;
 using Microsoft.Win32;
+using Serilog.Events;
 using Wpf.Ui.Controls;
 using MessageBox = System.Windows.MessageBox;
 namespace C_Flat
@@ -31,11 +33,33 @@ namespace C_Flat
 
         private void ButtonTranspile_Click(object sender, RoutedEventArgs e)
         {
+            TranspilerOutput.Text = "";
             _programChanged = true;
-            var tokens = _lexer.Tokenise(SourceInput.Text);
-            _parser.Parse(tokens);
+            _lexer.ClearLogs();
+            if (_lexer.Tokenise(SourceInput.Text) != 0)
+            {
+                //Lexer Failed!
+                TranspilerOutput.Text += "Lexing Failed! Printing logs: \n";
+                foreach (var errorMessage in _lexer.GetInMemoryLogs().Where(log => log.Level > LogEventLevel.Information))
+                {
+                    TranspilerOutput.Text += errorMessage.RenderMessage() + "\n";
+                }
+                return;
+            }
+            var tokens = _lexer.GetTokens();
+            _parser.ClearLogs();
+            if (_parser.Parse(tokens) != 0)
+            {
+                //Parser failed!
+                TranspilerOutput.Text += "Parsing Failed! Printing logs: \n";
+                foreach (var errorMessage in _parser.GetInMemoryLogs().Where(log => log.Level > LogEventLevel.Information))
+                {
+                    TranspilerOutput.Text += errorMessage.RenderMessage() + "\n";
+                }
+                return;
+            }
             _transpiler.Transpile(tokens);
-            TranspilerOutput.Text = $"> Transpiled input source. See the transpiled C# code in: {_transpiler.GetProgramPath()}";
+            TranspilerOutput.Text = $"Transpiled input source. See the transpiled C# code in: {_transpiler.GetProgramPath()}";
             SourceInput.Clear();
         }
         
