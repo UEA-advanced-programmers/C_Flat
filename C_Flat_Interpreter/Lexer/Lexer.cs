@@ -1,6 +1,5 @@
 ﻿using C_Flat_Interpreter.Common;
 using C_Flat_Interpreter.Common.Enums;
-using Serilog;
 
 namespace C_Flat_Interpreter.Lexer;
 using System.Collections.Generic;
@@ -123,13 +122,7 @@ public class Lexer : InterpreterLogger
                     else
                     {
                         newToken = null;
-                        var invalidToken = c.ToString();
-                        while (i + 1 < _input.Length && _input[i + 1] != ' ')
-                        {
-                            invalidToken += _input[++i];
-                        }
-                        
-                        _logger.Error("Invalid lexeme encountered! Disregarding: {invalidToken}", invalidToken);
+                        _logger.Error("Invalid lexeme encountered! Disregarding: {invalidToken}", c.ToString());
                         failed = true;
                     }
                     break;

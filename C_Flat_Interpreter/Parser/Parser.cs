@@ -15,11 +15,8 @@
  
  * */
 
-using System.Data;
 using C_Flat_Interpreter.Common;
 using C_Flat_Interpreter.Common.Enums;
-using Serilog;
-using Serilog.Sinks.InMemory;
 
 namespace C_Flat_Interpreter.Parser;
 

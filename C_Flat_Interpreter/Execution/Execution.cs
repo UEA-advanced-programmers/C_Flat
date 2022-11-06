@@ -1,6 +1,5 @@
 ﻿using C_Flat_Interpreter.Common;
 using C_Flat_Interpreter.Common.Enums;
-using Serilog;
 
 namespace C_Flat_Interpreter.Execution;
 

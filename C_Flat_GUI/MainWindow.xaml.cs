@@ -42,7 +42,8 @@ namespace C_Flat
                 TranspilerOutput.Text += "Lexing Failed! Printing logs: \n";
                 foreach (var errorMessage in _lexer.GetInMemoryLogs().Where(log => log.Level > LogEventLevel.Information))
                 {
-                    TranspilerOutput.Text += errorMessage.RenderMessage() + "\n";
+                    var messageRender = errorMessage.RenderMessage().Replace("\n", "\\n").Replace("\r", "\\r");;
+                    TranspilerOutput.Text += messageRender + "\n";
                 }
                 return;
             }
