@@ -1,6 +1,6 @@
 /*
  *	Statements:
- *	<statement>::=<Expression> | <Logic-Statement>
+ *	<Statement>::=<Expression> | <Logic-Statement>
 
  *	Numerical expressions:
 	 *  <Expression>::= <Term> {('+'|'-') <Term>}
@@ -11,10 +11,11 @@
 	 *	<Logic-Statement>::= <Boolean> {<Condition>}
 	 *  <Condition>::= ('==' | '&' | '|') <Boolean>
 	 *	<Boolean>::= '!’<Logic-Statement> | 'true' | 'false' | <Expression-Query> | '('<Logic-Statement>')'
-	 *	<Expression-Query> ::= <Expression> ('=='|'>'|'<') <expression>
+	 *	<Expression-Query> ::= <Expression> ('=='|'>'|'<') <Expression>
  
  * */
 
+using System.Data;
 using C_Flat_Interpreter.Common;
 using C_Flat_Interpreter.Common.Enums;
 
@@ -68,7 +69,7 @@ public class Parser : InterpreterLogger
 	}
 	private void Advance(int level)
 	{
-		if (++_currentIndex == _totalTokens) return; //todo - might be able to find a way to exit everything else quicker when we're at the end - EOF token!
+		if (++_currentIndex >= _totalTokens) return; //todo - might be able to find a way to exit everything else quicker when we're at the end - EOF token!
 		_tokenType = _tokens[_currentIndex].Type;
 		_logger.Information("advance() called at level {level}. Next token is {@token}", level, _tokens[_currentIndex]);
 	}
@@ -91,49 +92,39 @@ public class Parser : InterpreterLogger
 	private void Statement(int level)
 	{
 		_logger.Information( "Statement() called at level {level}", level);
-		Expression(level+1);
-		if(_currentIndex >= _totalTokens) //if we've successfully parsed an expression early exit
-			return;
-		Reset();
-		LogicStatement(level+1);
+		
+		try
+		{
+			Expression(level + 1);
+		}
+		catch (Exception e)
+		{
+			_logger.Warning(e.Message);
+		}
 
+		if (_currentIndex >= _totalTokens) return;
+		Reset();
+		LogicStatement(level + 1);
 	}
 	private void Expression(int level)
 	{
 		_logger.Information( "expression() called at level {level}", level);
 		Term(level + 1);
-		expression_p(level + 1);
+		if (!Match(TokenType.Add) && !Match(TokenType.Sub)) return; //this is terminal
+		Advance(level + 1);
+		Term(level + 1);
 	}
 
-	private void expression_p(int level)
-	{
-		while (true)
-		{
-			_logger.Information("expression_p() called at level {level}", level);
-			if (!Match(TokenType.Add) && !Match(TokenType.Sub)) return; //this is terminal
-			Advance(level + 1);
-			Term(level + 1);
-			level = level + 1;
-		}
-	}
-	
 	private void Term(int level)
 	{
 		_logger.Information( "term() called at level {level} ", level);
 		Factor(level + 1);
-		term_p(level + 1);
-	}
-
-	private void term_p(int level)
-	{
-		_logger.Information("term_p() called at level {level}", level);
 		if (!Match(TokenType.Multi) && !Match(TokenType.Divide)) return; //this is terminal
 		Advance(level + 1);
 		Factor(level + 1);
-		term_p(level + 1);
 	}
-	
-	private void Factor(int level)
+
+	private void Factor(int level) //todo - see if factor prime is needed
 	{
 		_logger.Information( "factor() called at level {level}", level);
 		if (Match(TokenType.Num))
@@ -152,8 +143,12 @@ public class Parser : InterpreterLogger
 			if (Match(TokenType.RightParen)) Advance(level + 1);
 			else
 			{
-				_logger.Error("Syntax Error! Mismatched parentheses at token {index}", _currentIndex);
+				throw new SyntaxErrorException("Syntax Error! Mismatched parentheses at token " + _currentIndex);
 			}
+		}
+		else
+		{
+			throw new SyntaxErrorException("Syntax Error! Unexpected token at token " + _currentIndex);
 		}
 	}
 
@@ -178,19 +173,30 @@ public class Parser : InterpreterLogger
 			if(CheckBoolLiteral())
 				Advance(level+1);
 		}
-		else if (Match(TokenType.LeftParen))
-		{
-			Advance(level + 1);
-			LogicStatement(level + 1);
-			if (Match(TokenType.RightParen)) Advance(level + 1);
-			else
-			{
-				_logger.Error("Syntax Error! Mismatched parentheses at token {index}", _currentIndex);
-			}
-		}
 		else
 		{
-			ExpressionQuery(level+1);
+			var index = _currentIndex;
+			try
+			{
+				ExpressionQuery(level+1);
+			}
+			catch (Exception e)
+			{
+				_logger.Warning(e.Message);
+				
+				_currentIndex = index;
+				_tokenType = TokenType.Null;
+				if (Match(TokenType.LeftParen))
+				{
+					Advance(level + 1);
+					LogicStatement(level + 1);
+					if (Match(TokenType.RightParen)) Advance(level + 1);
+					else
+					{
+						_logger.Error("Syntax Error! Mismatched parentheses at token {index}", _currentIndex);
+					}
+				}
+			}
 		}
 	}
 
@@ -216,7 +222,7 @@ public class Parser : InterpreterLogger
 	private void ExpressionQuery(int level)
 	{
 		_logger.Information( "ExpressionQuery() called at level {level}", level);
-		Expression(level+1);
+		Expression(level + 1);
 		if (!(Match(TokenType.Equals) || Match(TokenType.More) || Match(TokenType.Less)))
 			return;
 		if (Match(TokenType.Equals))
@@ -224,12 +230,13 @@ public class Parser : InterpreterLogger
 			Advance(level);
 			if (!Match(TokenType.Equals))
 			{
-				_logger.Error("Syntax Error! Mismatched equality operator, expected \"=\" actual: {@word} ", _tokens[_currentIndex].Word);
+				_logger.Error("Syntax Error! Mismatched equality operator, expected \"=\" actual: {@word} ",
+					_tokens[_currentIndex].Word);
 				return;
 			}
 		}
-		Advance(level+1);
-		Expression(level+1);
+		Advance(level + 1);
+		Expression(level + 1);
 	}
 	//EBNF Functions
 }
