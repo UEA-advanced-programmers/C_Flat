@@ -30,11 +30,11 @@ public class Transpiler : InterpreterLogger
                 case TokenType.Sub when prog.EndsWith('-'):
                     prog += ' ';
                     break;
-                case TokenType.Or:
-                    prog += '|';
-                    break;
                 case TokenType.And:
-                    prog += '&';
+                    tok.Value = "&&";
+                    break;
+                case TokenType.Or:
+                    tok.Value = "||";
                     break;
             }
             prog += (tok.Value ?? tok.Word);
