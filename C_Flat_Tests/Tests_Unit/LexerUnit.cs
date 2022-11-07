@@ -1,6 +1,7 @@
 ﻿using C_Flat_Interpreter.Common.Enums;
 using C_Flat_Interpreter.Lexer;
 using NUnit.Framework;
+using Serilog.Events;
 
 namespace C_Flat_Tests.Tests_Unit;
 
@@ -96,10 +97,11 @@ public class LexerUnit
     [Test]
     public void Lexer_Tokenise_InvalidToken_IsHandled()
     {
-        const string input = "5 & 3";
+        const string input = "5 ^ 3";
         _lexer.Tokenise(input);
+        var errorLogs = _lexer.GetInMemoryLogs().Where(log => log.Level > LogEventLevel.Warning);
         Assert.That(_lexer.GetFromTokenList(0).Word.ToString(), Is.EqualTo("5"));
+        Assert.That(errorLogs.Any(x => x.RenderMessage().Contains("Invalid lexeme encountered!")));
         Assert.That(_lexer.GetFromTokenList(1).Word.ToString(), Is.EqualTo("3"));
-        Assert.That(_lexer.GetTokens().Count, Is.EqualTo(2));
     }
 }

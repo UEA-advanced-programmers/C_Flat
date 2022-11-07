@@ -2,7 +2,6 @@
 using C_Flat_Interpreter.Common.Enums;
 using C_Flat_Interpreter.Execution;
 using C_Flat_Tests.Common;
-using Microsoft.Extensions.Logging;
 using NUnit.Framework;
 
 namespace C_Flat_Tests.Tests_Unit;
@@ -10,17 +9,16 @@ namespace C_Flat_Tests.Tests_Unit;
 public class ExecutionUnit : TestLogger
 {
     private readonly Execution _execution = new();
-    private readonly ILogger _logger;
 
     public ExecutionUnit()
     {
-        _logger = GetLogger("Execution Unit Tests");
+        GetLogger("Execution Unit Tests");
     }
 
     [Test]
     public void Execution_ShuntYard_SimpleAddition_ReturnsCorrectAnswer()
     {
-        _logger.LogInformation("Testing simple addition: 1 + 3 = 4\n");
+        _logger.Information("Testing simple addition: 1 + 3 = 4\n");
 
         //Arrange
         _execution.Tokens = new()
@@ -41,7 +39,7 @@ public class ExecutionUnit : TestLogger
     [Test]
     public void Execution_ShuntYard_Multiplication_ReturnsCorrectAnswer()
     {
-        _logger.LogInformation("Testing simple multiplication: 9 × 3 = 27\n");
+        _logger.Information("Testing simple multiplication: 9 × 3 = 27\n");
 
         //Arrange
         _execution.Tokens = new()
@@ -62,7 +60,7 @@ public class ExecutionUnit : TestLogger
     [Test]
     public void Execution_ShuntYard_ParenthesesExpression_ReturnsCorrectAnswer()
     {
-        _logger.LogInformation("Testing parenthesised expression: (9 + 3) × (4 + 2) = 72\n");
+        _logger.Information("Testing parenthesised expression: (9 + 3) × (4 + 2) = 72\n");
 
         //Arrange
         _execution.Tokens = new()
@@ -93,7 +91,7 @@ public class ExecutionUnit : TestLogger
     [Test]
     public void Execution_ShuntYard_NegativeNumberExpressions_ReturnsCorrectAnswers()
     {
-        _logger.LogInformation("Testing negative expression: 8 + -3 = 5\n");
+        _logger.Information("Testing negative expression: 8 + -3 = 5\n");
 
         //Arrange
         var negativeAddition = new List<Token>()
@@ -131,7 +129,7 @@ public class ExecutionUnit : TestLogger
     [Test]
     public void Execution_ShuntYard_SimpleSubtraction_ReturnsCorrectAnswer()
     {
-        _logger.LogInformation("Testing simple subtraction: 3 - 1 = 2\n");
+        _logger.Information("Testing simple subtraction: 3 - 1 = 2\n");
 
         //Arrange
         _execution.Tokens = new()
@@ -152,7 +150,7 @@ public class ExecutionUnit : TestLogger
     [Test] 
     public void Execution_ShuntYard_SimpleDivision_ReturnsCorrectAnswer()
     {
-        _logger.LogInformation("Testing simple division: 6 ÷ 2 = 3\n");
+        _logger.Information("Testing simple division: 6 ÷ 2 = 3\n");
 
         //Arrange
         _execution.Tokens = new()
@@ -173,7 +171,7 @@ public class ExecutionUnit : TestLogger
     [Test]
     public void Execution_ShuntYard_ComplexDivision_ReturnsWholeNumber()
     {
-        _logger.LogInformation("Testing complex division: 5 ÷ 2 = 2\n");
+        _logger.Information("Testing complex division: 5 ÷ 2 = 2\n");
 
         //Arrange
         _execution.Tokens = new()
@@ -194,7 +192,7 @@ public class ExecutionUnit : TestLogger
     [Test]
     public void Execution_ShuntYard_ComplexExpression_ReturnsCorrectAnswer()
     {
-        _logger.LogInformation("Testing complex expression: (3 × 2) + 4 - 2 = 8 \n");
+        _logger.Information("Testing complex expression: (3 × 2) + 4 - 2 = 8 \n");
 
         //Arrange
         _execution.Tokens = new()
@@ -223,7 +221,7 @@ public class ExecutionUnit : TestLogger
     [Test]
     public void Execution_ShuntYard_IncorrectExpression_ThrowsException()
     {
-        _logger.LogInformation("Testing exception handling:\n");
+        _logger.Information("Testing exception handling:\n");
         
         
         //Arrange

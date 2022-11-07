@@ -1,14 +1,16 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Serilog;
 
 namespace C_Flat_Tests.Common;
 
 public class TestLogger
 {
-    public ILogger GetLogger(string category)
+    protected ILogger _logger;
+    private string _category;
+    protected void GetLogger(string category)
     {
-        using ILoggerFactory loggerFactory =
-            LoggerFactory.Create(builder =>
-                builder.AddSimpleConsole());
-        return loggerFactory.CreateLogger(category);
+        _category = category;
+        _logger = new LoggerConfiguration().WriteTo.Console(outputTemplate:
+            $"[{{Timestamp:HH:mm:ss}} {{Level:u3}}] {category}: {{Message:lj}}{{NewLine}}{{Exception}}").CreateLogger();
+
     }
 }

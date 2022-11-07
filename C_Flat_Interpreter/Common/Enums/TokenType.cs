@@ -10,5 +10,12 @@ public enum TokenType //will be added to later, names not final
     RightParen,
     Num,
     Divide,
-    Sub
+    String,
+    Sub,
+    Not,
+    And,
+    Or,
+    Equals,
+    Less,
+    More,
 }

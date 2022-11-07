@@ -1,11 +1,11 @@
 ﻿using C_Flat_Interpreter.Common;
-using Microsoft.Extensions.Logging;
+using C_Flat_Interpreter.Common.Enums;
+using Serilog;
 
 namespace C_Flat_Interpreter.Transpiler;
 
 public class Transpiler : InterpreterLogger
 {
-    private readonly ILogger _logger;
     private readonly string[] _defaultProgramString =
     {
         "// See https://aka.ms/new-console-template for more information",
@@ -14,13 +14,23 @@ public class Transpiler : InterpreterLogger
 
     public Transpiler()
     {
-        _logger = GetLogger("Transpiler");
+        GetLogger("Transpiler");
     }
 
-    public void Transpile(string input)
+    public void Transpile(List<Token> tokens)
     {
+        //Retrieve program.cs file
         var writer = File.CreateText(GetProgramPath());
-        writer.Write(input);
+        string prog = $@"Console.Out.WriteLine(";
+        foreach (var tok in tokens)
+        {
+            //TODO: Refactor this if needed
+            if (tok.Type is TokenType.Sub && prog.EndsWith('-'))
+                prog += ' ';
+            prog += (tok.Value ?? tok.Word);
+        }
+        prog += @");";
+        writer.Write(prog);
         writer.Close();
     }
 
