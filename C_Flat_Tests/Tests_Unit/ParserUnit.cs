@@ -8,6 +8,7 @@ namespace C_Flat_Tests.Tests_Unit;
 
 public class ParserUnit
 {
+    /*
     [Test]
     public void Parser_Parse_DoubleMulti_ThrowsException()
     {
@@ -54,5 +55,5 @@ public class ParserUnit
         
         Assert.Throws(Is.TypeOf<SyntaxErrorException>().And.Message.Contains("Number expected"),
             delegate { parser.Parse(tokens); });
-    }
+    }*/
 }
