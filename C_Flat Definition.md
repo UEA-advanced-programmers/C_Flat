@@ -4,8 +4,8 @@
 ### Variable types:
 <table>
     <tr>
-        <th>Token</th>
-        <th>Implementation</th>
+        <th>Input Type</th>
+        <th>Code Representation</th>
     </tr>
     <tr>
         <td>Number</td>
@@ -60,65 +60,56 @@
     </tr>
     <tr>
         <td>==</td>
-        <td>N/A</td>
+        <td>5</td>
         <td>Equality</td>
     </tr>
     <tr>
         <td>!</td>
-        <td>N/A</td>
+        <td>1</td>
         <td>Not</td>
     </tr>
     <tr>
         <td>!=</td>
-        <td>N/A</td>
+        <td>5</td>
         <td>Inequality</td>
     </tr>
     <tr>
         <td><</td>
-        <td>N/A</td>
+        <td>4</td>
         <td>Less than</td>
     </tr>
     <tr>
         <td>></td>
-        <td>N/A</td>
+        <td>4</td>
         <td>More than</td>
     </tr>
     <tr>
         <td>&</td>
-        <td>N/A</td>
-        <td>logical and</td>
+        <td>6</td>
+        <td>Logical and</td>
     </tr>
     <tr>
         <td>|</td>
-        <td>N/A</td>
-        <td>logical or</td>
+        <td>7</td>
+        <td>Logical or</td>
     </tr>
     <tr>
         <td>=</td>
-        <td>N/A</td>
-        <td>Assignment operator</td>
+        <td>8</td>
+        <td>Assignment Operator</td>
     </tr>
     <tr>
-        <td>;</td>
-        <td>N/A</td>
-        <td>end of statement</td>
-    </tr>
-    <tr>
-        <td>{</td>
-        <td>N/A</td>
-        <td>Begin block</td>
-    </tr>
-    <tr>
-        <td>}</td>
-        <td>N/A</td>
-        <td>End block</td>
+        <td>-</td>
+        <td>1</td>
+        <td>Unary Negation</td>
     </tr>
 </table>
 
 ## Simplified EBNF as of Week 7:
 
 ### Statements:
-`<Statement>::= <Declaration> ';' | <ConditionalStatement>`
+`<Statement>::= <Declaration> | <Assignment> | <Function-Definition> | <Function-Call> | <Conditional-Statement> | <While-Loop>
+`
 
 ### Numerical expressions:
 
@@ -130,7 +121,7 @@
 
 `<Number>::= <Digit> { '.' <Digit>}`
 
-`<Digit> ::= #'[0-9]'`
+`<Digit> ::= 1*(0-9)`
 
 ### Logical expressions:
 
@@ -138,17 +129,39 @@
 
 `<Condition>::= ( '==' | '!=' | '&' | '|' ) <Boolean>`
 
-`<Boolean>::= '!’<Logic-Statement> | 'true' | 'false' | <Expression-Query> | '('<Logic-Statement>')'`
+`<Boolean>::= '!’<Logic-Statement> | 'true' | 'false' | <Expression-Query> | '('<Logic-Statement>')' | <Identifier>`
 
-`<Expression-Query> ::= <Expression> ( '==' | '!=' | '>'| '<' ) <Expression>`
+`<Expression-Query> ::= (<Expression> | <Identifier>) ( '==' | '!=' | '>'| '<' ) (<Expression> | <Identifier>)`
 
 ### Conditional Statements:
 
-`<ConditionalStatement>::= 'if’ ‘('<Logic-Statement> ’)’ ‘{' <block> '}' { 'else' ‘{‘ <block> ’}’ }`
-
-`<block>::= *{ <statement> ';' }`
+`<Conditional-Statement>::='if’ ‘('<Logic-Statement>’)’ <Block> {'else' <Block> }`
 
 ### Variables:
-`<Declaration>::= 'var' <Identifier> '=' (<Expression> | <Logic-Statement> ) ';'`
+
+`<Declaration>::= 'var’ (<Identifier> | <Assignment>) ‘;’`
+
 `<Identifier>::= <Word>`
-`<Word>::=[a-zA-Z]+`
+
+`<Word>::= 1*(a-zA-Z) - <Keywords>`
+`<Assignment>::= <Identifier> '=' (<Expression> | ' " '<Word>' " ' | <Logic-Statement>) ‘;’`
+
+### Functions:
+
+`<Function-Definition>::= 'func' <Identifier> '('#<Parameter>')' <Block>`
+
+`<Parameter>::= 'var' <Identifier>`
+
+`<Function-Call>::= <Identifier> '(' *{<Identifier>} ')' ';'`
+
+### Loops:
+
+`<While-Loop>::= 'while' '(' <Logic-Statement> ')' <Block>`
+
+### Keywords:
+
+`<Keyword>::= 'if' || 'else' || 'while' || 'var' || 'func' | 'true' | 'false`
+
+### Blocks:
+
+`<Block>::= '{' *{<statement>';'} '}'`
