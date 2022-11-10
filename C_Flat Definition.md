@@ -58,11 +58,67 @@
         <td>0</td>
         <td>Close Parentheses</td>
     </tr>
+    <tr>
+        <td>==</td>
+        <td>N/A</td>
+        <td>Equality</td>
+    </tr>
+    <tr>
+        <td>!</td>
+        <td>N/A</td>
+        <td>Not</td>
+    </tr>
+    <tr>
+        <td>!=</td>
+        <td>N/A</td>
+        <td>Inequality</td>
+    </tr>
+    <tr>
+        <td><</td>
+        <td>N/A</td>
+        <td>Less than</td>
+    </tr>
+    <tr>
+        <td>></td>
+        <td>N/A</td>
+        <td>More than</td>
+    </tr>
+    <tr>
+        <td>&</td>
+        <td>N/A</td>
+        <td>logical and</td>
+    </tr>
+    <tr>
+        <td>|</td>
+        <td>N/A</td>
+        <td>logical or</td>
+    </tr>
+    <tr>
+        <td>=</td>
+        <td>N/A</td>
+        <td>Assignment operator</td>
+    </tr>
+    <tr>
+        <td>;</td>
+        <td>N/A</td>
+        <td>end of statement</td>
+    </tr>
+    <tr>
+        <td>{</td>
+        <td>N/A</td>
+        <td>Begin block</td>
+    </tr>
+    <tr>
+        <td>}</td>
+        <td>N/A</td>
+        <td>End block</td>
+    </tr>
 </table>
 
-## Simplified EBNF as of Week 6:
+## Simplified EBNF as of Week 7:
+
 ### Statements:
-`<Statement>::=<Expression> | <Logic-Statement>`
+`<Statement>::= <Declaration> ';' | <ConditionalStatement>`
 
 ### Numerical expressions:
 
@@ -80,8 +136,19 @@
 
 `<Logic-Statement>::= <Boolean> {<Condition>}`
 
-`<Condition>::= ('==' | '&' | '|') <Boolean>`
+`<Condition>::= ( '==' | '!=' | '&' | '|' ) <Boolean>`
 
 `<Boolean>::= '!’<Logic-Statement> | 'true' | 'false' | <Expression-Query> | '('<Logic-Statement>')'`
 
-`<Expression-Query> ::= <Expression> ('=='|'>'|'<') <Expression>`
+`<Expression-Query> ::= <Expression> ( '==' | '!=' | '>'| '<' ) <Expression>`
+
+### Conditional Statements:
+
+`<ConditionalStatement>::= 'if’ ‘('<Logic-Statement> ’)’ ‘{' <block> '}' { 'else' ‘{‘ <block> ’}’ }`
+
+`<block>::= *{ <statement> ';' }`
+
+### Variables:
+`<Declaration>::= 'var' <Identifier> '=' (<Expression> | <Logic-Statement> ) ';'`
+`<Identifier>::= <Word>`
+`<Word>::=[a-zA-Z]+`
