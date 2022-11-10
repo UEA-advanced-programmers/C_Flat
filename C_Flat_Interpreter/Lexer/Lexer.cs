@@ -56,6 +56,9 @@ public class Lexer : InterpreterLogger
                     //ignore whitespace
                     newToken = null;
                     break;
+                case ';':
+                    newToken.Type = TokenType.SemiColon;
+                    break;
                 case '+' :
                     newToken.Type = TokenType.Add;
                     newToken.Word = c.ToString();
@@ -68,8 +71,16 @@ public class Lexer : InterpreterLogger
                     newToken.Type = TokenType.LeftParen;
                     newToken.Word = c.ToString();
                     break;
-                case ')' :
+                case ')':
                     newToken.Type = TokenType.RightParen;
+                    newToken.Word = c.ToString();
+                    break;
+                case '{':
+                    newToken.Type = TokenType.LeftCurlyBrace;
+                    newToken.Word = c.ToString();
+                    break;
+                case '}':
+                    newToken.Type = TokenType.RightCurlyBrace;
                     newToken.Word = c.ToString();
                     break;
                 case '-' :
