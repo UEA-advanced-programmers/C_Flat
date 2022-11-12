@@ -8,6 +8,24 @@ namespace C_Flat_Tests.Tests_Unit;
 
 public class ParserUnit
 {
+    [Test]
+    public void Parser_NoRightCurlyBrace_ThrowsException()
+    {
+        List<Token> tokens = new List<Token>
+        {
+            new Token(TokenType.String, "if"),
+            new Token(TokenType.LeftParen),
+            new Token(TokenType.String, "true"),
+            new Token(TokenType.RightParen),
+            new Token(TokenType.LeftCurlyBrace),
+            new Token(TokenType.Num, 3),
+
+        };
+        Parser parser = new Parser();
+
+        Assert.Throws(Is.TypeOf<SyntaxErrorException>().And.Message.Contains("Mismatched Curly braces"),
+            delegate { parser.Parse(tokens); });
+    }
     /*
     [Test]
     public void Parser_Parse_DoubleMulti_ThrowsException()

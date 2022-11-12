@@ -32,10 +32,12 @@ public class Parser : InterpreterLogger
 	public Parser()
 	{
 		GetLogger("Parser");
+		tokenIndexStack = new Stack<int>();
+		_tokens = new List<Token>();
 	}
 
-	//Helper Functions
-	
+    //Helper Functions
+    #region Helper Functions
 	private bool CheckBoolLiteral()
 	{
 		var word = _tokens[_currentIndex].Word;
@@ -48,6 +50,13 @@ public class Parser : InterpreterLogger
 		var word = _tokens[_currentIndex].Word;
 		if (word.Equals("if")) return true;
 		_logger.Error($"If parse error! Expected if, actual: \"{word}\"");
+		return false;
+	}
+	private bool CheckElse()
+	{
+		var word = _tokens[_currentIndex].Word;
+		if (word.Equals("else")) return true;
+		_logger.Error($"Else parse error! Expected else, actual: \"{word}\"");
 		return false;
 	}
 	private bool CheckWhile()
@@ -75,10 +84,17 @@ public class Parser : InterpreterLogger
 		}
 		return true;
 	}
-
+	Stack<int> tokenIndexStack;
+	private void Set()
+    {
+		tokenIndexStack.Push(_currentIndex);
+    }
 	private void Reset()
 	{
-		_currentIndex = 0;
+		if(tokenIndexStack.Count == 0)
+			_currentIndex = 0;
+		else
+			_currentIndex = tokenIndexStack.Pop();
 		_tokenType = TokenType.Null;
 	}
 	private void Advance(int level)
@@ -87,6 +103,8 @@ public class Parser : InterpreterLogger
 		_tokenType = _tokens[_currentIndex].Type;
 		_logger.Information("advance() called at level {level}. Next token is {@token}", level, _tokens[_currentIndex]);
 	}
+    #endregion
+    
 	
 	//End Helper Functions
 
@@ -106,7 +124,7 @@ public class Parser : InterpreterLogger
 	private void Statement(int level)
 	{
 		_logger.Information( "Statement() called at level {level}", level);
-		
+		Set();
 		try
 		{
 			Expression(level + 1);
@@ -115,10 +133,12 @@ public class Parser : InterpreterLogger
 		{
 			_logger.Warning(e.Message);
 		}
+		if (_currentIndex >= _totalTokens) return;
 		Reset();
+		Set();
 		try
 		{
-			IfStatements(level + 1);
+			LogicStatement(level + 1);
 		}
 		catch (Exception e)
 		{
@@ -126,7 +146,10 @@ public class Parser : InterpreterLogger
 		}
 		if (_currentIndex >= _totalTokens) return;
 		Reset();
-		LogicStatement(level + 1);
+		Set();
+		IfStatements(level + 1);
+		if (_currentIndex >= _totalTokens) return;
+		Reset();
 	}
 
     #region Expressions
@@ -265,15 +288,13 @@ public class Parser : InterpreterLogger
 		Expression(level + 1);
 	}
     #endregion
-    #region If and while statements
+    #region Conditions and iterators
 	private void IfStatements(int level)
     {
 		_logger.Information("if-statement() called at level {level}", level);
-		if (Match(TokenType.String))
-		{
-			if (CheckIf())
-				Advance(level + 1);
-		}
+		if (Match(TokenType.String) && CheckIf()) 
+			Advance(level + 1);
+        else return;
 		if (Match(TokenType.LeftParen)) Advance(level + 1);
         else
         {
@@ -287,20 +308,68 @@ public class Parser : InterpreterLogger
 			_logger.Error("Syntax Error! Expected \"(\" actual: {@word} ", _tokens[_currentIndex].Word);
 			return;
 		}
+		Block(level + 1);
+		try
+		{
+			ElseStatements(level + 1);
+		}
+		catch (Exception e)
+		{
+			_logger.Warning(e.Message);
+		}
+	}
+	private void ElseStatements(int level) {
+		if (Match(TokenType.String))
+		{
+			if (CheckElse())
+				Advance(level + 1);
+			Block(level + 1);
+		}
+	}
+	private void WhileStatement(int level)
+	{
+		_logger.Information("while-statement() called at level {level}", level);
+		if (Match(TokenType.String) && CheckWhile())
+			Advance(level + 1);
+		else return;
+		if (Match(TokenType.LeftParen)) Advance(level + 1);
+		else
+		{
+			_logger.Error("Syntax Error! Expected \"(\" actual: {@word} ", _tokens[_currentIndex].Word);
+			return;
+		}
+		LogicStatement(level + 1);
+		if (Match(TokenType.RightParen)) Advance(level + 1);
+		else
+		{
+			_logger.Error("Syntax Error! Expected \"(\" actual: {@word} ", _tokens[_currentIndex].Word);
+			return;
+		}
+		Block(level + 1);
+	}
+	private void Block(int level) {
 		if (Match(TokenType.LeftCurlyBrace)) Advance(level + 1);
 		else
 		{
 			_logger.Error("Syntax Error! Expected \"{\" actual: {@word} ", _tokens[_currentIndex].Word);
 			return;
 		}
-		Expression(level + 1);
-		if(Match(TokenType.RightCurlyBrace)) Advance(level + 1);
-        else
-        {
-            _logger.Error("Syntax Error! Expected \"}\" actual: {@word} ", _tokens[_currentIndex].Word);
-            return;
-        }
+		try
+		{
+			Set();
+			Statement(level + 1);
+		}
+		catch (Exception e)
+		{
+			_logger.Warning(e.Message);
+		}
+		if (Match(TokenType.RightCurlyBrace)) Advance(level + 1);
+		else
+		{
+			_logger.Error("Syntax Error! Expected \"}\" actual: {@word} ", _tokens[_currentIndex].Word);
+			return;
+		}
 	}
-    #endregion
-    //EBNF Functions
+	#endregion
+	//EBNF Functions
 }
