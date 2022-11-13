@@ -28,7 +28,33 @@ public class LexerUnit
         Assert.That(token.Type, Is.EqualTo(TokenType.Add));
         Assert.That(token.Word.ToString(), Is.EqualTo('+'.ToString()));
     }
-    
+    [Test]
+    public void Lexer_Tokenise_LeftBrace_TokenIsLeftBrace()
+    {
+        const string input = " +*{}()-/0123456789";
+        _lexer.Tokenise(input);
+        var token = _lexer.GetFromTokenList(2);
+        Assert.That(token.Type, Is.EqualTo(TokenType.LeftCurlyBrace));
+        Assert.That(token.Word.ToString(), Is.EqualTo('{'.ToString()));
+    }
+    [Test]
+    public void Lexer_Tokenise_RightBrace_TokenIsRightBrace()
+    {
+        const string input = " +*{}()-/0123456789";
+        _lexer.Tokenise(input);
+        var token = _lexer.GetFromTokenList(3);
+        Assert.That(token.Type, Is.EqualTo(TokenType.RightCurlyBrace));
+        Assert.That(token.Word.ToString(), Is.EqualTo('}'.ToString()));
+    }
+    [Test]
+    public void Lexer_Tokenise_Semicolon_TokenIsSemicolon()
+    {
+        const string input = " +*{};()-/0123456789";
+        _lexer.Tokenise(input);
+        var token = _lexer.GetFromTokenList(4);
+        Assert.That(token.Type, Is.EqualTo(TokenType.SemiColon));
+        Assert.That(token.Word.ToString(), Is.EqualTo(";"));
+    }
     [Test]
     public void Lexer_Tokenise_Multi_TokenIsMulti()
     {

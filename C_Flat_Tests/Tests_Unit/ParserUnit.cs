@@ -9,7 +9,23 @@ namespace C_Flat_Tests.Tests_Unit;
 public class ParserUnit
 {
     [Test]
-    public void Parser_NoRightCurlyBrace_ThrowsException()
+    public void Parser_IfStatementEmpty()
+    {
+        List<Token> tokens = new List<Token>
+        {
+            new Token(TokenType.String, "if"),
+            new Token(TokenType.LeftParen),
+            new Token(TokenType.String, "true"),
+            new Token(TokenType.RightParen),
+            new Token(TokenType.LeftCurlyBrace),
+            new Token(TokenType.RightCurlyBrace),
+        };
+        Parser parser = new Parser();
+
+        Assert.That(parser.Parse(tokens) == 0);
+    }
+    [Test]
+    public void Parser_IfStatementWithExpression()
     {
         List<Token> tokens = new List<Token>
         {
@@ -19,59 +35,53 @@ public class ParserUnit
             new Token(TokenType.RightParen),
             new Token(TokenType.LeftCurlyBrace),
             new Token(TokenType.Num, 3),
-
+            new Token(TokenType.RightCurlyBrace),
         };
         Parser parser = new Parser();
 
-        Assert.Throws(Is.TypeOf<SyntaxErrorException>().And.Message.Contains("Mismatched Curly braces"),
-            delegate { parser.Parse(tokens); });
+        Assert.That(parser.Parse(tokens)==0);
     }
-    /*
     [Test]
-    public void Parser_Parse_DoubleMulti_ThrowsException()
+    public void Parser_IfStatementWithLogic()
     {
         List<Token> tokens = new List<Token>
         {
-            new Token(TokenType.Num, 1),
-            new Token(TokenType.Multi),
-            new Token(TokenType.Multi),
-            new Token(TokenType.Num, 2),
-        };
-        Parser parser = new Parser();
-
-        Assert.Throws(Is.TypeOf<SyntaxErrorException>().And.Message.Contains("Number expected"),
-        delegate { parser.Parse(tokens); });
-    }
-    
-    [Test]
-    public void Parser_Parse_NoRightParam_ThrowsException()
-    {
-        List<Token> tokens = new List<Token>
-        {
-            new Token(TokenType.Num, 1),
-            new Token(TokenType.Multi),
+            new Token(TokenType.String, "if"),
             new Token(TokenType.LeftParen),
-            new Token(TokenType.Num, 2),
+            new Token(TokenType.String, "true"),
+            new Token(TokenType.RightParen),
+            new Token(TokenType.LeftCurlyBrace),
+            new Token(TokenType.Num, 3),
+            new Token(TokenType.Equals),
+            new Token(TokenType.Equals),
+            new Token(TokenType.Num, 3),
+            new Token(TokenType.RightCurlyBrace),
         };
         Parser parser = new Parser();
 
-        Assert.Throws(Is.TypeOf<SyntaxErrorException>().And.Message.Contains("Mismatched parentheses"),
-            delegate { parser.Parse(tokens); });
+        Assert.That(parser.Parse(tokens) == 0);
     }
-    
     [Test]
-    public void Parser_Parse_NoLeftParam_ThrowsException()
+    public void Parser_IfElseStatement()
     {
         List<Token> tokens = new List<Token>
         {
-            new Token(TokenType.Num, 1),
-            new Token(TokenType.Multi),
+            //if
+            new Token(TokenType.String, "if"),
+            new Token(TokenType.LeftParen),
+            new Token(TokenType.String, "true"),
             new Token(TokenType.RightParen),
-            new Token(TokenType.Num, 2),
+            new Token(TokenType.LeftCurlyBrace),
+            new Token(TokenType.Num, 3),
+            new Token(TokenType.RightCurlyBrace),
+            //else
+            new Token(TokenType.String, "if"),
+            new Token(TokenType.LeftCurlyBrace),
+            new Token(TokenType.Num, 7),
+            new Token(TokenType.RightCurlyBrace),
         };
         Parser parser = new Parser();
-        
-        Assert.Throws(Is.TypeOf<SyntaxErrorException>().And.Message.Contains("Number expected"),
-            delegate { parser.Parse(tokens); });
-    }*/
+
+        Assert.That(parser.Parse(tokens) == 0);
+    }
 }
