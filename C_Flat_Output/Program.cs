@@ -1,1 +1,1 @@
-Console.Out.WriteLine(if(true){3+3});
+Console.Out.WriteLine(32+2);
