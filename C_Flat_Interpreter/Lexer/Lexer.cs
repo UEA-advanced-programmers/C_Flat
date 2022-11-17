@@ -58,6 +58,7 @@ public class Lexer : InterpreterLogger
                     break;
                 case ';':
                     newToken.Type = TokenType.SemiColon;
+                    newToken.Word = c.ToString();
                     break;
                 case '+' :
                     newToken.Type = TokenType.Add;
