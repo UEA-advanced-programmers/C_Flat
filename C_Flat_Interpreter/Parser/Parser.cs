@@ -344,12 +344,15 @@ public class Parser : InterpreterLogger
 		}
 	}
 	private void ElseStatements(int level) {
-		if (Match(TokenType.String))
+		if (Match(TokenType.String) && CheckElse())
 		{
-			if (CheckElse())
-				Advance(level + 1);
+			Advance(level + 1);
 			SubBlock(level + 1);
 		}
+        else
+        {
+			return;
+        }
 	}
 	private void WhileStatement(int level)
 	{
