@@ -1,6 +1,6 @@
 /*
  *	Statements:
- *	<Statement>::=<Expression> | <Logic-Statement>
+ *	<Statement>::=<Expression> | <Logic-Statement> | <Conditional> | <While>
 
  *	Numerical expressions:
 	 *  <Expression>::= <Term> {('+'|'-') <Term>}
@@ -12,7 +12,10 @@
 	 *  <Condition>::= ('==' | '&' | '|') <Boolean>
 	 *	<Boolean>::= '!’<Logic-Statement> | 'true' | 'false' | <Expression-Query> | '('<Logic-Statement>')'
 	 *	<Expression-Query> ::= <Expression> ('=='|'>'|'<') <Expression>
- 
+ *	Conditional expressions:
+	*	<Conditional>::= 'if(' <Logic-Statement> ')' <block> {'else'}
+	*	<While>::= 'while(' <Logic-Statement>')'<block>
+	*	<block>::= '{' {<Statement>} '}'
  * */
 
 using System.Data;
@@ -103,15 +106,6 @@ public class Parser : InterpreterLogger
 		_tokenType = _tokens[_currentIndex].Type;
 		_logger.Information("advance() called at level {level}. Next token is {@token}", level, _tokens[_currentIndex]);
 	}
-	private void PrintCurrentLevel()
-    {
-        for (int i = _currentIndex; i < _totalTokens; i++)
-        {
-			String token = _tokens[i].Type.ToString();
-			Console.Write(token + ", ");
-        }
-		Console.Write("\n");
-    }
     #endregion
     
 	
@@ -129,38 +123,16 @@ public class Parser : InterpreterLogger
 	}
 	
 	//EBNF Functions
-	private void Block(int level)
-    {
-		_logger.Information("Block() called at level {level}", level);
-		while (_currentIndex < _totalTokens)
-        {
-			if (Match(TokenType.RightCurlyBrace))return;
-			try
-            {
-				Statement(level+1);
-				if (Match(TokenType.SemiColon)) Advance(level + 1);
-				else
-				{
-					_logger.Error("Syntax Error! Expected \";\" actual: {@word} ", _tokens[_currentIndex].Word);
-					return;
-				}
-			}
-            catch (Exception e)
-            {
-
-				_logger.Warning(e.Message);
-				return;
-			}
-        }
-	}
+	
 	private void Statement(int level)
 	{
 		_logger.Information( "Statement() called at level {level}", level);
-		PrintCurrentLevel();
 		Set();
 		try
 		{
 			Expression(level + 1);
+			if (Match(TokenType.SemiColon))
+				Advance(level + 1);
 			return;
 		}
 		catch (Exception e)
@@ -192,6 +164,8 @@ public class Parser : InterpreterLogger
 		}
 		Set();
 		LogicStatement(level + 1);
+		if (Match(TokenType.SemiColon))
+			Advance(level + 1);
 	}
 
     #region Expressions
@@ -330,27 +304,30 @@ public class Parser : InterpreterLogger
 		Expression(level + 1);
 	}
     #endregion
-    #region Conditions and iterators
+    #region Condition-Statements and iterators
 	private void IfStatements(int level)
     {
 		_logger.Information("if-statement() called at level {level}", level);
-		if (Match(TokenType.String) && CheckIf()) 
+		if (Match(TokenType.String) && CheckIf())
 			Advance(level + 1);
-        else return;
+		else {
+			_logger.Error("Syntax Error! Expected \"if\" actual: {@word} ", _tokens[_currentIndex].Word);
+			throw new SyntaxErrorException("Syntax Error! Expected \"if\" at token " + _currentIndex);
+		} 
 		if (Match(TokenType.LeftParen)) Advance(level + 1);
         else
         {
             _logger.Error("Syntax Error! Expected \"(\" actual: {@word} ", _tokens[_currentIndex].Word);
-            return;
+			throw new SyntaxErrorException("Syntax Error! Expected \"(\" at token " + _currentIndex);
         }
 		LogicStatement(level + 1);
 		if (Match(TokenType.RightParen)) Advance(level + 1);
 		else
         {
 			_logger.Error("Syntax Error! Expected \"(\" actual: {@word} ", _tokens[_currentIndex].Word);
-			return;
+			throw new SyntaxErrorException("Syntax Error! Expected \")\" at token " + _currentIndex);
 		}
-		SubBlock(level + 1);
+		Block(level + 1);
 		try
 		{
 			ElseStatements(level + 1);
@@ -365,7 +342,12 @@ public class Parser : InterpreterLogger
 		{
 			if (CheckElse())
 				Advance(level + 1);
-			SubBlock(level + 1);
+			Block(level + 1);
+		}
+		else
+		{
+			_logger.Error("Syntax Error! Expected \"else\" actual: {@word} ", _tokens[_currentIndex].Word);
+			throw new SyntaxErrorException("Syntax Error! Expected \"else\" at token " + _currentIndex);
 		}
 	}
 	private void WhileStatement(int level)
@@ -373,33 +355,38 @@ public class Parser : InterpreterLogger
 		_logger.Information("while-statement() called at level {level}", level);
 		if (Match(TokenType.String) && CheckWhile())
 			Advance(level + 1);
-		else return;
+		else
+		{
+			_logger.Error("Syntax Error! Expected \"while\" actual: {@word} ", _tokens[_currentIndex].Word);
+			throw new SyntaxErrorException("Syntax Error! Expected \"while\" at token " + _currentIndex);
+		}
 		if (Match(TokenType.LeftParen)) Advance(level + 1);
 		else
 		{
 			_logger.Error("Syntax Error! Expected \"(\" actual: {@word} ", _tokens[_currentIndex].Word);
-			return;
+			throw new SyntaxErrorException("Syntax Error! Expected \"(\" at token " + _currentIndex);
 		}
 		LogicStatement(level + 1);
 		if (Match(TokenType.RightParen)) Advance(level + 1);
 		else
 		{
-			_logger.Error("Syntax Error! Expected \"(\" actual: {@word} ", _tokens[_currentIndex].Word);
-			return;
+			_logger.Error("Syntax Error! Expected \")\" actual: {@word} ", _tokens[_currentIndex].Word);
+			throw new SyntaxErrorException("Syntax Error! Expected \")\" at token " + _currentIndex);
 		}
-		SubBlock(level + 1);
+		Block(level + 1);
 	}
-	private void SubBlock(int level) {
+	//checks that there is a valid block as described in the EBNF above
+	private void Block(int level) {
 		if (Match(TokenType.LeftCurlyBrace)) Advance(level + 1);
 		else
 		{
 			_logger.Error("Syntax Error! Expected \"{\" actual: {@word} ", _tokens[_currentIndex].Word);
-			return;
+			throw new SyntaxErrorException("Syntax Error! Expected \"{\" at token " + _currentIndex);
 		}
 		try
 		{
 			Set();
-			Block(level + 1);
+			BlockInternals(level + 1);
 		}
 		catch (Exception e)
 		{
@@ -409,7 +396,32 @@ public class Parser : InterpreterLogger
 		else
 		{
 			_logger.Error("Syntax Error! Expected \"}\" actual: {@word} ", _tokens[_currentIndex].Word);
-			return;
+			throw new SyntaxErrorException("Syntax Error! Expected \"}\" at token " + _currentIndex);
+		}
+	}
+	//validates that the statements inside the block are valid
+	private void BlockInternals(int level)
+	{
+		_logger.Information("Block() called at level {level}", level);
+		while (_currentIndex < _totalTokens)
+		{
+			if (Match(TokenType.RightCurlyBrace)) return;
+			try
+			{
+				Statement(level + 1);
+				if (Match(TokenType.SemiColon)) Advance(level + 1);
+				else
+				{
+					_logger.Error("Syntax Error! Expected \";\" actual: {@word} ", _tokens[_currentIndex].Word);
+					return;
+				}
+			}
+			catch (Exception e)
+			{
+
+				_logger.Warning(e.Message);
+				return;
+			}
 		}
 	}
 	#endregion

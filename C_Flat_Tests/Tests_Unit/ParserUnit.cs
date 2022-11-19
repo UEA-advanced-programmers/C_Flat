@@ -2,84 +2,79 @@
 using C_Flat_Interpreter.Common;
 using C_Flat_Interpreter.Common.Enums;
 using C_Flat_Interpreter.Parser;
+using C_Flat_Interpreter.Lexer;
 using NUnit.Framework;
-
 namespace C_Flat_Tests.Tests_Unit;
 
 public class ParserUnit
 {
     [Test]
-    public void Parser_IfStatementEmpty()
+    public void Parser_Parse_Expression()
     {
-        List<Token> tokens = new List<Token>
-        {
-            new Token(TokenType.String, "if"),
-            new Token(TokenType.LeftParen),
-            new Token(TokenType.String, "true"),
-            new Token(TokenType.RightParen),
-            new Token(TokenType.LeftCurlyBrace),
-            new Token(TokenType.RightCurlyBrace),
-        };
+        string statement = "3+4;";
+        Lexer lexer = new Lexer();
+        lexer.Tokenise(statement);
+        List<Token> tokens = lexer.GetTokens();
         Parser parser = new Parser();
 
         Assert.That(parser.Parse(tokens) == 0);
     }
-    [Test]
-    public void Parser_IfStatementWithExpression()
-    {
-        List<Token> tokens = new List<Token>
-        {
-            new Token(TokenType.String, "if"),
-            new Token(TokenType.LeftParen),
-            new Token(TokenType.String, "true"),
-            new Token(TokenType.RightParen),
-            new Token(TokenType.LeftCurlyBrace),
-            new Token(TokenType.Num, 3),
-            new Token(TokenType.RightCurlyBrace),
-        };
-        Parser parser = new Parser();
 
-        Assert.That(parser.Parse(tokens)==0);
-    }
     [Test]
-    public void Parser_IfStatementWithLogic()
+    public void Parser_Parse_LogicStatement()
     {
-        List<Token> tokens = new List<Token>
-        {
-            new Token(TokenType.String, "if"),
-            new Token(TokenType.LeftParen),
-            new Token(TokenType.String, "true"),
-            new Token(TokenType.RightParen),
-            new Token(TokenType.LeftCurlyBrace),
-            new Token(TokenType.Num, 3),
-            new Token(TokenType.Equals),
-            new Token(TokenType.Equals),
-            new Token(TokenType.Num, 3),
-            new Token(TokenType.RightCurlyBrace),
-        };
+        string statement = "true;";
+        Lexer lexer = new Lexer();
+        lexer.Tokenise(statement);
+        List<Token> tokens = lexer.GetTokens();
+        Parser parser = new Parser();
+        parser.Parse(tokens);
+        Assert.That(parser.Parse(tokens) == 0);
+    }
+
+    [Test]
+    public void Parser_Parse_IfStatementEmpty()
+    {
+        string statement = "if(true){}";
+        Lexer lexer = new Lexer();
+        lexer.Tokenise(statement);
+        List<Token> tokens = lexer.GetTokens();
         Parser parser = new Parser();
 
         Assert.That(parser.Parse(tokens) == 0);
     }
+
     [Test]
-    public void Parser_IfElseStatement()
+    public void Parser_Parse_IfStatementWithExpression()
     {
-        List<Token> tokens = new List<Token>
-        {
-            //if
-            new Token(TokenType.String, "if"),
-            new Token(TokenType.LeftParen),
-            new Token(TokenType.String, "true"),
-            new Token(TokenType.RightParen),
-            new Token(TokenType.LeftCurlyBrace),
-            new Token(TokenType.Num, 3),
-            new Token(TokenType.RightCurlyBrace),
-            //else
-            new Token(TokenType.String, "if"),
-            new Token(TokenType.LeftCurlyBrace),
-            new Token(TokenType.Num, 7),
-            new Token(TokenType.RightCurlyBrace),
-        };
+        string statement = "if(true){3+4;}";
+        Lexer lexer = new Lexer();
+        lexer.Tokenise(statement);
+        List<Token> tokens = lexer.GetTokens();
+        Parser parser = new Parser();
+
+        Assert.That(parser.Parse(tokens) == 0);
+    }
+
+    [Test]
+    public void Parser_Parse_IfStatementWithLogic()
+    {
+        string statement = "if(true){true;}";
+        Lexer lexer = new Lexer();
+        lexer.Tokenise(statement);
+        List<Token> tokens = lexer.GetTokens();
+        Parser parser = new Parser();
+
+        Assert.That(parser.Parse(tokens) == 0);
+    }
+
+    [Test]
+    public void Parser_Parse_IfElseStatement()
+    {
+        string statement = "if(true){}else{}";
+        Lexer lexer = new Lexer();
+        lexer.Tokenise(statement);
+        List<Token> tokens = lexer.GetTokens();
         Parser parser = new Parser();
 
         Assert.That(parser.Parse(tokens) == 0);
