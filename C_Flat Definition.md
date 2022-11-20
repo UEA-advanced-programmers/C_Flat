@@ -139,11 +139,12 @@
 
 ### Variables:
 
-`<Declaration>::= 'var’ (<Identifier> | <Assignment>) ‘;’`
+`<Declaration>::= 'var’ (<Identifier> ';'| <Assignment>)`
 
 `<Identifier>::= <Word>`
 
 `<Word>::= 1*(a-zA-Z) - <Keywords>`
+
 `<Assignment>::= <Identifier> '=' (<Expression> | ' " '<Word>' " ' | <Logic-Statement>) ‘;’`
 
 ### Functions:
@@ -152,7 +153,7 @@
 
 `<Parameter>::= 'var' <Identifier>`
 
-`<Function-Call>::= <Identifier> '(' *{<Identifier>} ')' ';'`
+`<Function-Call>::= <Identifier> '(' *{<Identifier> | <Logic-Statement> | <Expression>} ')' ';'`
 
 ### Loops:
 
@@ -160,8 +161,8 @@
 
 ### Keywords:
 
-`<Keyword>::= 'if' || 'else' || 'while' || 'var' || 'func' | 'true' | 'false`
+`<Keyword>::= 'if' | 'else' | 'while' | 'var' | 'func' | 'true' | 'false`
 
 ### Blocks:
 
-`<Block>::= '{' *{<statement>';'} '}'`
+`<Block>::= '{' *{<statement>} '}'`
