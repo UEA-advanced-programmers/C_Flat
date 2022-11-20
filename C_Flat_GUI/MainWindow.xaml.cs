@@ -36,7 +36,7 @@ namespace C_Flat
             TranspilerOutput.Text = "";
             _programChanged = true;
             _lexer.ClearLogs();
-            if (_lexer.Tokenise(SourceInput.Text) != 0)
+            if (_lexer.Lex(SourceInput.Text) != 0)
             {
                 //Lexer Failed!
                 TranspilerOutput.Text += "Lexing Failed! Printing logs: \n";
@@ -47,7 +47,7 @@ namespace C_Flat
                 }
                 return;
             }
-            var tokens = _lexer.GetTokens();
+            var tokens = _lexer.GetLines();
             _parser.ClearLogs();
             if (_parser.Parse(tokens) != 0)
             {

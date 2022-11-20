@@ -25,14 +25,20 @@ public class Parser : InterpreterLogger
 {
 	private TokenType _tokenType;
 	private int _currentIndex;
-	private int _currentLine;
-	private int _totalTokens;
-	private List<parseToken> _tokens; //TODO - define max with the group
-
-	struct parseToken
+	private ParseNode currentNode;
+	private List<ParseNode> ParseTree; //TODO - define max with the group
+	
+	//TODO: Move to class with overload for ToString() for better error logging (see refactor logging)
+	struct ParseNode
 	{
-		public int lineIndex;
-		public Token token;
+		public int nodeIndex;
+		public List<KeyValuePair<int, Token>> tokens;
+
+		public ParseNode(int i, List<KeyValuePair<int, Token>> nodeTokens)
+		{
+			nodeIndex = i;
+			tokens = nodeTokens;
+		}
 	}
 	//constructor
 	public Parser()
@@ -44,7 +50,7 @@ public class Parser : InterpreterLogger
 	
 	private bool CheckBoolLiteral()
 	{
-		var word = _tokens[_currentIndex].token.Word;
+		var word = currentNode.tokens[_currentIndex].Value.Word;
 		if (word.Equals("true") || word.Equals("false")) return true;
 		_logger.Error($"Bool parse error! Expected boolean literal, actual: \"{word}\"");
 		return false;
@@ -53,7 +59,7 @@ public class Parser : InterpreterLogger
 	{
 		if (_tokenType == TokenType.Null) //only on first call,  TODO - find better way to do this that means we don't need to set to null and/or we don't need this check
         {
-			_tokenType = _tokens[_currentIndex].token.Type;
+			_tokenType = currentNode.tokens[_currentIndex].Value.Type;
 		}
 
 		if (tokenType == _tokenType)
@@ -75,29 +81,57 @@ public class Parser : InterpreterLogger
 	}
 	private void Advance(int level)
 	{
-		if (++_currentIndex >= _totalTokens) return; //todo - might be able to find a way to exit everything else quicker when we're at the end - EOF token!
-		_tokenType = _tokens[_currentIndex].token.Type;
-		_logger.Information("advance() called at level {level}. Next token is {@token}", level, _tokens[_currentIndex]);
+		if (++_currentIndex >= currentNode.tokens.Count) return; //todo - might be able to find a way to exit everything else quicker when we're at the end - EOF token!
+		_tokenType = currentNode.tokens[_currentIndex].Value.Type;
+		_logger.Information("advance() called at level {level}. Next token is {@token}", level, currentNode.tokens[_currentIndex]);
 	}
+
+	private void ConstructParseTree(List<Line> lines)
+	{
+		ParseTree = new();
+		int i = 0;
+		List<KeyValuePair<int, Token>> nodeTokens = new();
+		foreach (var line in lines)
+		{
+			//ignore empty lines
+			if(line.Tokens.Count == 0)
+				continue;
+			foreach (var tok in line.Tokens)
+			{
+				nodeTokens.Add(new(line.LineNumber, tok));
+				//TODO: Check token type not word when these tokens are added!
+				if (tok.Word is ";" or "}")
+				{
+					//Terminal token signalling a new node
+					ParseTree.Add(new ParseNode(i++, nodeTokens));
+					nodeTokens = new();
+				}
+			}
+			//REMOVE BELOW LINES WHICH ALLOWS FOR NON TERMINATED EXPRESSIONS E.G. 1+1
+			ParseTree.Add(new ParseNode(i++, nodeTokens));
+			nodeTokens = new();
+		}
+	}
+	
 	
 	//End Helper Functions
 
 	public int Parse(List<Line> lines)
 	{
-		_currentLine = 0;
-		foreach (var line in lines)
+		ConstructParseTree(lines);
+		bool fail = false;
+		foreach (var parseNode in ParseTree)
 		{
-			foreach (var tok in line.Tokens)
+			currentNode = parseNode;
+			Statement(0);
+			if (_currentIndex < currentNode.tokens.Count)
 			{
-				_tokens.Add(new parseToken{lineIndex =  line.LineNumber, token = tok});
+				_logger.Error("Syntax error! Could not parse node: {@node}", currentNode);
+				fail = true;
 			}
+			Reset();
 		}
-		_totalTokens = lines.Select(t => t.Tokens.Count).Sum();
-		Reset();
-		Statement(0);
-		if (_currentIndex >= _totalTokens) return 0;
-		_logger.Error("Syntax error! Could not parse Token: {@token}", _tokens[_currentIndex]); //todo - Create test for this!
-		return 1;
+		return fail? 1 : 0;
 	}
 	
 	//EBNF Functions
@@ -105,7 +139,6 @@ public class Parser : InterpreterLogger
 	private void Statement(int level)
 	{
 		_logger.Information( "Statement() called at level {level}", level);
-		
 		try
 		{
 			Expression(level + 1);
@@ -114,8 +147,7 @@ public class Parser : InterpreterLogger
 		{
 			_logger.Warning(e.Message);
 		}
-
-		if (_currentIndex >= _totalTokens) return;
+		if (_currentIndex >= currentNode.tokens.Count) return;
 		Reset();
 		LogicStatement(level + 1);
 	}
@@ -156,12 +188,12 @@ public class Parser : InterpreterLogger
 			if (Match(TokenType.RightParen)) Advance(level + 1);
 			else
 			{
-				throw new SyntaxErrorException("Syntax Error! Mismatched parentheses at token " + _currentIndex);
+				throw new SyntaxErrorException("Syntax Error! Mismatched parentheses at line: "+ currentNode.tokens[_currentIndex-1].Key);
 			}
 		}
 		else
 		{
-			throw new SyntaxErrorException("Syntax Error! Unexpected token at token " + _currentIndex);
+			throw new SyntaxErrorException("Syntax Error! Unexpected token at line: " + currentNode.tokens[_currentIndex].Key);
 		}
 	}
 
@@ -206,7 +238,7 @@ public class Parser : InterpreterLogger
 					if (Match(TokenType.RightParen)) Advance(level + 1);
 					else
 					{
-						_logger.Error("Syntax Error! Mismatched parentheses at token {index}", _currentIndex);
+						_logger.Error("Syntax Error! Mismatched parentheses at line: {line}", currentNode.tokens[_currentIndex-1].Key);
 					}
 				}
 			}
@@ -224,7 +256,9 @@ public class Parser : InterpreterLogger
 			Advance(level);
 			if (!Match(TokenType.Equals))
 			{
-				_logger.Error("Syntax Error! Mismatched inequality operator, expected \"=\" actual: {@word} ", _tokens[_currentIndex].token.Word);
+				_logger.Error("Syntax Error! Mismatched inequality operator at line: {line}. Expected \"=\" actual: {@word} ", 
+					currentNode.tokens[_currentIndex].Key, 
+					currentNode.tokens[_currentIndex].Value.Word);
 				return;
 			}
 		}
@@ -233,7 +267,9 @@ public class Parser : InterpreterLogger
 			Advance(level);
 			if (!Match(TokenType.Equals))
 			{
-				_logger.Error("Syntax Error! Mismatched equality operator, expected \"=\" actual: {@word} ", _tokens[_currentIndex].token.Word);
+				_logger.Error("Syntax Error! Mismatched equality operator at line: {line}. Expected \"=\" actual: {@word} ",
+					currentNode.tokens[_currentIndex].Key,
+					currentNode.tokens[_currentIndex].Value.Word);
 				return;
 			}
 		}
@@ -252,7 +288,9 @@ public class Parser : InterpreterLogger
 			Advance(level);
 			if (!Match(TokenType.Equals))
 			{
-				_logger.Error("Syntax Error! Mismatched inequality operator, expected \"=\" actual: {@word} ", _tokens[_currentIndex].token.Word);
+				_logger.Error("Syntax Error! Mismatched inequality operator at line: {line}. Expected \"=\" actual: {@word} ",
+					currentNode.tokens[_currentIndex].Key,
+					currentNode.tokens[_currentIndex].Value.Word);
 				return;
 			}
 		}
@@ -261,8 +299,9 @@ public class Parser : InterpreterLogger
 			Advance(level);
 			if (!Match(TokenType.Equals))
 			{
-				_logger.Error("Syntax Error! Mismatched equality operator, expected \"=\" actual: {@word} ",
-					_tokens[_currentIndex].token.Word);
+				_logger.Error("Syntax Error! Mismatched equality operator, at line: {line}. Expected \"=\" actual: {@word} ",
+					currentNode.tokens[_currentIndex].Key,
+					currentNode.tokens[_currentIndex].Value.Word);
 				return;
 			}
 		}
