@@ -11,36 +11,39 @@ public class Transpiler : InterpreterLogger
         "// See https://aka.ms/new-console-template for more information",
         @"Console.WriteLine(""Hello, World!"");",
     };
-
     public Transpiler()
     {
         GetLogger("Transpiler");
     }
 
-    public void Transpile(List<Token> tokens)
+    public void Transpile(List<Line> lines)
     {
         //Retrieve program.cs file
         var writer = File.CreateText(GetProgramPath());
-        string prog = $@"Console.Out.WriteLine(";
-        foreach (var tok in tokens)
+        foreach (var line in lines)
         {
-            switch (tok.Type)
+            string prog = $@"Console.Out.WriteLine(";
+            foreach (var tok in line.Tokens)
             {
-                //TODO: Refactor this if needed
-                case TokenType.Sub when prog.EndsWith('-'):
-                    prog += ' ';
-                    break;
-                case TokenType.And:
-                    tok.Value = "&&";
-                    break;
-                case TokenType.Or:
-                    tok.Value = "||";
-                    break;
+                switch (tok.Type)
+                {
+                    //TODO: Refactor this if needed
+                    case TokenType.Sub when prog.EndsWith('-'):
+                        prog += ' ';
+                        break;
+                    case TokenType.And:
+                        tok.Value = "&&";
+                        break;
+                    case TokenType.Or:
+                        tok.Value = "||";
+                        break;
+                }
+                prog += (tok.Value ?? tok.Word);
             }
-            prog += (tok.Value ?? tok.Word);
+            prog += @");";
+            writer.WriteLine(prog);
         }
-        prog += @");";
-        writer.Write(prog);
+
         writer.Close();
     }
 

@@ -7,10 +7,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Folder Include="Common" />
-    </ItemGroup>
-
-    <ItemGroup>
       <PackageReference Include="Serilog" Version="2.12.1-dev-01587" />
       <PackageReference Include="Serilog.Sinks.Console" Version="4.1.1-dev-00896" />
       <PackageReference Include="Serilog.Sinks.InMemory" Version="0.11.0" />

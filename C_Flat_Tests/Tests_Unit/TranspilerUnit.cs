@@ -19,14 +19,21 @@ public class TranspilerUnit : TestLogger
     {
         //Arrange
         string testInput = @"Console.WriteLine(""Hello World!"");";
-        List<Token> input = new List<Token>
+        List<Line> input = new List<Line>
         {
-            new(TokenType.Num, 10),
-            new(TokenType.Add)
+            new Line
             {
-                Word = "+"
-            },
-            new(TokenType.Num, 20),
+                LineNumber = 1,
+                Tokens = new List<Token>
+                {
+                    new(TokenType.Num, 10),
+                    new(TokenType.Add)
+                    {
+                        Word = "+"
+                    },
+                    new(TokenType.Num, 20),
+                }
+            }
         };
         //Act
         _transpiler.Transpile(input);
@@ -34,6 +41,49 @@ public class TranspilerUnit : TestLogger
 
         //Assert
         Assert.That(testOutput, Contains.Substring("10+20"));
+    }
+    [Test]
+    public void Transpiler_Transpile_MultipleLinesToFile()
+    {
+        //Arrange
+        List<Line> input = new List<Line>
+        {
+            new Line
+            {
+                LineNumber = 1,
+                Tokens = new List<Token>
+                {
+                    new(TokenType.Num, 10),
+                    new(TokenType.Add)
+                    {
+                        Word = "+"
+                    },
+                    new(TokenType.Num, 20),
+                }
+            },
+            new Line
+            {
+                LineNumber = 2,
+                Tokens = new List<Token>
+                {
+                    new(TokenType.Num, 10),
+                    new(TokenType.Less)
+                    {
+                        Word = "<"
+                    },
+                    new(TokenType.Num, 20),
+                }
+            }
+        };
+        //Act
+        _transpiler.Transpile(input);
+        var testOutput = File.ReadLines(_transpiler.GetProgramPath()).ToList();
+
+        //Assert
+        Assert.That(testOutput.Count(), Is.EqualTo(2));
+        Assert.That(testOutput[0], Contains.Substring("10+20"));
+        Assert.That(testOutput[1], Contains.Substring("10<20"));
+
     }
 
     [TearDown]

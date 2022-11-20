@@ -1,2 +1,4 @@
-// See https://aka.ms/new-console-template for more information
-Console.WriteLine("Hello, World!");
+Console.Out.WriteLine(1+(10-8));
+Console.Out.WriteLine(300<399&&true);
+Console.Out.WriteLine(100/20);
+

@@ -25,9 +25,15 @@ public class Parser : InterpreterLogger
 {
 	private TokenType _tokenType;
 	private int _currentIndex;
+	private int _currentLine;
 	private int _totalTokens;
-	private List<Token> _tokens; //TODO - define max with the group
+	private List<parseToken> _tokens; //TODO - define max with the group
 
+	struct parseToken
+	{
+		public int lineIndex;
+		public Token token;
+	}
 	//constructor
 	public Parser()
 	{
@@ -38,7 +44,7 @@ public class Parser : InterpreterLogger
 	
 	private bool CheckBoolLiteral()
 	{
-		var word = _tokens[_currentIndex].Word;
+		var word = _tokens[_currentIndex].token.Word;
 		if (word.Equals("true") || word.Equals("false")) return true;
 		_logger.Error($"Bool parse error! Expected boolean literal, actual: \"{word}\"");
 		return false;
@@ -47,7 +53,7 @@ public class Parser : InterpreterLogger
 	{
 		if (_tokenType == TokenType.Null) //only on first call,  TODO - find better way to do this that means we don't need to set to null and/or we don't need this check
         {
-			_tokenType = _tokens[_currentIndex].Type;
+			_tokenType = _tokens[_currentIndex].token.Type;
 		}
 
 		if (tokenType == _tokenType)
@@ -70,16 +76,23 @@ public class Parser : InterpreterLogger
 	private void Advance(int level)
 	{
 		if (++_currentIndex >= _totalTokens) return; //todo - might be able to find a way to exit everything else quicker when we're at the end - EOF token!
-		_tokenType = _tokens[_currentIndex].Type;
+		_tokenType = _tokens[_currentIndex].token.Type;
 		_logger.Information("advance() called at level {level}. Next token is {@token}", level, _tokens[_currentIndex]);
 	}
 	
 	//End Helper Functions
 
-	public int Parse(List<Token> tokens)
+	public int Parse(List<Line> lines)
 	{
-		_tokens = tokens;
-		_totalTokens = tokens.Count;
+		_currentLine = 0;
+		foreach (var line in lines)
+		{
+			foreach (var tok in line.Tokens)
+			{
+				_tokens.Add(new parseToken{lineIndex =  line.LineNumber, token = tok});
+			}
+		}
+		_totalTokens = lines.Select(t => t.Tokens.Count).Sum();
 		Reset();
 		Statement(0);
 		if (_currentIndex >= _totalTokens) return 0;
@@ -211,7 +224,7 @@ public class Parser : InterpreterLogger
 			Advance(level);
 			if (!Match(TokenType.Equals))
 			{
-				_logger.Error("Syntax Error! Mismatched inequality operator, expected \"=\" actual: {@word} ", _tokens[_currentIndex].Word);
+				_logger.Error("Syntax Error! Mismatched inequality operator, expected \"=\" actual: {@word} ", _tokens[_currentIndex].token.Word);
 				return;
 			}
 		}
@@ -220,7 +233,7 @@ public class Parser : InterpreterLogger
 			Advance(level);
 			if (!Match(TokenType.Equals))
 			{
-				_logger.Error("Syntax Error! Mismatched equality operator, expected \"=\" actual: {@word} ", _tokens[_currentIndex].Word);
+				_logger.Error("Syntax Error! Mismatched equality operator, expected \"=\" actual: {@word} ", _tokens[_currentIndex].token.Word);
 				return;
 			}
 		}
@@ -239,7 +252,7 @@ public class Parser : InterpreterLogger
 			Advance(level);
 			if (!Match(TokenType.Equals))
 			{
-				_logger.Error("Syntax Error! Mismatched inequality operator, expected \"=\" actual: {@word} ", _tokens[_currentIndex].Word);
+				_logger.Error("Syntax Error! Mismatched inequality operator, expected \"=\" actual: {@word} ", _tokens[_currentIndex].token.Word);
 				return;
 			}
 		}
@@ -249,7 +262,7 @@ public class Parser : InterpreterLogger
 			if (!Match(TokenType.Equals))
 			{
 				_logger.Error("Syntax Error! Mismatched equality operator, expected \"=\" actual: {@word} ",
-					_tokens[_currentIndex].Word);
+					_tokens[_currentIndex].token.Word);
 				return;
 			}
 		}
