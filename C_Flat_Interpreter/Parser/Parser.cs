@@ -90,6 +90,7 @@ public class Parser : InterpreterLogger
 	{
 		ParseTree = new();
 		int i = 0;
+		int openBlocks = 0;
 		List<KeyValuePair<int, Token>> nodeTokens = new();
 		foreach (var line in lines)
 		{
@@ -100,7 +101,11 @@ public class Parser : InterpreterLogger
 			{
 				nodeTokens.Add(new(line.LineNumber, tok));
 				//TODO: Check token type not word when these tokens are added!
-				if (tok.Word is ";" or "}")
+				if(tok.Word is "{")
+					openBlocks++;
+				else if (tok.Word is "}")
+					openBlocks--;
+				if (openBlocks <= 0 && tok.Word is "}" or ";")
 				{
 					//Terminal token signalling a new node
 					ParseTree.Add(new ParseNode(i++, nodeTokens));
