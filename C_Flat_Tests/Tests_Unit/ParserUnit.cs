@@ -9,31 +9,38 @@ namespace C_Flat_Tests.Tests_Unit;
 public class ParserUnit
 {
     [Test]
-    public void Parser_Parse_Expression()
+    public void Parser_Parse_Expression_RunsCorrectly()
     {
-        string statement = "3+4;";
-        Lexer lexer = new Lexer();
-        lexer.Tokenise(statement);
-        List<Token> tokens = lexer.GetTokens();
+        List<Token> tokens =
+            new List<Token>() { 
+                new Token(TokenType.Num, 3),
+                new Token(TokenType.Add),
+                new Token(TokenType.Num, 4),
+            };
         Parser parser = new Parser();
 
         Assert.That(parser.Parse(tokens) == 0);
     }
 
     [Test]
-    public void Parser_Parse_LogicStatement()
+    public void Parser_Parse_LogicStatement_RunsCorrectly()
     {
-        string statement = "true;";
+        string statement = "true";
         Lexer lexer = new Lexer();
         lexer.Tokenise(statement);
-        List<Token> tokens = lexer.GetTokens();
+        List<Token> tokens =
+            new List<Token>() {
+                new Token(TokenType.Num, 3),
+                new Token(TokenType.Less),
+                new Token(TokenType.Num, 4),
+            };
         Parser parser = new Parser();
         parser.Parse(tokens);
         Assert.That(parser.Parse(tokens) == 0);
     }
 
     [Test]
-    public void Parser_Parse_IfStatementEmpty()
+    public void Parser_Parse_IfStatementEmpty_RunsCorrectly()
     {
         string statement = "if(true){}";
         Lexer lexer = new Lexer();
@@ -45,9 +52,9 @@ public class ParserUnit
     }
 
     [Test]
-    public void Parser_Parse_IfStatementWithExpression()
+    public void Parser_Parse_IfStatementWithExpression_RunsCorrectly()
     {
-        string statement = "if(true){3+4;}";
+        string statement = "if(true){3+4}";
         Lexer lexer = new Lexer();
         lexer.Tokenise(statement);
         List<Token> tokens = lexer.GetTokens();
@@ -57,9 +64,9 @@ public class ParserUnit
     }
 
     [Test]
-    public void Parser_Parse_IfStatementWithLogic()
+    public void Parser_Parse_IfStatementWithLogic_RunsCorrectly()
     {
-        string statement = "if(true){true;}";
+        string statement = "if(true){true}";
         Lexer lexer = new Lexer();
         lexer.Tokenise(statement);
         List<Token> tokens = lexer.GetTokens();
@@ -69,7 +76,7 @@ public class ParserUnit
     }
 
     [Test]
-    public void Parser_Parse_IfElseStatement()
+    public void Parser_Parse_IfElseStatement_RunsCorrectly()
     {
         string statement = "if(true){}else{}";
         Lexer lexer = new Lexer();

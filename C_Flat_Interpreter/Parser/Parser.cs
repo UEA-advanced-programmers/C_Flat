@@ -35,7 +35,6 @@ public class Parser : InterpreterLogger
 	public Parser()
 	{
 		GetLogger("Parser");
-		tokenIndexStack = new Stack<int>();
 		_tokens = new List<Token>();
 	}
 
@@ -87,17 +86,29 @@ public class Parser : InterpreterLogger
 		}
 		return true;
 	}
-	Stack<int> tokenIndexStack;
-	private void Set()
+	private bool TryStatement(int level, Action<int> statementType)
     {
-		tokenIndexStack.Push(_currentIndex);
+		int index = _currentIndex;
+		try
+        {
+			statementType(level+1);
+			return true;
+        }
+        catch (Exception e)
+        {
+			_logger.Warning(e.Message);
+			Reset();
+			_currentIndex = index;
+			return false;
+		}
+    }
+	private void Set(int index)
+    {
+		_currentIndex = index;	
     }
 	private void Reset()
 	{
-		if(tokenIndexStack.Count == 0)
-			_currentIndex = 0;
-		else
-			_currentIndex = tokenIndexStack.Pop();
+		_currentIndex = 0;
 		_tokenType = TokenType.Null;
 	}
 	private void Advance(int level)
@@ -126,32 +137,13 @@ public class Parser : InterpreterLogger
 	
 	private void Statement(int level)
 	{
+		int currentIndex = _currentIndex; ;
 		_logger.Information( "Statement() called at level {level}", level);
-		Set();
-		try
-		{
-			Expression(level + 1);
-			if (Match(TokenType.SemiColon))
-				Advance(level + 1);
+
+		if (TryStatement(level, Expression))
 			return;
-		}
-		catch (Exception e)
-		{
-			_logger.Warning(e.Message);
-			Reset();
-		}
-		Set();
-		try
-		{
-			IfStatements(level + 1);
+		if (TryStatement(level, IfStatements))
 			return;
-		}
-		catch (Exception e)
-		{
-			_logger.Warning(e.Message);
-			Reset();	
-		}
-		Set();
 		try
 		{
 			WhileStatement(level + 1);
@@ -161,11 +153,9 @@ public class Parser : InterpreterLogger
 		{
 			_logger.Warning(e.Message);
 			Reset();
+			_currentIndex = currentIndex;
 		}
-		Set();
 		LogicStatement(level + 1);
-		if (Match(TokenType.SemiColon))
-			Advance(level + 1);
 	}
 
     #region Expressions
@@ -385,8 +375,30 @@ public class Parser : InterpreterLogger
 		}
 		try
 		{
-			Set();
-			BlockInternals(level + 1);
+			while (_currentIndex < _totalTokens)
+			{
+				if (Match(TokenType.RightCurlyBrace))
+                {
+					Advance(level + 1);
+					return;
+                }
+				try
+				{
+					Statement(level + 1);
+					if (Match(TokenType.SemiColon)) Advance(level + 1);
+					else
+					{
+						_logger.Error("Syntax Error! Expected \";\" actual: {@word} ", _tokens[_currentIndex].Word);
+						//return;
+					}
+				}
+				catch (Exception e)
+				{
+
+					_logger.Warning(e.Message);
+					return;
+				}
+			}
 		}
 		catch (Exception e)
 		{
@@ -399,31 +411,7 @@ public class Parser : InterpreterLogger
 			throw new SyntaxErrorException("Syntax Error! Expected \"}\" at token " + _currentIndex);
 		}
 	}
-	//validates that the statements inside the block are valid
-	private void BlockInternals(int level)
-	{
-		_logger.Information("Block() called at level {level}", level);
-		while (_currentIndex < _totalTokens)
-		{
-			if (Match(TokenType.RightCurlyBrace)) return;
-			try
-			{
-				Statement(level + 1);
-				if (Match(TokenType.SemiColon)) Advance(level + 1);
-				else
-				{
-					_logger.Error("Syntax Error! Expected \";\" actual: {@word} ", _tokens[_currentIndex].Word);
-					return;
-				}
-			}
-			catch (Exception e)
-			{
-
-				_logger.Warning(e.Message);
-				return;
-			}
-		}
-	}
+	
 	#endregion
 	//EBNF Functions
 }
