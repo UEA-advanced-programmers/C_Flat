@@ -24,9 +24,19 @@ public class Transpiler : InterpreterLogger
         string prog = $@"Console.Out.WriteLine(";
         foreach (var tok in tokens)
         {
-            //TODO: Refactor this if needed
-            if (tok.Type is TokenType.Sub && prog.EndsWith('-'))
-                prog += ' ';
+            switch (tok.Type)
+            {
+                //TODO: Refactor this if needed
+                case TokenType.Sub when prog.EndsWith('-'):
+                    prog += ' ';
+                    break;
+                case TokenType.And:
+                    tok.Value = "&&";
+                    break;
+                case TokenType.Or:
+                    tok.Value = "||";
+                    break;
+            }
             prog += (tok.Value ?? tok.Word);
         }
         prog += @");";
