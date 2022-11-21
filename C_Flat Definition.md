@@ -1,4 +1,33 @@
 ﻿# C_Flat Language Definition
+## Language Identity:
+C_Flat is a procedural general-purpose language. It is designed to be used for quick prototypes and proof of concept programs.
+This is in part due to it's procedural nature, where larger programs are best suited to Object Oriented languages such as C#.
+As such, C_Flat can be easily transpiled into C# to further develop your quick prototype into a completed project.
+
+Due to it's procedural paradigm and C-Style syntax, an obvious comparison to C_Flat is C.
+However, C is much more volatile and low-level which means the user can quickly create critical bugs within their program resulting in crashes or worse!
+Comparatively, C-Flat is Transpiled into C# which handles garbage collection itself, removing the risk of volatile memory-related issues.
+This results in C_Flat being much more intuitive and user-friendly, making it a good choice to use within education, where user-decipherable errors and intuitiveness reign supreme over the additional performance and low-level control C provides.
+
+Furthering the user-friendliness of C_Flat is the use of implicit typing for variables.
+When quickly prototyping is is a burden to have to explicitly consider the type of each variable.
+C_Flat removes this burden by making all types implicitly declared using the `var` keyword.
+This means that the variables type is chosen at the time of being transpiled to C# which places the burden on the transpiler instead of the developer.
+
+Another comparable language would be Pascal, a procedural language based upon ALGOL. Pascal is similar to C_Flat in that it is both implicitly typed and procedural
+which makes it useful in the cases I have outlined above. However, C_Flat has a syntax very different to Pascal as it derives from the C-family of languages.
+While the argument could be made that the C-Style syntax is more difficult to read than Pascals.
+We decided that due to C-Style languages being much more popular and widely used it would be more beneficial to help the user get comfortable with the C-Style of syntax.
+
+As such in C_Flat statements are terminated with a semi-colon e.g. `var myNumber = 1;` and blocks of code are wrapped within curly braces such as the following:
+
+```csharp
+if (myNumber == 1)
+{
+   myNumber = 2;
+}
+```
+
 ## Language Syntax:
 
 ### Variables (In Progress):
