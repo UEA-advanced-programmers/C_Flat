@@ -259,9 +259,18 @@ public class Parser : InterpreterLogger
 	{
 		_logger.Information( "Condition() called at level {level}", level);
 
-		if (!(Match(TokenType.Equals) || Match(TokenType.And) || Match(TokenType.Or)))
+		if (!(Match(TokenType.Equals) || Match(TokenType.And) || Match(TokenType.Or) || Match(TokenType.Not)))
 			return;
-		if (Match(TokenType.Equals))
+		if (Match(TokenType.Not))
+		{
+			Advance(level);
+			if (!Match(TokenType.Equals))
+			{
+				_logger.Error("Syntax Error! Mismatched inequality operator, expected \"=\" actual: {@word} ", _tokens[_currentIndex].Word);
+				return;
+			}
+		}
+		else if (Match(TokenType.Equals))
 		{
 			Advance(level);
 			if (!Match(TokenType.Equals))
@@ -280,7 +289,16 @@ public class Parser : InterpreterLogger
 		Expression(level + 1);
 		if (!(Match(TokenType.Equals) || Match(TokenType.More) || Match(TokenType.Less)))
 			return;
-		if (Match(TokenType.Equals))
+		if (Match(TokenType.Not))
+		{
+			Advance(level);
+			if (!Match(TokenType.Equals))
+			{
+				_logger.Error("Syntax Error! Mismatched inequality operator, expected \"=\" actual: {@word} ", _tokens[_currentIndex].Word);
+				return;
+			}
+		}
+		else if (Match(TokenType.Equals))
 		{
 			Advance(level);
 			if (!Match(TokenType.Equals))
