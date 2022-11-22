@@ -243,7 +243,7 @@ A loop can be created using the keyword `while`, followed by a logic statement w
 
 ### Keywords:
 
-`<Keyword>::= 'if' | 'else' | 'while' | 'var' | 'func' | 'true' | 'false`
+`<Keyword>::= 'if' | 'else' | 'while' | 'var' | 'func' | 'true' | 'false'`
 
 ### Blocks:
 
