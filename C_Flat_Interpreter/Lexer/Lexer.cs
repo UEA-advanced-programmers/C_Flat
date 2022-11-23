@@ -5,12 +5,6 @@ namespace C_Flat_Interpreter.Lexer;
 using System.Collections.Generic;
 
 /*
-Assumptions - only one line can be entered.
-
-This will be changed but is assumed now in order to create a simple starting lexer
-*/
-
-/*
  * List of things to add in future
  * 
  * TODO - Other operators (power, root etc)
