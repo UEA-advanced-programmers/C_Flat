@@ -421,7 +421,7 @@ public class Parser : InterpreterLogger
 				//try
 				//{
 					Statement(level + 1);
-					Expression(level + 1);
+					Expression(level + 1); //todo - remove this once variables have been added
 				//}
 				//catch (Exception e)
 				//{
