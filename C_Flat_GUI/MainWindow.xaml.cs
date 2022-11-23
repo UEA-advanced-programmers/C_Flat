@@ -14,7 +14,6 @@ using C_Flat_Interpreter.Parser;
 using C_Flat_Interpreter.Transpiler;
 using Microsoft.Win32;
 using Serilog.Events;
-using Wpf.Ui.Controls;
 using Button = Wpf.Ui.Controls.Button;
 using MessageBox = System.Windows.MessageBox;
 using TreeViewItem = System.Windows.Controls.TreeViewItem;
@@ -24,21 +23,22 @@ namespace C_Flat
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : UiWindow
+    public partial class MainWindow
     {
         private readonly Lexer _lexer;
         private readonly Parser _parser;
         private readonly Transpiler _transpiler;
         private bool _programChanged;
-        private LinearGradientBrush _executionBrush;
-        private Storyboard _executionAnim;
+        
+        private LinearGradientBrush? _executionBrush;
+        private Storyboard? _executionAnim;
 
         private TreeView? _parseTree;
-        private Button _ShowTree;
-        private TextBlock _CodeView;
-        private Button _ShowCode;
-        private TextBlock? _ExecutionOutput;
-        private Button _ShowOutput;
+        private readonly Button _showTree;
+        private readonly TextBlock _codeView;
+        private readonly Button _showCode;
+        private TextBlock? _executionOutput;
+        private readonly Button _showOutput;
 
         public MainWindow()
         {
@@ -50,7 +50,7 @@ namespace C_Flat
 
             ExecuteButton.IsEnabled = false;
             
-            _ShowTree = new Button()
+            _showTree = new Button()
             {
                 Content = "Show parse tree",
                 Margin = new Thickness(5),
@@ -59,9 +59,9 @@ namespace C_Flat
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 Background = new SolidColorBrush(Color.FromRgb(106, 27, 154)),
             };
-            _ShowTree.Click += ShowTree_Click;
+            _showTree.Click += ShowTree_Click;
             
-            _ShowOutput = new Button()
+            _showOutput = new Button()
             {
                 Content = "Show execution output",
                 Margin = new Thickness(5),
@@ -70,9 +70,9 @@ namespace C_Flat
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 Background = new SolidColorBrush(Color.FromRgb(106, 27, 154)),
             };
-            _ShowOutput.Click += ShowOutput_Click;
+            _showOutput.Click += ShowOutput_Click;
             
-            _ShowCode = new Button()
+            _showCode = new Button()
             {
                 Content = "Show transpiled code",
                 Margin = new Thickness(5),
@@ -81,12 +81,12 @@ namespace C_Flat
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 Background = new SolidColorBrush(Color.FromRgb(106, 27, 154)),
             };
-            _ShowCode.Click += ShowCode_Click;
+            _showCode.Click += ShowCode_Click;
             
-            LeftButton.Content = _ShowTree;
-            RightButton.Content = _ShowOutput;
+            LeftButton.Content = _showTree;
+            RightButton.Content = _showOutput;
 
-            _CodeView = new TextBlock()
+            _codeView = new TextBlock()
             {
                 Background = Brushes.Transparent,
                 Foreground = Brushes.White,
@@ -94,30 +94,30 @@ namespace C_Flat
                 TextWrapping = TextWrapping.NoWrap,
                 IsEnabled = false,
             };
-            OutputBorder.Child = _CodeView;
+            OutputBorder.Child = _codeView;
         }
 
         private void ButtonTranspile_Click(object sender, RoutedEventArgs e)
         {
-            _CodeView.Text = "";
+            _codeView.Text = "";
             SourceInput.BorderThickness = new Thickness(0);
             OutputBorder.BorderThickness = new Thickness(0);
             ExecuteButton.IsEnabled = false;
-            _ExecutionOutput = null;
+            _executionOutput = null;
             _parseTree = null;
             _programChanged = true;
             _lexer.ClearLogs();
             if (_lexer.Tokenise(SourceInput.Text) != 0)
             {
                 //Lexer Failed!
-                _CodeView.Inlines.Clear();
+                _codeView.Inlines.Clear();
                 var run = new Run
                 {
                     Text = "Parsing Failed! Printing logs: \n",
                     Background = Brushes.DarkRed,
                     Foreground = Brushes.White
                 };
-                _CodeView.Inlines.Add(new Bold(run));
+                _codeView.Inlines.Add(run);
                 foreach (var errorMessage in _parser.GetInMemoryLogs()
                              .Where(log => log.Level > LogEventLevel.Information))
                 {
@@ -127,11 +127,11 @@ namespace C_Flat
                         _ => Brushes.DarkRed
                     };
                     run.Text = errorMessage.RenderMessage();
-                    _CodeView.Inlines.Add(run);
+                    _codeView.Inlines.Add(run);
                 }
                 SourceInput.BorderBrush = new SolidColorBrush(Colors.DarkRed);
                 SourceInput.BorderThickness = new Thickness(2);
-                _ShowTree.IsEnabled = false;
+                _showTree.IsEnabled = false;
                 return;
             }
 
@@ -141,14 +141,14 @@ namespace C_Flat
             if (_parser.Parse(tokens) != 0)
             {
                 //Parser failed!
-                _CodeView.Inlines.Clear();
+                _codeView.Inlines.Clear();
                 var run = new Run
                 {
                     Text = "Parsing Failed! Printing logs: \n",
                     Background = Brushes.DarkRed,
                     Foreground = Brushes.White
                 };
-                _CodeView.Inlines.Add(new Bold(run));
+                _codeView.Inlines.Add(run);
                 foreach (var errorMessage in _parser.GetInMemoryLogs()
                              .Where(log => log.Level > LogEventLevel.Information))
                 {
@@ -158,12 +158,12 @@ namespace C_Flat
                         _ => Brushes.DarkRed
                     };
                     run.Text = errorMessage.RenderMessage() + "\n";
-                    _CodeView.Inlines.Add(run);
+                    _codeView.Inlines.Add(run);
                 }
                 
                 SourceInput.BorderBrush = new SolidColorBrush(Colors.DarkRed);
                 SourceInput.BorderThickness = new Thickness(2);
-                _ShowTree.IsEnabled = false;
+                _showTree.IsEnabled = false;
                 return;
             }
 
@@ -173,8 +173,8 @@ namespace C_Flat
             SourceInput.BorderBrush = new SolidColorBrush(Colors.LawnGreen);
             SourceInput.BorderThickness = new Thickness(2);
             ExecuteButton.IsEnabled = true;
-            _CodeView.Text = $"{transpiledProgram}";
-            ShowCode_Click(default, default);
+            _codeView.Text = $"{transpiledProgram}";
+            ShowCode_Click(default!, default!);
         }
 
         private async void ButtonExecuteCode_Click(object sender, RoutedEventArgs e)
@@ -182,7 +182,7 @@ namespace C_Flat
             
             TranspileButton.IsEnabled = false;
             ExecuteButton.IsEnabled = false;
-            _ExecutionOutput = new TextBlock
+            _executionOutput = new TextBlock
             {
                 Background = Brushes.Transparent,
                 Foreground = Brushes.White,
@@ -191,13 +191,13 @@ namespace C_Flat
                 IsEnabled = false,
                 Text = "Execution in progress..."
             };
-            ShowOutput_Click(default, default);
-            //_ShowOutput.IsEnabled = true;
-            //Begin execution textbox animation
+            ShowOutput_Click(default!, default!);
+            
+            //Begin execution text box animation
             Mouse.OverrideCursor = Cursors.Wait;
             OutputBorder.BorderBrush = _executionBrush;
             OutputBorder.BorderThickness = new Thickness(3);
-            _executionAnim.Begin(this);
+            _executionAnim?.Begin(this);
 
             //Create and start dotnet run process
             var proc = new Process
@@ -220,33 +220,35 @@ namespace C_Flat
             await proc.WaitForExitAsync();
 
             //End execution animation
-            _executionAnim.Stop(this);
+            _executionAnim?.Stop(this);
             Mouse.OverrideCursor = Cursors.Arrow;
 
             //Check for errors and format stored output logs
             if (proc.ExitCode != 0)
             {
-                _ExecutionOutput.Inlines.Clear();
+                _executionOutput.Inlines.Clear();
                 OutputBorder.BorderBrush = new SolidColorBrush(Colors.DarkRed);
                 OutputBorder.BorderThickness = new Thickness(2);
                 var errorLogs = output.Split("\r\n", StringSplitOptions.RemoveEmptyEntries);
                 foreach (var error in errorLogs)
                 {
-                    var start = error.IndexOf("Program.cs", 0);
+                    var start = error.IndexOf("Program.cs", 0, StringComparison.Ordinal);
                     var end = error.LastIndexOf('[');
                     var trimmedError = error.Substring(start, end - start);
-                    _ExecutionOutput.Inlines.Add(new Run()
+                    _executionOutput.Inlines.Add(new Run()
                     {
                         Text = trimmedError + "\n",
                         Background = Brushes.DarkRed,
                     });
                 }
                 ExecuteButton.IsEnabled = false;
+                OutputBorder.BorderBrush = Brushes.DarkRed;
+
                 return;
             }
             //Otherwise just copy output directly to text-box and apply a green "success border"
-            _ExecutionOutput.Text = output;
-            OutputBorder.BorderBrush = new SolidColorBrush(Colors.LawnGreen);
+            _executionOutput.Text = output;
+            OutputBorder.BorderBrush = Brushes.LawnGreen;
             OutputBorder.BorderThickness = new Thickness(2);
             TranspileButton.IsEnabled = true;
             ExecuteButton.IsEnabled = true;
@@ -277,28 +279,28 @@ namespace C_Flat
 
         }
 
-        private async void ShowTree_Click(object sender, RoutedEventArgs e)
+        private void ShowTree_Click(object sender, RoutedEventArgs e)
         {
-            _ShowOutput.IsEnabled = _ExecutionOutput != null;
-            LeftButton.Content = _ShowOutput;
-            RightButton.Content = _ShowCode;
+            _showOutput.IsEnabled = _executionOutput != null;
+            LeftButton.Content = _showOutput;
+            RightButton.Content = _showCode;
             OutputBorder.Child = _parseTree;
         }
 
-        private async void ShowOutput_Click(object sender, RoutedEventArgs e)
+        private void ShowOutput_Click(object sender, RoutedEventArgs e)
         {
-            LeftButton.Content = _ShowCode;
-            RightButton.Content = _ShowTree;
-            OutputBorder.Child = _ExecutionOutput;
+            LeftButton.Content = _showCode;
+            RightButton.Content = _showTree;
+            OutputBorder.Child = _executionOutput;
         }
 
-        private async void ShowCode_Click(object sender, RoutedEventArgs e)
+        private void ShowCode_Click(object sender, RoutedEventArgs e)
         {
-            _ShowTree.IsEnabled = _parseTree != null;
-            LeftButton.Content = _ShowTree;
-            _ShowOutput.IsEnabled = _ExecutionOutput != null;
-            RightButton.Content = _ShowOutput;
-            OutputBorder.Child = _CodeView;
+            _showTree.IsEnabled = _parseTree != null;
+            LeftButton.Content = _showTree;
+            _showOutput.IsEnabled = _executionOutput != null;
+            RightButton.Content = _showOutput;
+            OutputBorder.Child = _codeView;
         }
 
         private void CreateExecuteAnimation()
