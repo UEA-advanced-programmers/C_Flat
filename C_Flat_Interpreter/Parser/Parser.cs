@@ -86,25 +86,10 @@ public class Parser : InterpreterLogger
 		}
 		return true;
 	}
-	private bool TryStatement(int level, Action<int> statementType)
-    {
-		int index = _currentIndex;
-		try
-        {
-			statementType(level+1);
-			return true;
-        }
-        catch (Exception e)
-        {
-			_logger.Warning(e.Message);
-			Reset();
-			_currentIndex = index;
-			return false;
-		}
-    }
 	private void Set(int index)
     {
-		_currentIndex = index;	
+		_currentIndex = index;
+		_tokenType = TokenType.Null;
     }
 	private void Reset()
 	{
@@ -126,7 +111,8 @@ public class Parser : InterpreterLogger
 	{
 		_tokens = tokens;
 		_totalTokens = tokens.Count;
-		_currentIndex = 0;
+		//_currentIndex = 0;
+		Reset();
 		Statement(0);
 		if (_currentIndex >= _totalTokens) return 0;
 		_logger.Error("Syntax error! Could not parse Token: {@token}", _tokens[_currentIndex]); //todo - Create test for this!
@@ -137,23 +123,51 @@ public class Parser : InterpreterLogger
 	
 	private void Statement(int level)
 	{
-		int currentIndex = _currentIndex; ;
+		int currentIndex = _currentIndex;
 		_logger.Information( "Statement() called at level {level}", level);
-
-		if (TryStatement(level, Expression))
-			return;
-		if (TryStatement(level, IfStatements))
-			return;
+		
 		try
 		{
-			WhileStatement(level + 1);
-			return;
+			Expression(level + 1);
+			//currentIndex = _currentIndex;
+			//return;
 		}
 		catch (Exception e)
 		{
 			_logger.Warning(e.Message);
-			Reset();
-			_currentIndex = currentIndex;
+			//Reset();
+			//Set(currentIndex); //todo - check this as it isn't right
+			//_currentIndex = currentIndex;
+		}
+		if (_currentIndex >= _totalTokens) return;
+		Set(currentIndex);
+		
+		try
+		{
+			IfStatements(level + 1);
+			//currentIndex = _currentIndex;
+			//return;
+		}
+		catch (Exception e)
+		{
+			_logger.Warning(e.Message);
+			//Reset();
+			//Set(currentIndex);
+			//_currentIndex = currentIndex;
+		}
+		
+		try
+		{
+			WhileStatement(level + 1);
+			//currentIndex = _currentIndex;
+			//return;
+		}
+		catch (Exception e)
+		{
+			_logger.Warning(e.Message);
+			//Reset();
+			//Set(currentIndex);
+			//_currentIndex = currentIndex;
 		}
 		LogicStatement(level + 1);
 	}
@@ -240,7 +254,12 @@ public class Parser : InterpreterLogger
 				_logger.Warning(e.Message);
 				
 				_currentIndex = index;
-				_tokenType = TokenType.Null;
+				//_tokenType = TokenType.Null;
+				//if (_currentIndex >= _totalTokens) //todo - make this better
+				//{
+				//	return;
+				//}
+
 				if (Match(TokenType.LeftParen))
 				{
 					Advance(level + 1);
@@ -328,7 +347,7 @@ public class Parser : InterpreterLogger
             _logger.Error("Syntax Error! Expected \"(\" actual: {@word} ", _tokens[_currentIndex].Word);
 			throw new SyntaxErrorException("Syntax Error! Expected \"(\" at token " + _currentIndex);
         }
-		LogicStatement(level + 1);
+		LogicStatement(level + 1); //todo - check this is working correctly and won't cause an error
 		if (Match(TokenType.RightParen)) Advance(level + 1);
 		else
         {
@@ -346,10 +365,9 @@ public class Parser : InterpreterLogger
 		}
 	}
 	private void ElseStatements(int level) {
-		if (Match(TokenType.String))
+		if (Match(TokenType.String) && CheckElse())
 		{
-			if (CheckElse())
-				Advance(level + 1);
+			Advance(level + 1);
 			Block(level + 1);
 		}
 		else
@@ -400,22 +418,16 @@ public class Parser : InterpreterLogger
 					Advance(level + 1);
 					return;
                 }
-				try
-				{
+				//try
+				//{
 					Statement(level + 1);
-					if (Match(TokenType.SemiColon)) Advance(level + 1);
-					else
-					{
-						_logger.Error("Syntax Error! Expected \";\" actual: {@word} ", _tokens[_currentIndex].Word);
-						//return;
-					}
-				}
-				catch (Exception e)
-				{
-
-					_logger.Warning(e.Message);
-					return;
-				}
+					Expression(level + 1);
+				//}
+				//catch (Exception e)
+				//{
+				//	_logger.Warning(e.Message);
+				//	return;
+				//}
 			}
 		}
 		catch (Exception e)
