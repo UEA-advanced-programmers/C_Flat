@@ -1,1 +1,1 @@
-Console.Out.WriteLine(testing);
+Console.Out.WriteLine();
