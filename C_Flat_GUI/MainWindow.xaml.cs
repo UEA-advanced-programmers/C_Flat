@@ -4,6 +4,9 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Windows;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
 using C_Flat_Interpreter.Lexer;
 using C_Flat_Interpreter.Parser;
 using C_Flat_Interpreter.Transpiler;
@@ -33,18 +36,36 @@ namespace C_Flat
 
         private void ButtonTranspile_Click(object sender, RoutedEventArgs e)
         {
-            TranspilerOutput.Text = "";
+            OutputBlock.Text = "";
+            SourceInput.BorderThickness = new Thickness(0);
+            OutputBorder.BorderThickness = new Thickness(0);
+
             _programChanged = true;
             _lexer.ClearLogs();
             if (_lexer.Tokenise(SourceInput.Text) != 0)
             {
                 //Lexer Failed!
-                TranspilerOutput.Text += "Lexing Failed! Printing logs: \n";
-                foreach (var errorMessage in _lexer.GetInMemoryLogs().Where(log => log.Level > LogEventLevel.Information))
+                OutputBlock.Inlines.Clear();
+                var run = new Run
                 {
-                    var messageRender = errorMessage.RenderMessage().Replace("\n", "\\n").Replace("\r", "\\r");;
-                    TranspilerOutput.Text += messageRender + "\n";
+                    Text = "Parsing Failed! Printing logs: \n",
+                    Background = Brushes.DarkRed,
+                    Foreground = Brushes.White
+                };
+                OutputBlock.Inlines.Add(new Bold(run));
+                foreach (var errorMessage in _parser.GetInMemoryLogs().Where(log => log.Level > LogEventLevel.Information))
+                {
+                    run.Background = errorMessage.Level switch
+                    {
+                        LogEventLevel.Warning => new SolidColorBrush(Colors.Goldenrod),
+                        _ => Brushes.DarkRed
+                    };
+                    run.Text = errorMessage.RenderMessage();
+                    OutputBlock.Inlines.Add(run);
                 }
+                SourceInput.BorderBrush = new SolidColorBrush(Colors.DarkRed);
+                SourceInput.BorderThickness = new Thickness(2);
+                ExecuteButton.IsEnabled = false;
                 return;
             }
             var tokens = _lexer.GetTokens();
@@ -52,21 +73,42 @@ namespace C_Flat
             if (_parser.Parse(tokens) != 0)
             {
                 //Parser failed!
-                TranspilerOutput.Text += "Parsing Failed! Printing logs: \n";
+                OutputBlock.Inlines.Clear();
+                var run = new Run
+                {
+                    Text = "Parsing Failed! Printing logs: \n",
+                    Background = Brushes.DarkRed,
+                    Foreground = Brushes.White
+                };
+                OutputBlock.Inlines.Add(new Bold(run));
                 foreach (var errorMessage in _parser.GetInMemoryLogs().Where(log => log.Level > LogEventLevel.Information))
                 {
-                    TranspilerOutput.Text += errorMessage.RenderMessage() + "\n";
+                    run.Background = errorMessage.Level switch
+                    {
+                        LogEventLevel.Warning => new SolidColorBrush(Colors.Goldenrod),
+                        _ => Brushes.DarkRed
+                    };
+                    run.Text = errorMessage.RenderMessage();
+                    OutputBlock.Inlines.Add(run);
                 }
+                SourceInput.BorderBrush = new SolidColorBrush(Colors.DarkRed);
+                SourceInput.BorderThickness = new Thickness(2);
+                ExecuteButton.IsEnabled = false;
                 return;
             }
-            _transpiler.Transpile(tokens);
-            TranspilerOutput.Text = $"Transpiled input source. See the transpiled C# code in: {_transpiler.GetProgramPath()}";
-            SourceInput.Clear();
+            var transpiledProgram = _transpiler.Transpile(tokens);
+            SourceInput.BorderBrush = new SolidColorBrush(Colors.LawnGreen);
+            SourceInput.BorderThickness = new Thickness(2);
+            ExecuteButton.IsEnabled = true;
+            OutputBlock.Text = $"{transpiledProgram}";
         }
         
-        private async void ButtonTranspileAndRun_Click(object sender, RoutedEventArgs e)
+        private async void ButtonExecuteCode_Click(object sender, RoutedEventArgs e)
         {
-            ExecutionOutput.Text = "Executing transpiled code!!";
+            Mouse.OverrideCursor = Cursors.Wait;
+            OutputBlock.Text = "Executing transpiled code!!";
+            OutputBorder.BorderBrush = new SolidColorBrush(Colors.MediumPurple);
+            OutputBorder.BorderThickness = new Thickness(2);
             var proc = new Process
             {
                 StartInfo = new ProcessStartInfo
@@ -83,7 +125,11 @@ namespace C_Flat
             proc.Start();
             var output = await proc.StandardOutput.ReadToEndAsync();
             await proc.WaitForExitAsync();
-            ExecutionOutput.Text = output;
+            Mouse.OverrideCursor = Cursors.Arrow;
+            OutputBlock.Text = output;
+            OutputBorder.BorderBrush = new SolidColorBrush(Colors.LawnGreen);
+            OutputBorder.BorderThickness = new Thickness(2);
+
         }
 
         private void OnWindowClose(object sender, CancelEventArgs e)

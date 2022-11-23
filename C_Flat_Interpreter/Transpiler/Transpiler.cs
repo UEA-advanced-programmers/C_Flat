@@ -17,7 +17,7 @@ public class Transpiler : InterpreterLogger
         GetLogger("Transpiler");
     }
 
-    public void Transpile(List<Token> tokens)
+    public string Transpile(List<Token> tokens)
     {
         //Retrieve program.cs file
         var writer = File.CreateText(GetProgramPath());
@@ -42,6 +42,7 @@ public class Transpiler : InterpreterLogger
         prog += @");";
         writer.Write(prog);
         writer.Close();
+        return prog;
     }
 
     public string GetProgramPath()
