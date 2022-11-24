@@ -21,4 +21,6 @@ public enum TokenType //will be added to later, names not final
     Equals,
     Less,
     More,
+    NotEqual,
+    Assignment
 }

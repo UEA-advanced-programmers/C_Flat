@@ -5,8 +5,7 @@ namespace C_Flat_Interpreter.Parser;
 public class ParseNode
 {
     private List<ParseNode> childNodes = new();
-    private List<Token> tokens;
-    private Token token;
+    private Token? token;
     private NodeType type;
     
 //todo - figure out what constructors are needed
@@ -14,11 +13,6 @@ public class ParseNode
     {
         this.type = type;
         this.token = token;
-    }
-
-    public ParseNode(List<Token> tokens)
-    {
-        this.tokens = tokens;
     }
 
     public ParseNode(NodeType type)

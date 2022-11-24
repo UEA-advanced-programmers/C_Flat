@@ -30,11 +30,6 @@ public class Lexer : InterpreterLogger
         return _tokens;
     }
 
-    //public int GetLines()
-    //{
-    //    return _lines;
-    //}
-
     //TODO - Handle index out of bounds exceptions here
     public Token GetFromTokenList(int placeToSearch)
     {
@@ -49,17 +44,11 @@ public class Lexer : InterpreterLogger
 
         input = input.Replace("\r", "");
         _lines = input.Split("\n");
-        //lines[0].Length;
-        //_lines = lines.Length;
 
         for (int j = 0; j < _lines.Length; j++) //line
         {
-            //foreach (var character in lines[i])
             for(int i = 0; i < _lines[j].Length; i++) //character
-            //for(int i = 0; i < input.Length; i++)
             {
-                //char c = character;
-                //char c = lines[i][j];
                 char c = _lines[j][i];
                 var newToken = new Token();
                 newToken.Line = j;
@@ -107,12 +96,31 @@ public class Lexer : InterpreterLogger
                         newToken.Word = c.ToString();
                         break;
                     case '!':
-                        newToken.Type = TokenType.Not;
-                        newToken.Word = c.ToString();
+                        if (_lines[j][i + 1] == '=')
+                        {
+                            i++;
+                            newToken.Type = TokenType.NotEqual;
+                            newToken.Word = c.ToString() + _lines[j][i].ToString();
+                        }
+                        else
+                        {
+                            newToken.Type = TokenType.Not;
+                            newToken.Word = c.ToString();
+                        }
                         break;
                     case '=':
-                        newToken.Type = TokenType.Equals;
-                        newToken.Word = c.ToString();
+                        if (_lines[j][i + 1] == '=')
+                        {
+                            i++;
+                            newToken.Type = TokenType.NotEqual;
+                            newToken.Word = c.ToString() + _lines[j][i].ToString();
+                        }
+                        else
+                        {
+                            newToken.Type = TokenType.Assignment;
+                            newToken.Word = c.ToString();
+                        }
+
                         break;
                     case '&':
                         newToken.Type = TokenType.And;
@@ -130,9 +138,6 @@ public class Lexer : InterpreterLogger
                         newToken.Type = TokenType.More;
                         newToken.Word = c.ToString();
                         break;
-                    //case '\n':
-                        //newToken = null;
-                        //break;
                     default:
                         if (char.IsDigit(c))
                         {
@@ -163,8 +168,6 @@ public class Lexer : InterpreterLogger
                     _tokens.Add(newToken);
                 }
             }
-
-            //return _failed ? 1 : 0;
         }
         return _failed ? 1 : 0;
     }

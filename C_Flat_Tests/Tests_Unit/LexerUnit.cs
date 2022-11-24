@@ -29,9 +29,7 @@ public class LexerUnit
                              "test" + "\r\n" +
                              "}";
         _lexer.Tokenise(input);
-        //var token = _lexer.GetFromTokenList(0);
         Assert.That(_lexer.GetTokens().Count == 7);
-        //Assert.That(_lexer.GetLines() == 4);
     }
     
     [Test]
