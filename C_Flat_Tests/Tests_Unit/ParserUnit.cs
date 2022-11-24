@@ -9,6 +9,20 @@ namespace C_Flat_Tests.Tests_Unit;
 public class ParserUnit
 {
     [Test]
+    public void test()
+    {
+        List<Token> tokens =
+            new List<Token>() { 
+                new Token(TokenType.Num, 1),
+                new Token(TokenType.Sub),
+                new Token(TokenType.Num, 1),
+            };
+        Parser parser = new Parser();
+
+        Assert.That(parser.Parse(tokens) == 0);
+    }
+    
+    [Test]
     public void Parser_Parse_Expression_RunsCorrectly()
     {
         List<Token> tokens =

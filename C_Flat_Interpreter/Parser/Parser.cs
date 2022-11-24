@@ -30,6 +30,9 @@ public class Parser : InterpreterLogger
 	private int _currentIndex;
 	private int _totalTokens;
 	private List<Token> _tokens; //TODO - define max with the group
+	private List<ParseNode> _parseTree = new();
+
+	private delegate void Delegate(ParseNode node);
 
 	//constructor
 	public Parser()
@@ -96,24 +99,53 @@ public class Parser : InterpreterLogger
 		_currentIndex = 0;
 		_tokenType = TokenType.Null;
 	}
-	private void Advance(int level)
+	private void Advance(ParseNode node)
 	{
 		if (++_currentIndex >= _totalTokens) return; //todo - might be able to find a way to exit everything else quicker when we're at the end - EOF token!
 		_tokenType = _tokens[_currentIndex].Type;
-		_logger.Information("advance() called at level {level}. Next token is {@token}", level, _tokens[_currentIndex]);
+		//_logger.Information("advance() called at level {level}. Next token is {@token}", level, _tokens[_currentIndex]); //todo - fix
 	}
     #endregion
-    
-	
-	//End Helper Functions
+
+    private void printNodesAndChildren(ParseNode node) //todo - remove
+    {
+	    _logger.Error("Node: " + node);
+	    foreach (var child in node.getChildren())
+	    {
+		    _logger.Error("{@node} Child: " + child, node.ToString());
+	    }
+    }
+
+    private ParseNode testFunc(NodeType type, Delegate func)
+    {
+	    ParseNode newNode = new ParseNode(type);
+	    func(newNode);
+	    return newNode;
+    }
+
+    //End Helper Functions
 
 	public int Parse(List<Token> tokens)
 	{
 		_tokens = tokens;
 		_totalTokens = tokens.Count;
-		//_currentIndex = 0;
 		Reset();
-		Statement(0);
+		
+		try
+		{
+			while (_currentIndex < _totalTokens)
+			{
+				ParseNode statementNode = new ParseNode(NodeType.Statement);
+				Statement(statementNode);
+				_parseTree.Add(statementNode);
+				printNodesAndChildren(statementNode);
+			}
+		}
+		catch (Exception e)
+		{
+			_logger.Warning(e.Message);
+		}
+		
 		if (_currentIndex >= _totalTokens) return 0;
 		_logger.Error("Syntax error! Could not parse Token: {@token}", _tokens[_currentIndex]); //todo - Create test for this!
 		return 1;
@@ -121,14 +153,19 @@ public class Parser : InterpreterLogger
 	
 	//EBNF Functions
 	
-	private void Statement(int level)
+	private void Statement(ParseNode node)
 	{
 		int currentIndex = _currentIndex;
-		_logger.Information( "Statement() called at level {level}", level);
+		//_logger.Information( "Statement() called at level {level}", level); //todo - fix
 		
 		try
 		{
-			Expression(level + 1);
+			//Expression(level + 1);
+			//ParseNode newNode = new ParseNode(NodeType.Expression);
+			//Expression(newNode);
+			//node.assignChild(newNode);
+			node.assignChild(testFunc(NodeType.Expression, Expression));
+
 			//currentIndex = _currentIndex;
 			//return;
 		}
@@ -144,7 +181,9 @@ public class Parser : InterpreterLogger
 		
 		try
 		{
-			IfStatements(level + 1);
+			ParseNode newNode = new ParseNode(NodeType.LogicStatement);
+			IfStatements(newNode);
+			node.assignChild(newNode);
 			//currentIndex = _currentIndex;
 			//return;
 		}
@@ -158,7 +197,9 @@ public class Parser : InterpreterLogger
 		
 		try
 		{
-			WhileStatement(level + 1);
+			ParseNode newNode = new ParseNode(NodeType.WhileStatement);
+			WhileStatement(newNode);
+			node.assignChild(newNode);
 			//currentIndex = _currentIndex;
 			//return;
 		}
@@ -169,45 +210,97 @@ public class Parser : InterpreterLogger
 			//Set(currentIndex);
 			//_currentIndex = currentIndex;
 		}
-		LogicStatement(level + 1);
+
+		//try
+		//{
+			ParseNode nextNode = new ParseNode(NodeType.LogicStatement);
+			LogicStatement(nextNode);
+			node.assignChild(nextNode);
+		//}
+		//catch (Exception e)
+		//{
+		//	_logger.Warning(e.Message);
+		//}
 	}
 
     #region Expressions
-	private void Expression(int level)
+	private void Expression(ParseNode node)
 	{
-		_logger.Information( "expression() called at level {level}", level);
-		Term(level + 1);
+		//_logger.Information( "expression() called at level {level}", level); //todo - fix
+		//Term(level + 1);
+		ParseNode newNode = new ParseNode(NodeType.Term);
+		Term(newNode);
+		node.assignChild(newNode);
+		printNodesAndChildren(newNode);
 		if (!Match(TokenType.Add) && !Match(TokenType.Sub)) return; //this is terminal
-		Advance(level + 1);
-		Term(level + 1);
+		ParseNode terminalNode = new ParseNode(NodeType.Terminal, _tokens[_currentIndex]);
+		node.assignChild(terminalNode);
+		printNodesAndChildren(terminalNode);
+		Advance(node); //todo - fix
+		ParseNode nextNode = new ParseNode(NodeType.Term); //todo - sort naming convention for node or do differently
+		Term(nextNode);
+		node.assignChild(nextNode);
+		printNodesAndChildren(nextNode);
 	}
 
-	private void Term(int level)
+	private void Term(ParseNode node)
 	{
-		_logger.Information( "term() called at level {level} ", level);
-		Factor(level + 1);
+		//_logger.Information( "term() called at level {level} ", level); //todo - fix
+		ParseNode newNode = new ParseNode(NodeType.Factor);
+		Factor(newNode);
+		node.assignChild(newNode);
+		printNodesAndChildren(newNode);
 		if (!Match(TokenType.Multi) && !Match(TokenType.Divide)) return; //this is terminal
-		Advance(level + 1);
-		Factor(level + 1);
+		ParseNode terminalNode = new ParseNode(NodeType.Terminal);
+		Factor(terminalNode);
+		node.assignChild(terminalNode);
+		printNodesAndChildren(terminalNode);
+		Advance(terminalNode);
+		ParseNode nextNode = new ParseNode(NodeType.Factor);
+		Factor(nextNode);
+		node.assignChild(nextNode);
+		printNodesAndChildren(nextNode);
 	}
 
-	private void Factor(int level) //todo - see if factor prime is needed
+	private void Factor(ParseNode node)
 	{
-		_logger.Information( "factor() called at level {level}", level);
+		//_logger.Information( "factor() called at level {level}", level); //todo - fix
+		//ParseNode newNode = new ParseNode(node);
 		if (Match(TokenType.Num))
 		{
-			Advance(level + 1);
+			//ParseNode numberNode = new ParseNode(NodeType.NumTerminal); //todo - do I need to add the number here?
+			ParseNode numberNode = new ParseNode(NodeType.Terminal, _tokens[_currentIndex]);
+			
+			Advance(numberNode); //todo - do we really need to pass the node here? We need to advance the list, the tree advances itself
+			node.assignChild(numberNode);
+			printNodesAndChildren(numberNode);
 		}
 		else if (Match(TokenType.Sub))
 		{
-			Advance(level+1);
-			Factor(level+1);
+			ParseNode subNode = new ParseNode(NodeType.Terminal, _tokens[_currentIndex]);
+			Advance(subNode);
+			Factor(subNode);
+			node.assignChild(subNode);
+			printNodesAndChildren(subNode);
 		}
 		else if (Match(TokenType.LeftParen))
 		{
-			Advance(level + 1);
-			Expression(level + 1);
-			if (Match(TokenType.RightParen)) Advance(level + 1);
+			ParseNode leftParenNode = new ParseNode(NodeType.Terminal, _tokens[_currentIndex]);
+			node.assignChild(leftParenNode);
+			printNodesAndChildren(leftParenNode);
+			Advance(leftParenNode);
+			
+			ParseNode expressionNode = new ParseNode(NodeType.Terminal, _tokens[_currentIndex]);
+			Expression(expressionNode);
+			node.assignChild(expressionNode);
+			printNodesAndChildren(expressionNode);
+			if (Match(TokenType.RightParen))
+			{
+				ParseNode rightParenNode = new ParseNode(NodeType.Terminal, _tokens[_currentIndex]);
+				node.assignChild(rightParenNode);
+				printNodesAndChildren(rightParenNode);
+				Advance(rightParenNode);
+			}
 			else
 			{
 				throw new SyntaxErrorException("Syntax Error! Mismatched parentheses at token " + _currentIndex);
@@ -221,33 +314,54 @@ public class Parser : InterpreterLogger
     #endregion
 
     #region Boolean expressions
-	private void LogicStatement(int level)
+	private void LogicStatement(ParseNode node)
 	{
-		_logger.Information( "LogicStatement() called at level {level}", level);
-		Boolean(level+1);
-		Condition(level + 1);
+		//_logger.Information( "LogicStatement() called at level {level}", level);
+		ParseNode newNode = new ParseNode(NodeType.Boolean);
+		Boolean(newNode);
+		node.assignChild(newNode);
+
+		ParseNode nextNode = new ParseNode(NodeType.Conditional);
+		Condition(nextNode);
+		node.assignChild(nextNode);
 	}
 
-	private void Boolean(int level)
+	private void Boolean(ParseNode node)
 	{
-		_logger.Information( "Boolean() called at level {level}", level);
+		//_logger.Information( "Boolean() called at level {level}", level);
 
 		if (Match(TokenType.Not))
 		{
-			Advance(level+1);
-			LogicStatement(level+1);
+			ParseNode newNode = new ParseNode(NodeType.Terminal);
+			Advance(newNode);
+			node.assignChild(newNode);
+			
+			ParseNode nextNode = new ParseNode(NodeType.LogicStatement);
+			LogicStatement(nextNode);
+			node.assignChild(nextNode);
 		}
 		else if (Match(TokenType.String))
 		{
-			if(CheckBoolLiteral())
-				Advance(level+1);
+			if (CheckBoolLiteral())
+			{
+				ParseNode newNode = new ParseNode(NodeType.Terminal);
+				Advance(newNode);
+				node.assignChild(newNode);
+			}
+			else
+			{
+				//_logger.Error("Syntax Error! Expected Boolean Literal but found {index}", _currentIndex);
+				throw new SyntaxErrorException("Syntax Error! Unexpected Boolean Literal at token " + _currentIndex);
+			}
 		}
 		else
 		{
 			var index = _currentIndex;
 			try
 			{
-				ExpressionQuery(level+1);
+				ParseNode newNode = new ParseNode(NodeType.ExpressionQuery);
+				ExpressionQuery(newNode);
+				node.assignChild(newNode);
 			}
 			catch (Exception e)
 			{
@@ -262,55 +376,78 @@ public class Parser : InterpreterLogger
 
 				if (Match(TokenType.LeftParen))
 				{
-					Advance(level + 1);
-					LogicStatement(level + 1);
-					if (Match(TokenType.RightParen)) Advance(level + 1);
+					ParseNode newNode = new ParseNode(NodeType.Terminal);
+					Advance(newNode);
+					node.assignChild(newNode);
+					
+					ParseNode nextNode = new ParseNode(NodeType.LogicStatement);
+					LogicStatement(nextNode);
+					node.assignChild(nextNode);
+
+					if (Match(TokenType.RightParen))
+					{
+						ParseNode otherNode = new ParseNode(NodeType.Terminal);
+						Advance(otherNode);
+						node.assignChild(otherNode);
+					}
 					else
 					{
 						_logger.Error("Syntax Error! Mismatched parentheses at token {index}", _currentIndex);
 					}
 				}
+				else
+				{
+					throw new SyntaxErrorException("Syntax Error! Unexpected token at token " + _currentIndex); //todo - check error here!
+				}
 			}
 		}
 	}
 
-	private void Condition(int level)
+	private void Condition(ParseNode node)
 	{
-		_logger.Information( "Condition() called at level {level}", level);
+		//_logger.Information( "Condition() called at level {level}", level);
 
 		if (!(Match(TokenType.Equals) || Match(TokenType.And) || Match(TokenType.Or) || Match(TokenType.Not)))
 			return;
 		if (Match(TokenType.Not))
 		{
-			Advance(level);
+			ParseNode nextNode = new ParseNode(NodeType.Terminal);
+			Advance(nextNode);
 			if (!Match(TokenType.Equals))
 			{
 				_logger.Error("Syntax Error! Mismatched inequality operator, expected \"=\" actual: {@word} ", _tokens[_currentIndex].Word);
 				return;
 			}
+			node.assignChild(nextNode);
 		}
 		else if (Match(TokenType.Equals))
 		{
-			Advance(level);
+			ParseNode nextNode = new ParseNode(NodeType.Terminal);
+			Advance(nextNode);
 			if (!Match(TokenType.Equals))
 			{
 				_logger.Error("Syntax Error! Mismatched equality operator, expected \"=\" actual: {@word} ", _tokens[_currentIndex].Word);
 				return;
 			}
+			node.assignChild(nextNode);
 		}
-		Advance(level+1);
-		Boolean(level+1);
+		ParseNode otherNode = new ParseNode(NodeType.Boolean);
+		Boolean(otherNode);
+		node.assignChild(otherNode);
 	}
 
-	private void ExpressionQuery(int level)
+	private void ExpressionQuery(ParseNode node)
 	{
-		_logger.Information( "ExpressionQuery() called at level {level}", level);
-		Expression(level + 1);
+		//_logger.Information( "ExpressionQuery() called at level {level}", level);
+		ParseNode newNode = new ParseNode(NodeType.Expression);
+		Expression(newNode);
+		node.assignChild(newNode);
 		if (!(Match(TokenType.Equals) || Match(TokenType.More) || Match(TokenType.Less)))
 			return;
+		ParseNode nextNode = new ParseNode(NodeType.Terminal);
 		if (Match(TokenType.Not))
 		{
-			Advance(level);
+			Advance(nextNode);
 			if (!Match(TokenType.Equals))
 			{
 				_logger.Error("Syntax Error! Mismatched inequality operator, expected \"=\" actual: {@word} ", _tokens[_currentIndex].Word);
@@ -319,7 +456,7 @@ public class Parser : InterpreterLogger
 		}
 		else if (Match(TokenType.Equals))
 		{
-			Advance(level);
+			Advance(nextNode);
 			if (!Match(TokenType.Equals))
 			{
 				_logger.Error("Syntax Error! Mismatched equality operator, expected \"=\" actual: {@word} ",
@@ -327,121 +464,175 @@ public class Parser : InterpreterLogger
 				return;
 			}
 		}
-		Advance(level + 1);
-		Expression(level + 1);
+		node.assignChild(nextNode);
+		
+		ParseNode otherNode = new ParseNode(NodeType.Expression);
+		Advance(otherNode);
+		Expression(otherNode);
+		node.assignChild(otherNode);
 	}
     #endregion
     #region Condition-Statements and iterators
-	private void IfStatements(int level)
+    
+	private void IfStatements(ParseNode node)
     {
-		_logger.Information("if-statement() called at level {level}", level);
+		//_logger.Information("if-statement() called at level {level}", level);
 		if (Match(TokenType.String) && CheckIf())
-			Advance(level + 1);
+		{
+			ParseNode newNode = new ParseNode(NodeType.Terminal);
+			Advance(newNode);
+			node.assignChild(newNode);
+		}
 		else {
 			_logger.Error("Syntax Error! Expected \"if\" actual: {@word} ", _tokens[_currentIndex].Word);
 			throw new SyntaxErrorException("Syntax Error! Expected \"if\" at token " + _currentIndex);
-		} 
-		if (Match(TokenType.LeftParen)) Advance(level + 1);
-        else
+		}
+
+		if (Match(TokenType.LeftParen))
+		{
+			ParseNode newNode = new ParseNode(NodeType.Terminal);
+			Advance(newNode);
+			node.assignChild(newNode);
+		}
+		else
         {
             _logger.Error("Syntax Error! Expected \"(\" actual: {@word} ", _tokens[_currentIndex].Word);
 			throw new SyntaxErrorException("Syntax Error! Expected \"(\" at token " + _currentIndex);
         }
-		LogicStatement(level + 1); //todo - check this is working correctly and won't cause an error
-		if (Match(TokenType.RightParen)) Advance(level + 1);
+
+		ParseNode logicStatementNode = new ParseNode(NodeType.LogicStatement); 
+		LogicStatement(logicStatementNode); //todo - check this is working correctly and won't cause an error
+		node.assignChild(logicStatementNode);
+		if (Match(TokenType.RightParen))
+		{
+			ParseNode newNode = new ParseNode(NodeType.Terminal);
+			Advance(newNode);
+			node.assignChild(newNode);
+		}
 		else
         {
 			_logger.Error("Syntax Error! Expected \"(\" actual: {@word} ", _tokens[_currentIndex].Word);
 			throw new SyntaxErrorException("Syntax Error! Expected \")\" at token " + _currentIndex);
 		}
-		Block(level + 1);
+
+		ParseNode blockNode = new ParseNode(NodeType.Block);
+		Block(blockNode);
+		node.assignChild(blockNode);
 		try
 		{
-			ElseStatements(level + 1);
-		}
-		catch (Exception e)
-		{
-			_logger.Warning(e.Message);
-		}
-	}
-	private void ElseStatements(int level) {
-		if (Match(TokenType.String) && CheckElse())
-		{
-			Advance(level + 1);
-			Block(level + 1);
-		}
-		else
-		{
-			_logger.Error("Syntax Error! Expected \"else\" actual: {@word} ", _tokens[_currentIndex].Word);
-			throw new SyntaxErrorException("Syntax Error! Expected \"else\" at token " + _currentIndex);
-		}
-	}
-	private void WhileStatement(int level)
-	{
-		_logger.Information("while-statement() called at level {level}", level);
-		if (Match(TokenType.String) && CheckWhile())
-			Advance(level + 1);
-		else
-		{
-			_logger.Error("Syntax Error! Expected \"while\" actual: {@word} ", _tokens[_currentIndex].Word);
-			throw new SyntaxErrorException("Syntax Error! Expected \"while\" at token " + _currentIndex);
-		}
-		if (Match(TokenType.LeftParen)) Advance(level + 1);
-		else
-		{
-			_logger.Error("Syntax Error! Expected \"(\" actual: {@word} ", _tokens[_currentIndex].Word);
-			throw new SyntaxErrorException("Syntax Error! Expected \"(\" at token " + _currentIndex);
-		}
-		LogicStatement(level + 1);
-		if (Match(TokenType.RightParen)) Advance(level + 1);
-		else
-		{
-			_logger.Error("Syntax Error! Expected \")\" actual: {@word} ", _tokens[_currentIndex].Word);
-			throw new SyntaxErrorException("Syntax Error! Expected \")\" at token " + _currentIndex);
-		}
-		Block(level + 1);
-	}
-	//checks that there is a valid block as described in the EBNF above
-	private void Block(int level) {
-		if (Match(TokenType.LeftCurlyBrace)) Advance(level + 1);
-		else
-		{
-			_logger.Error("Syntax Error! Expected \"{\" actual: {@word} ", _tokens[_currentIndex].Word);
-			throw new SyntaxErrorException("Syntax Error! Expected \"{\" at token " + _currentIndex);
-		}
-		try
-		{
-			while (_currentIndex < _totalTokens)
+			ParseNode newNode = new ParseNode(NodeType.Terminal);
+			if (Match(TokenType.String) && CheckElse())
 			{
-				if (Match(TokenType.RightCurlyBrace))
-                {
-					Advance(level + 1);
-					return;
-                }
-				//try
-				//{
-					Statement(level + 1);
-					Expression(level + 1); //todo - remove this once variables have been added
-				//}
-				//catch (Exception e)
-				//{
-				//	_logger.Warning(e.Message);
-				//	return;
-				//}
+				Advance(newNode);
+				node.assignChild(newNode);
+				ParseNode newBlockNode = new ParseNode(NodeType.Block);
+				Block(newBlockNode);
+				node.assignChild(newNode);
+			}
+			else
+			{
+				_logger.Error("Syntax Error! Expected \"else\" actual: {@word} ", _tokens[_currentIndex].Word);
+				throw new SyntaxErrorException("Syntax Error! Expected \"else\" at token " + _currentIndex);
 			}
 		}
 		catch (Exception e)
 		{
 			_logger.Warning(e.Message);
 		}
-		if (Match(TokenType.RightCurlyBrace)) Advance(level + 1);
+	}
+
+	private void WhileStatement(ParseNode node)
+	{
+		//_logger.Information("while-statement() called at level {level}", level);
+		if (Match(TokenType.String) && CheckWhile())
+		{
+			ParseNode newNode = new ParseNode(NodeType.Terminal);
+			Advance(newNode);
+			node.assignChild(newNode);
+		}
+		else
+		{
+			_logger.Error("Syntax Error! Expected \"while\" actual: {@word} ", _tokens[_currentIndex].Word);
+			throw new SyntaxErrorException("Syntax Error! Expected \"while\" at token " + _currentIndex);
+		}
+
+		if (Match(TokenType.LeftParen))
+		{
+			ParseNode newNode = new ParseNode(NodeType.Terminal);
+			Advance(newNode);
+			node.assignChild(newNode);
+		}
+		else
+		{
+			_logger.Error("Syntax Error! Expected \"(\" actual: {@word} ", _tokens[_currentIndex].Word);
+			throw new SyntaxErrorException("Syntax Error! Expected \"(\" at token " + _currentIndex);
+		}
+		ParseNode logicStatementNode = new ParseNode(NodeType.LogicStatement); 
+		LogicStatement(logicStatementNode); //todo - check this is working correctly and won't cause an error
+		node.assignChild(logicStatementNode);
+		if (Match(TokenType.RightParen))
+		{
+			ParseNode newNode = new ParseNode(NodeType.Terminal);
+			Advance(newNode);
+			node.assignChild(newNode);
+		}
+		else
+		{
+			_logger.Error("Syntax Error! Expected \"(\" actual: {@word} ", _tokens[_currentIndex].Word);
+			throw new SyntaxErrorException("Syntax Error! Expected \")\" at token " + _currentIndex);
+		}
+
+		ParseNode blockNode = new ParseNode(NodeType.Block);
+		Block(blockNode);
+		node.assignChild(blockNode);
+	}
+
+	//checks that there is a valid block as described in the EBNF above
+	private void Block(ParseNode node) {
+		if (Match(TokenType.LeftCurlyBrace))
+		{
+			ParseNode newNode = new ParseNode(NodeType.Terminal);
+			Advance(newNode);
+			node.assignChild(newNode);
+		}
+		else
+		{
+			_logger.Error("Syntax Error! Expected \"{\" actual: {@word} ", _tokens[_currentIndex].Word);
+			throw new SyntaxErrorException("Syntax Error! Expected \"{\" at token " + _currentIndex);
+		}
+		
+		try
+		{
+			if (Match(TokenType.RightCurlyBrace))
+			{
+				ParseNode newNode = new ParseNode(NodeType.Terminal);
+				Advance(newNode);
+				node.assignChild(newNode);
+				return;
+			}
+		}
+		catch (Exception e)
+		{
+			_logger.Warning(e.Message);
+		}
+		
+		//TODO - For now, blocks cannot contain anything, once variables have been added we can change this
+
+		/* //TODO - Add back in once variables are added
+		if (Match(TokenType.RightCurlyBrace))
+		{
+			ParseNode newNode = new ParseNode(NodeType.Terminal);
+			Advance(newNode);
+			node.assignChild(newNode);
+		}
 		else
 		{
 			_logger.Error("Syntax Error! Expected \"}\" actual: {@word} ", _tokens[_currentIndex].Word);
 			throw new SyntaxErrorException("Syntax Error! Expected \"}\" at token " + _currentIndex);
 		}
+		*/
 	}
-	
+
 	#endregion
 	//EBNF Functions
 }

@@ -17,7 +17,7 @@ public class Lexer : InterpreterLogger
     private readonly List<Token> _tokens = new(); //TODO - define max with the group
     private string _input;
     private bool _failed;
-    private int _lines = 1;
+    private string[] _lines;
 
     //constructor
     public Lexer()
@@ -30,10 +30,10 @@ public class Lexer : InterpreterLogger
         return _tokens;
     }
 
-    public int GetLines()
-    {
-        return _lines;
-    }
+    //public int GetLines()
+    //{
+    //    return _lines;
+    //}
 
     //TODO - Handle index out of bounds exceptions here
     public Token GetFromTokenList(int placeToSearch)
@@ -48,145 +48,142 @@ public class Lexer : InterpreterLogger
         _input = input;
 
         input = input.Replace("\r", "");
-        var lines= input.Split("\n");
+        _lines = input.Split("\n");
+        //lines[0].Length;
+        //_lines = lines.Length;
 
-        for(int i = 0; i < _input.Length; i++)
+        for (int j = 0; j < _lines.Length; j++) //line
         {
-            char c = _input[i];
-            var newToken  = new Token();
-            
-            switch(c)
+            //foreach (var character in lines[i])
+            for(int i = 0; i < _lines[j].Length; i++) //character
+            //for(int i = 0; i < input.Length; i++)
             {
-                case ' ' :
-                    //ignore whitespace
-                    newToken = null;
-                    break;
-                case ';':
-                    newToken.Type = TokenType.SemiColon;
-                    newToken.Word = c.ToString();
-                    newToken.Line = _lines;
-                    break;
-                case '+' :
-                    newToken.Type = TokenType.Add;
-                    newToken.Word = c.ToString();
-                    newToken.Line = _lines;
-                    break;
-                case '*' :
-                    newToken.Type = TokenType.Multi;
-                    newToken.Word = c.ToString();
-                    newToken.Line = _lines;
-                    break;
-                case '(' :
-                    newToken.Type = TokenType.LeftParen;
-                    newToken.Word = c.ToString();
-                    newToken.Line = _lines;
-                    break;
-                case ')':
-                    newToken.Type = TokenType.RightParen;
-                    newToken.Word = c.ToString();
-                    newToken.Line = _lines;
-                    break;
-                case '{':
-                    newToken.Type = TokenType.LeftCurlyBrace;
-                    newToken.Word = c.ToString();
-                    newToken.Line = _lines;
-                    break;
-                case '}':
-                    newToken.Type = TokenType.RightCurlyBrace;
-                    newToken.Word = c.ToString();
-                    newToken.Line = _lines;
-                    break;
-                case '-' :
-                    newToken.Type = TokenType.Sub;
-                    newToken.Word = c.ToString();
-                    newToken.Line = _lines;
-                    break;
-                case '/' :
-                    newToken.Type = TokenType.Divide;
-                    newToken.Word = c.ToString();
-                    newToken.Line = _lines;
-                    break;
-                case '!':
-                    newToken.Type = TokenType.Not;
-                    newToken.Word = c.ToString();
-                    newToken.Line = _lines;
-                    break;
-                case '=':
-                    newToken.Type = TokenType.Equals;
-                    newToken.Word = c.ToString();
-                    newToken.Line = _lines;
-                    break;
-                case '&':
-                    newToken.Type = TokenType.And;
-                    newToken.Word = c.ToString();
-                    newToken.Line = _lines;
-                    break;
-                case '|':
-                    newToken.Type = TokenType.Or;
-                    newToken.Word = c.ToString();
-                    newToken.Line = _lines;
-                    break;
-                case '<':
-                    newToken.Type = TokenType.Less;
-                    newToken.Word = c.ToString();
-                    newToken.Line = _lines;
-                    break;
-                case '>':
-                    newToken.Type = TokenType.More;
-                    newToken.Word = c.ToString();
-                    newToken.Line = _lines;
-                    break;
-                case '\n':
-                    newToken = null;
-                    _lines++;
-                    break;
-                default :
-                    if (char.IsDigit(c))
-                    {
-                        newToken.Type = TokenType.Num;
-                        newToken.Word = ParseNumber(i);
-                        i += newToken.Word.Length-1;
-                        newToken.Value = double.Parse(newToken.Word);
-                    }
-                    else if(char.IsLetter(c))
-                    {
-                        newToken.Type = TokenType.String;
-                        newToken.Word = ParseWord(i);
-                        i += newToken.Word.Length-1;
-                        newToken.Value = newToken.Word;
-                    }
-                    else
-                    {
+                //char c = character;
+                //char c = lines[i][j];
+                char c = _lines[j][i];
+                var newToken = new Token();
+                newToken.Line = j;
+
+                switch (c)
+                {
+                    case ' ':
+                        //ignore whitespace
                         newToken = null;
-                        _logger.Error("Invalid lexeme encountered! Disregarding: {invalidToken}", c.ToString());
-                        _failed = true;
-                    }
-                    break;
+                        break;
+                    case ';':
+                        newToken.Type = TokenType.SemiColon;
+                        newToken.Word = c.ToString();
+                        break;
+                    case '+':
+                        newToken.Type = TokenType.Add;
+                        newToken.Word = c.ToString();
+                        break;
+                    case '*':
+                        newToken.Type = TokenType.Multi;
+                        newToken.Word = c.ToString();
+                        break;
+                    case '(':
+                        newToken.Type = TokenType.LeftParen;
+                        newToken.Word = c.ToString();
+                        break;
+                    case ')':
+                        newToken.Type = TokenType.RightParen;
+                        newToken.Word = c.ToString();
+                        break;
+                    case '{':
+                        newToken.Type = TokenType.LeftCurlyBrace;
+                        newToken.Word = c.ToString();
+                        break;
+                    case '}':
+                        newToken.Type = TokenType.RightCurlyBrace;
+                        newToken.Word = c.ToString();
+                        break;
+                    case '-':
+                        newToken.Type = TokenType.Sub;
+                        newToken.Word = c.ToString();
+                        break;
+                    case '/':
+                        newToken.Type = TokenType.Divide;
+                        newToken.Word = c.ToString();
+                        break;
+                    case '!':
+                        newToken.Type = TokenType.Not;
+                        newToken.Word = c.ToString();
+                        break;
+                    case '=':
+                        newToken.Type = TokenType.Equals;
+                        newToken.Word = c.ToString();
+                        break;
+                    case '&':
+                        newToken.Type = TokenType.And;
+                        newToken.Word = c.ToString();
+                        break;
+                    case '|':
+                        newToken.Type = TokenType.Or;
+                        newToken.Word = c.ToString();
+                        break;
+                    case '<':
+                        newToken.Type = TokenType.Less;
+                        newToken.Word = c.ToString();
+                        break;
+                    case '>':
+                        newToken.Type = TokenType.More;
+                        newToken.Word = c.ToString();
+                        break;
+                    //case '\n':
+                        //newToken = null;
+                        //break;
+                    default:
+                        if (char.IsDigit(c))
+                        {
+                            newToken.Type = TokenType.Num;
+                            newToken.Word = ParseNumber(j, i);
+                            i += newToken.Word.Length - 1;
+                            newToken.Value = double.Parse(newToken.Word);
+                        }
+                        else if (char.IsLetter(c))
+                        {
+                            newToken.Type = TokenType.String;
+                            newToken.Word = ParseWord(j, i);
+                            i += newToken.Word.Length - 1;
+                            newToken.Value = newToken.Word;
+                        }
+                        else
+                        {
+                            newToken = null;
+                            _logger.Error("Invalid lexeme encountered! Disregarding: {invalidToken}", c.ToString());
+                            _failed = true;
+                        }
+
+                        break;
+                }
+
+                if (newToken != null)
+                {
+                    _tokens.Add(newToken);
+                }
             }
 
-            if (newToken != null)
-            {
-                _tokens.Add(newToken);
-            }
+            //return _failed ? 1 : 0;
         }
         return _failed ? 1 : 0;
     }
 
-    private string ParseNumber(int index)
+    private string ParseNumber(int line, int index)
     {
-        var numberString = _input[index].ToString();
+        var numberString = _lines[line][index].ToString();
         bool isDecimal = false;
-        while (index+1 < _input.Length)
+        while (index+1 < _lines[line].Length)
         {
-            if (Char.IsDigit(_input[index+1]))
+            if (Char.IsDigit(_lines[line][index + 1]))
             {
-                numberString += _input[++index];    
+                numberString += _lines[line][++index];    
             }
-            else if (!isDecimal && _input[index+1] == '.' && index+2 < _input.Length && char.IsDigit(_input[index+2]))
+            else if (!isDecimal && _lines[line][index + 1] == '.' && index+2 < _lines[line].Length && char.IsDigit(_lines[line][index+2]))
             {
                 //if '.' ensure there's not already '.' and at least one digit afterwards
                 isDecimal = true;
-                numberString += _input[++index];
+                numberString += _lines[line][++index];
             }
             else
             {
@@ -195,14 +192,14 @@ public class Lexer : InterpreterLogger
         }
         return numberString;
     }
-    private string ParseWord(int index)
+    private string ParseWord(int line, int index)
     {
-        var wordString = _input[index].ToString();
-        while (index+1 < _input.Length)
+        var wordString = _lines[line][index].ToString();
+        while (index+1 < _lines[line].Length)
         {
-            if (Char.IsLetter(_input[index+1]))
+            if (Char.IsLetter(_lines[line][index + 1]))
             {
-                wordString += _input[++index];    
+                wordString += _lines[line][++index];    
             }
             else
             {
