@@ -26,7 +26,7 @@ public class ParseNode
         this.type = type;
     }
 
-    public void assignChild(ParseNode child)
+    public void AddChild(ParseNode child)
     {
         childNodes.Add(child);
     }
