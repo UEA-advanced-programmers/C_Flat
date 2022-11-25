@@ -1,12 +1,10 @@
-﻿using C_Flat_Interpreter.Common;
-
-namespace C_Flat_Interpreter.Parser;
+﻿namespace C_Flat_Interpreter.Common;
 
 public class ParseNode
 {
     private List<ParseNode> childNodes = new();
-    private Token? token;
-    private NodeType type;
+    public Token? token;
+    public NodeType type;
     
 //todo - figure out what constructors are needed
     public ParseNode(NodeType type, Token token)
@@ -24,16 +22,28 @@ public class ParseNode
     {
         childNodes.Add(child);
     }
-    
-    
+
     //Testing Function
     public List<ParseNode> getChildren()
     {
         return childNodes;
     }
 
+    public void GetTerminals(List<ParseNode> terminalList)
+    {
+        if (this.type is NodeType.Terminal)
+        {
+            terminalList.Add(this);
+            return;
+        }
+        foreach (var childNode in this.childNodes)
+        {
+            childNode.GetTerminals(terminalList);
+        }
+    }
+    
     public override string ToString()
     {
-        return type.ToString();
+        return token != null ? $"{type.ToString()}: {token.Word}" : type.ToString();
     }
 }

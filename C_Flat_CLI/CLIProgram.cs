@@ -24,7 +24,7 @@ internal static class CLIProgram
             return;
         }
         Transpiler _transpiler = new Transpiler();
-        _transpiler.Transpile(_lexer.GetTokens());
+        _transpiler.Transpile(_parser.GetParseTree());
         Console.WriteLine($"Successfully transpiled output to {_transpiler.GetProgramPath()}");
     }
 }

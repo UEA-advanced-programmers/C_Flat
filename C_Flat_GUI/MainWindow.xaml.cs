@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
@@ -9,6 +10,7 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using C_Flat_Interpreter.Common;
 using C_Flat_Interpreter.Lexer;
 using C_Flat_Interpreter.Parser;
 using C_Flat_Interpreter.Transpiler;
@@ -167,9 +169,10 @@ namespace C_Flat
                 return;
             }
 
+            var parseNodes = _parser.GetParseTree();
             //Construct parse tree element passing parse tree
-            ConstructParseTree();
-            var transpiledProgram = _transpiler.Transpile(tokens);
+            ConstructParseTree(parseNodes);
+            var transpiledProgram = _transpiler.Transpile(parseNodes);
             SourceInput.BorderBrush = new SolidColorBrush(Colors.LawnGreen);
             SourceInput.BorderThickness = new Thickness(2);
             ExecuteButton.IsEnabled = true;
@@ -254,29 +257,42 @@ namespace C_Flat
             ExecuteButton.IsEnabled = true;
         }
 
-        private void ConstructParseTree()
+        private void ConstructParseTree(List<ParseNode> parseNodes)
         {
             _parseTree = new TreeView()
             {
                 VerticalAlignment = VerticalAlignment.Stretch,
                 Name = "ParseTree",
             };
-            //TEST CODE, REPLACE WITH PARSER OUTPUT
-            var testItem = new TreeViewItem()
+            foreach (var node in parseNodes)
             {
-                Header = "Function declaration",
-                Items =
+                var treeItem = new TreeViewItem
                 {
-                    new TreeViewItem() {Header = "If statement",}
+                    Header = node.ToString()
+                };
+                if (node.type is NodeType.Terminal) continue;
+                foreach (var childNode in node.getChildren())
+                {
+                    AddNodeTreeItems(treeItem, childNode);
                 }
-            };
-            var testItem2 = new TreeViewItem()
-            {
-                Header = "Variable declaration",
-            };
-            _parseTree.Items.Add(testItem);
-            _parseTree.Items.Add(testItem2);
+                _parseTree.Items.Add(treeItem);
+            }
+        }
 
+        private void AddNodeTreeItems(TreeViewItem parentTreeItem, ParseNode node)
+        {
+            var treeItem = new TreeViewItem
+            {
+                Header = node.ToString()
+            };
+            if (node.type is not NodeType.Terminal)
+            {
+                foreach (var childNode in node.getChildren())
+                {
+                    AddNodeTreeItems(treeItem, childNode);
+                }
+            }
+            parentTreeItem.Items.Add(treeItem);
         }
 
         private void ShowTree_Click(object sender, RoutedEventArgs e)
