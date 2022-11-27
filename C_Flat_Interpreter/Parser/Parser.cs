@@ -176,6 +176,7 @@ public class Parser : InterpreterLogger
 		{
 			node.AddChild(CreateNode(NodeType.Conditional, IfStatements));
 			currentIndex = _currentIndex;
+			return;
 		}
 		catch (Exception e)
 		{
@@ -187,6 +188,7 @@ public class Parser : InterpreterLogger
 		{
 			node.AddChild(CreateNode(NodeType.WhileStatement, WhileStatement));
 			currentIndex = _currentIndex;
+			return;
 		}
 		catch (Exception e)
 		{
@@ -194,7 +196,19 @@ public class Parser : InterpreterLogger
 			Set(currentIndex);
 		}
 		//TODO - Wrap this in a try catch and throw another exception in catch
-		node.AddChild(CreateNode(NodeType.LogicStatement, LogicStatement));
+		try
+		{
+			node.AddChild(CreateNode(NodeType.LogicStatement, LogicStatement));
+			currentIndex = _currentIndex;
+		}
+		catch (Exception e)
+		{
+			_logger.Warning(e.Message);
+			Set(currentIndex);
+			throw new Exception("Syntax error! invalid statement");
+		}
+		
+
 	}
 
     #region Expressions

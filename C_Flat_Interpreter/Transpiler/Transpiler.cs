@@ -27,7 +27,7 @@ public class Transpiler : InterpreterLogger
                            throw new NullReferenceException("Node is marked as terminal but has no token");
         if (tokenToPrint.Line > _currentLine)
         {
-            _currentLine++;
+            _currentLine = tokenToPrint.Line;
             _program += Environment.NewLine;
         }
         _program += tokenToPrint.Word;
