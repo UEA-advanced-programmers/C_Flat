@@ -1,6 +1,7 @@
 ﻿using C_Flat_Interpreter.Common.Enums;
 using C_Flat_Interpreter.Lexer;
 using NUnit.Framework;
+using NUnit.Framework.Internal;
 using Serilog.Events;
 
 namespace C_Flat_Tests.Tests_Unit;
@@ -18,6 +19,18 @@ public class LexerUnit
     //approach. However, I decided that splitting this into multiple tests made it easier to identify what was failing
     //and why. Therefore, I believe that having multiple, clear tests with magic numbers is better than having one big
     //test without them.
+    
+    
+    [Test]
+    public void Lexer_Tokenise_MultiLines_SevenTokensFourLines()
+    {
+        const string input = "if(true)" + "\r\n" +
+                             "{" + "\r\n" +
+                             "test" + "\r\n" +
+                             "}";
+        _lexer.Tokenise(input);
+        Assert.That(_lexer.GetTokens().Count == 7);
+    }
     
     [Test]
     public void Lexer_Tokenise_Add_TokenIsAdd()
