@@ -13,5 +13,8 @@ public enum NodeType //will be added to
     Boolean,
     Conditional,
     ExpressionQuery,
-    WhileStatement
+    WhileStatement,
+    VarIdentifier,
+    VarAssignment,
+    DeclareVariable
 }
