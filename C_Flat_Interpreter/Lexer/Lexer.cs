@@ -112,7 +112,7 @@ public class Lexer : InterpreterLogger
                         if (_lines[j][i + 1] == '=')
                         {
                             i++;
-                            newToken.Type = TokenType.NotEqual;
+                            newToken.Type = TokenType.Equals;
                             newToken.Word = c.ToString() + _lines[j][i].ToString();
                         }
                         else
