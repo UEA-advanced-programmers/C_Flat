@@ -1,2 +1,2 @@
-Console.WriteLine(100<20);Console.WriteLine(
-200>100);
+// See https://aka.ms/new-console-template for more information
+Console.WriteLine("Hello, World!");
