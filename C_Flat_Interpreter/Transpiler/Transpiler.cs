@@ -1,7 +1,6 @@
-﻿using System.Diagnostics.SymbolStore;
-using C_Flat_Interpreter.Common;
+﻿using C_Flat_Interpreter.Common;
 using C_Flat_Interpreter.Common.Enums;
-using Serilog;
+
 
 namespace C_Flat_Interpreter.Transpiler;
 
@@ -14,9 +13,10 @@ public class Transpiler : InterpreterLogger
     };
 
     private int _currentLine;
-    private string _program;
+    public string Program { get; private set; }
     public Transpiler()
     {
+        Program = string.Empty;
         GetLogger("Transpiler");
     }
     
@@ -28,16 +28,17 @@ public class Transpiler : InterpreterLogger
         if (tokenToPrint.Line > _currentLine)
         {
             _currentLine = tokenToPrint.Line;
-            _program += Environment.NewLine;
+            Program += Environment.NewLine;
         }
-        _program += tokenToPrint.Word;
+        //Consider handling empty spaces within lexer
+        Program += tokenToPrint.Word + " ";
     }
 
 
-    public string Transpile(List<ParseNode> parseTree)
+    public int Transpile(List<ParseNode> parseTree)
     {
         //Retrieve program.cs file
-        _program = string.Empty;
+        Program = string.Empty;
         var writer = File.CreateText(GetProgramPath());
         foreach (var node in parseTree)
         {
@@ -45,27 +46,36 @@ public class Transpiler : InterpreterLogger
             {
                 switch (statement.type)
                 {
+                    //TODO - Remove these once they are removed from Statement
                     case NodeType.LogicStatement:
-                        _program += @"Console.WriteLine(";
+                        Program += @"Console.WriteLine(";
                         TranspileLogicStatement(statement);
-                        _program += @");";
+                        Program += @");";
                         break;
                     case NodeType.Expression:
-                        _program += @"Console.WriteLine(";
+                        Program += @"Console.WriteLine(";
                         TranspileExpression(statement);
-                        _program += @");";
+                        Program += @");";
                         break;
+                    //TODO - Implement Conditional Transpile method
                     case NodeType.Conditional:
+                        break;
+                    case NodeType.DeclareVariable:
+                        TranspileDeclaration(statement);
+                        break;
+                    case NodeType.VarAssignment:
+                        TranspileAssignment(statement);
                         break;
                     default:
                         _logger.Error("Unhandled statement");
-                        break;
+                        writer.Close();
+                        return 1;
                 }
             }
         }
-        writer.Write(_program);
+        writer.Write(Program);
         writer.Close();
-        return _program;
+        return 0;
     }
 
     private void TranspileExpression(ParseNode node)
@@ -127,7 +137,7 @@ public class Transpiler : InterpreterLogger
         if(conditionComparison.token?.Type is TokenType.And or TokenType.Or)
         {
             //For and/or we add the token word twice because we don't do bitwise logic
-            _program += conditionComparison.token?.Word;
+            Program += conditionComparison.token?.Word;
         }
         var conditionBoolean = node.getChildren().Last();
         TranspileBoolean(conditionBoolean);
@@ -142,8 +152,48 @@ public class Transpiler : InterpreterLogger
         if(node.getChildren().Count == 2 && node.getChildren().Last().getChildren().Count > 0)
             TranspileCondition(node.getChildren().Last());
     }
-     
-    
+
+    private void TranspileIdentifier(ParseNode node)
+    {
+        PrintTerminal(node.getChildren().First());
+    }
+
+    private void TranspileAssignment(ParseNode node)
+    {
+        var children = node.getChildren();
+        TranspileIdentifier(children.First());
+        
+        //Print assignment terminal
+        PrintTerminal(children[1]);
+        
+        //TODO: Add handling for other assignment types
+        if (children[2].type is NodeType.Expression)
+        {
+            TranspileExpression(children[2]);
+        }
+        
+        //Print semicolon terminal
+        PrintTerminal(children.Last());
+    }
+    private void TranspileDeclaration(ParseNode node)
+    {
+        var children = node.getChildren();
+        
+        //print var keyword
+        PrintTerminal(children.First());
+        if (children[1].type is NodeType.VarIdentifier)
+        {
+            TranspileIdentifier(children[1]);
+            
+            //Print semicolon terminal
+            PrintTerminal(children.Last());
+        }
+        else
+        {
+            TranspileAssignment(children.Last());
+        }
+    }
+
     public string GetProgramPath()
     {
         return Path.GetFullPath("../../../../C_Flat_Output/Program.cs");

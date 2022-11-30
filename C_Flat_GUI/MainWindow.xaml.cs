@@ -172,7 +172,35 @@ namespace C_Flat
             var parseNodes = _parser.GetParseTree();
             //Construct parse tree element passing parse tree
             ConstructParseTree(parseNodes);
-            var transpiledProgram = _transpiler.Transpile(parseNodes);
+            //TODO - move error printing into helper method
+            if (_transpiler.Transpile(parseNodes) != 0)
+            {
+                //Transpiler failed!
+                _codeView.Inlines.Clear();
+                _codeView.Inlines.Add(new Run
+                {
+                    Text = "Transpilation Failed! Printing logs: \n",
+                    Background = Brushes.DarkRed,
+                    Foreground = Brushes.White
+                });
+                foreach (var errorMessage in _transpiler.GetInMemoryLogs()
+                             .Where(log => log.Level > LogEventLevel.Information))
+                {
+                    _codeView.Inlines.Add(new Run
+                    {
+                        Background = errorMessage.Level switch
+                        {
+                            LogEventLevel.Warning => new SolidColorBrush(Colors.Goldenrod),
+                            _ => Brushes.DarkRed
+                        },
+                        Text = errorMessage.RenderMessage() + "\n"
+                    });
+                }
+                SourceInput.BorderBrush = new SolidColorBrush(Colors.DarkRed);
+                SourceInput.BorderThickness = new Thickness(2);
+                return;
+            }
+            var transpiledProgram = _transpiler.Program;
             SourceInput.BorderBrush = new SolidColorBrush(Colors.LawnGreen);
             SourceInput.BorderThickness = new Thickness(2);
             ExecuteButton.IsEnabled = true;
