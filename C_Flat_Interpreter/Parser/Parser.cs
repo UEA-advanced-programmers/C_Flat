@@ -193,11 +193,153 @@ public class Parser : InterpreterLogger
 			_logger.Warning(e.Message);
 			Set(currentIndex);
 		}
+
+
+		try
+		{
+			node.AddChild(CreateNode(NodeType.DeclareVariable, DeclareVariable));
+			currentIndex = _currentIndex;
+		}
+		catch (Exception e)
+		{
+			_logger.Warning(e.Message);
+			Set(currentIndex);
+		}
+		try
+		{
+			node.AddChild(CreateNode(NodeType.VarAssignment, VarAssignment));
+			currentIndex = _currentIndex;
+		}
+		catch (Exception e)
+		{
+			_logger.Warning(e.Message);
+			Set(currentIndex);
+		}
+
+
+
 		//TODO - Wrap this in a try catch and throw another exception in catch
 		node.AddChild(CreateNode(NodeType.LogicStatement, LogicStatement));
 	}
+	#region Variables
+	private bool CheckVarLiteral()
+	{
+		var word = _tokens[_currentIndex].Word;
+		if (word.Equals("var"))
+		{
+			return true;
+		}
+		_logger.Error($"Var parse error! Expected variable literal, actual: \"{word}\"");
+		return false;
+	}
+	private void DeclareVariable(ParseNode node)
+	{
+		//_logger.Information("DeclareVariable() called at level {level}", level);
+		// check for String token with the name "var"
+		if (Match(TokenType.String) && CheckVarLiteral())
+		{
+			node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
+			Advance();
+		}
+		else
+		{
+			_logger.Error("Syntax Error! variable is not declared, expected \"var\" actual: {@word} ", _tokens[_currentIndex].Word);
+			return;
+		}
+		int Rein = _currentIndex;
+		// check if a value is being assigned
+		try
+		{
+			node.AddChild(CreateNode(NodeType.VarAssignment, VarAssignment));
+			return;
+		}
+		catch (Exception e)
+		{
+			Set(Rein);
+			_logger.Warning(e.Message);
+		}
+		try
+		{
+			node.AddChild(CreateNode(NodeType.VarIdentifier, VarIdentifier));
+			return;
+		}
+		catch (Exception e)
+		{
+			_logger.Warning(e.Message);
+		}
 
-    #region Expressions
+	}
+
+	private void VarIdentifier(ParseNode node)
+	{
+		if (Match(TokenType.String))
+		{
+			node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
+			Advance();
+		}
+		else
+		{
+			_logger.Error("Syntax Error! variable does not have a name, expected \"X\" actual: {@word} ", _tokens[_currentIndex].Word);
+			return;
+		}
+		if (Match(TokenType.SemiColon))
+		{
+			node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
+			Advance();
+		}
+		else
+		{
+			_logger.Error("Syntax Error! declaration is not closed, expected \";\" actual: {@word} ", _tokens[_currentIndex].Word);
+			return;
+		}
+	}
+	private void VarAssignment(ParseNode node)
+	{
+		// check for String token (variable name)
+		if (Match(TokenType.String))
+		{
+			node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
+			Advance();
+		}
+		else
+		{
+			_logger.Error("Syntax Error! variable does not have a name, expected \"X\" actual: {@word} ", _tokens[_currentIndex].Word);
+			return;
+		}
+		try
+		{
+			if (Match(TokenType.Assignment))
+			{
+				node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
+				Advance();
+			}
+			try
+			{
+				node.AddChild(CreateNode(NodeType.Expression, Expression));
+			}
+			catch (Exception e)
+			{
+				_logger.Warning(e.Message);
+			}
+		}
+
+		catch (Exception e)
+		{
+			_logger.Warning(e.Message);
+		}
+		if (Match(TokenType.SemiColon))
+		{
+			node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
+			Advance();
+		}
+		else
+		{
+			_logger.Error("Syntax Error! declaration is not closed, expected \";\" actual: {@word} ", _tokens[_currentIndex].Word);
+			return;
+		}
+	}
+	#endregion
+	#region Expressions
 	private void Expression(ParseNode node)
 	{
 		node.AddChild(CreateNode(NodeType.Term, Term));
