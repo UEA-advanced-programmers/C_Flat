@@ -1,1 +1,2 @@
-Console.WriteLine(100 - 20 );
+// See https://aka.ms/new-console-template for more information
+Console.WriteLine("Hello, World!");
