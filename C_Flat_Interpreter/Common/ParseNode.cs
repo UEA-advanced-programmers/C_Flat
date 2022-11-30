@@ -1,4 +1,6 @@
-﻿namespace C_Flat_Interpreter.Common;
+﻿using C_Flat_Interpreter.Common.Enums;
+
+namespace C_Flat_Interpreter.Common;
 
 public class ParseNode
 {

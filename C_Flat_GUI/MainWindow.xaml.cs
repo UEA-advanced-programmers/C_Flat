@@ -11,6 +11,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using C_Flat_Interpreter.Common;
+using C_Flat_Interpreter.Common.Enums;
 using C_Flat_Interpreter.Lexer;
 using C_Flat_Interpreter.Parser;
 using C_Flat_Interpreter.Transpiler;

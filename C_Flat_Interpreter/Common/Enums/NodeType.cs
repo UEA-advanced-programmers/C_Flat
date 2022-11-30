@@ -1,4 +1,4 @@
-﻿namespace C_Flat_Interpreter.Common;
+﻿namespace C_Flat_Interpreter.Common.Enums;
 
 public enum NodeType //will be added to
 {
