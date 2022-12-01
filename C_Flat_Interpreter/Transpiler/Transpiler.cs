@@ -60,6 +60,8 @@ public class Transpiler : InterpreterLogger
                     //TODO - Implement Conditional Transpile method
                     case NodeType.ConditionalStatement:
                         break;
+                    case NodeType.WhileStatement:
+                        break;
                     case NodeType.DeclareVariable:
                         TranspileDeclaration(statement);
                         break;
