@@ -106,17 +106,13 @@ public class Parser : InterpreterLogger
 		}
 		return true;
 	}
-	//TODO - Merge both together
+
 	private void Set(int index)
     {
 		_currentIndex = index;
 		_tokenType = _tokens[_currentIndex].Type;
     }
-	private void Reset()
-	{
-		_currentIndex = 0;
-		_tokenType = TokenType.Null;
-	}
+	
 	private void Advance()
 	{
 		if (++_currentIndex >= _totalTokens) return; //todo - might be able to find a way to exit everything else quicker when we're at the end - EOF token!
@@ -139,7 +135,7 @@ public class Parser : InterpreterLogger
 		_tokens = tokens;
 		_totalTokens = tokens.Count;
 		_parseTree = new();
-		Reset();
+		Set(0);
 		
 		//TODO - investigate better way to do this
 		try
@@ -442,13 +438,21 @@ public class Parser : InterpreterLogger
 
 	private void Condition(ParseNode node)
 	{
+		var index = _currentIndex;
 		if (!Match(TokenType.NotEqual) && !Match(TokenType.Equals) && !Match(TokenType.And) &&
-		    !Match(TokenType.Or)) throw new SyntaxErrorException("Syntax Error! Unexpected token at token " + _currentIndex);;
-		
+		    !Match(TokenType.Or)) throw new SyntaxErrorException("Syntax Error! Unexpected token at token " + _currentIndex);
 		node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
 		Advance();
-		node.AddChild(CreateNode(NodeType.Boolean, Boolean)); //todo - only assign if this works
-
+		
+		try
+		{
+			node.AddChild(CreateNode(NodeType.Boolean, Boolean));
+		}
+		catch (Exception e)
+		{
+			_logger.Warning(e.Message);
+			Set(index);
+		}
 	}
 
 	private void ExpressionQuery(ParseNode node)
@@ -573,7 +577,8 @@ public class Parser : InterpreterLogger
 		}
 		catch (Exception e)
 		{
-			Console.WriteLine(e);
+			_logger.Warning(e.Message);
+			throw new SyntaxErrorException("Syntax Error!" + _currentIndex); //todo - this message!
 		}
 
 		if (Match(TokenType.RightCurlyBrace))
