@@ -50,32 +50,44 @@ public class Parser : InterpreterLogger
     #region Helper Functions
 	private bool CheckBoolLiteral()
 	{
-		var value = _tokens[_currentIndex].Value;
-		if (value.Equals("true") || value.Equals("false")) return true;
-		_logger.Error($"Bool parse error! Expected boolean literal, actual: \"{value}\"");
+		var word = _tokens[_currentIndex].Word.Trim();
+		if (word.Equals("true") || word.Equals("false")) return true;
+		_logger.Error($"Bool parse error! Expected boolean literal, actual: \"{word}\"");
 		return false;
 	}
 	private bool CheckIf()
     {
-		var value = _tokens[_currentIndex].Value;
-		if (value.Equals("if")) return true;
-		_logger.Error($"If parse error! Expected if, actual: \"{value}\"");
+		var word = _tokens[_currentIndex].Word.Trim();
+		if (word.Equals("if")) return true;
+		_logger.Error($"If parse error! Expected if, actual: \"{word}\"");
 		return false;
 	}
 	private bool CheckElse()
 	{
-		var value = _tokens[_currentIndex].Value;
-		if (value.Equals("else")) return true;
-		_logger.Error($"Else parse error! Expected else, actual: \"{value}\"");
+		var word = _tokens[_currentIndex].Word.Trim();
+		if (word.Equals("else")) return true;
+		_logger.Error($"Else parse error! Expected else, actual: \"{word}\"");
 		return false;
 	}
 	private bool CheckWhile()
 	{
-		var value = _tokens[_currentIndex].Value;
-		if (value.Equals("while")) return true;
-		_logger.Error($"While parse error! Expected while, actual: \"{value}\"");
+		var word = _tokens[_currentIndex].Word.Trim();
+		if (word.Equals("while")) return true;
+		_logger.Error($"While parse error! Expected while, actual: \"{word}\"");
 		return false;
 	}
+	
+	private bool CheckVarLiteral()
+	{
+		var word = _tokens[_currentIndex].Word.Trim();
+		if (word.Equals("var"))
+		{
+			return true;
+		}
+		_logger.Error($"Var parse error! Expected variable literal, actual: \"{word}\"");
+		return false;
+	}
+	
 	private bool Match(TokenType tokenType)
 	{
 		if (_tokenType == TokenType.Null) //only on first call,  TODO - find better way to do this that means we don't need to set to null and/or we don't need this check
@@ -231,17 +243,6 @@ public class Parser : InterpreterLogger
 	}
 	
 	#region Variables
-	//TODO - Probably needs moving to helper methods
-	private bool CheckVarLiteral()
-	{
-		var value = _tokens[_currentIndex].Value;
-		if (value.Equals("var"))
-		{
-			return true;
-		}
-		_logger.Error($"Var parse error! Expected variable literal, actual: \"{value}\"");
-		return false;
-	}
 	//TODO - Rename to match ebnf (Declaration)
 	private void DeclareVariable(ParseNode node)
 	{

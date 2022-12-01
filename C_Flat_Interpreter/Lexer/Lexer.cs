@@ -58,7 +58,7 @@ public class Lexer : InterpreterLogger
                 switch (c)
                 {
                     case ' ':
-                        whitespace += " ";
+                        whitespace += c;
                         newToken = null;
                         break;
                     case ';':
@@ -122,7 +122,6 @@ public class Lexer : InterpreterLogger
                             newToken.Type = TokenType.Assignment;
                             newToken.Word = whitespace + c;
                         }
-
                         break;
                     case '&':
                         newToken.Type = TokenType.And;
@@ -147,15 +146,13 @@ public class Lexer : InterpreterLogger
                             var num = ParseNumber(j, i);
                             newToken.Word = whitespace + num;
                             i += num.Length - 1;
-                            newToken.Value = double.Parse(num);
                         }
                         else if (char.IsLetter(c))
                         {
                             newToken.Type = TokenType.String;
-                            var letters = ParseWord(j, i);
+                            var letters = ParseString(j, i);
                             newToken.Word = whitespace + letters;
                             i += letters.Length - 1;
-                            newToken.Value = letters;
                         }
                         else
                         {
@@ -198,7 +195,7 @@ public class Lexer : InterpreterLogger
         }
         return numberString;
     }
-    private string ParseWord(int line, int index)
+    private string ParseString(int line, int index)
     {
         var wordString = _lines[line][index].ToString();
         while (index+1 < _lines[line].Length)

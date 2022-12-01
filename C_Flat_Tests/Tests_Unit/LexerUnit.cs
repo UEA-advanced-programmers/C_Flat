@@ -124,7 +124,6 @@ public class LexerUnit
         _lexer.Tokenise(input);
         Assert.That(_lexer.GetFromTokenList(0).Word, Is.EqualTo("69"));
         Assert.That(_lexer.GetFromTokenList(0).Type, Is.EqualTo(TokenType.Num));
-        Assert.That(_lexer.GetFromTokenList(0).Value, Is.EqualTo(69));
     }
     
     [Test]
@@ -134,7 +133,6 @@ public class LexerUnit
         _lexer.Tokenise(input);
         Assert.That(_lexer.GetFromTokenList(0).Word, Is.EqualTo("69.420"));
         Assert.That(_lexer.GetFromTokenList(0).Type, Is.EqualTo(TokenType.Num));
-        Assert.That(_lexer.GetFromTokenList(0).Value, Is.EqualTo(69.420));
     }
     
     [Test]
