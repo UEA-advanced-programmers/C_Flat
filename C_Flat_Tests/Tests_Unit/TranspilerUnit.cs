@@ -32,7 +32,7 @@ public class TranspilerUnit : TestLogger
         declaration.AddChild(new (NodeType.Terminal, new Token(TokenType.String){Word = "var"}));
         
         var identifier = new ParseNode(NodeType.VarIdentifier);
-        identifier.AddChild(new(NodeType.Terminal, new Token(TokenType.String) {Word = "test"}));
+        identifier.AddChild(new(NodeType.Terminal, new Token(TokenType.String) {Word = " test"}));
         declaration.AddChild(identifier);
         
         declaration.AddChild(new (NodeType.Terminal, new Token(TokenType.SemiColon){Word = ";"}));
