@@ -182,7 +182,7 @@ public class Parser : InterpreterLogger
 		}
 		try
 		{
-			node.AddChild(CreateNode(NodeType.Conditional, IfStatements));
+			node.AddChild(CreateNode(NodeType.ConditionalStatement, IfStatements));
 			currentIndex = _currentIndex;
 			return;
 		}
@@ -399,7 +399,7 @@ public class Parser : InterpreterLogger
 		
 		//TODO - Investigate and remove early out
 		if (_currentIndex >= _totalTokens) return;
-		node.AddChild(CreateNode(NodeType.Conditional, Condition));
+		node.AddChild(CreateNode(NodeType.Condition, Condition));
 	}
 
 	private void Boolean(ParseNode node)
@@ -523,24 +523,18 @@ public class Parser : InterpreterLogger
 
 		node.AddChild(CreateNode(NodeType.Block, Block));
 		
-		try
+		if (Match(TokenType.String) && CheckElse())
 		{
-			if (Match(TokenType.String) && CheckElse())
-			{
-				node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
-				Advance();
-				
-				node.AddChild(CreateNode(NodeType.Block, Block));
-			}
-			else
-			{
-				_logger.Error("Syntax Error! Expected \"else\" actual: {@word} ", _tokens[_currentIndex].Word);
-			}
+			node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
+			Advance();
+			
+			node.AddChild(CreateNode(NodeType.Block, Block));
 		}
-		catch (Exception e)
+		else
 		{
-			_logger.Warning(e.Message);
+			_logger.Error("Syntax Error! Expected \"else\" actual: {@word} ", _tokens[_currentIndex].Word);
 		}
+
 	}
 
 	private void WhileStatement(ParseNode node)
