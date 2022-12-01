@@ -562,22 +562,25 @@ public class Parser : InterpreterLogger
 
 		try
 		{
-			node.AddChild(CreateNode(NodeType.Statement, Statement));
+			while (_currentIndex < _totalTokens && !Match(TokenType.RightCurlyBrace))
+			{
+				node.AddChild(CreateNode(NodeType.Statement, Statement));
+			}
 		}
 		catch (Exception e)
 		{
 			Console.WriteLine(e);
 		}
-		
-		try
+
+		if (Match(TokenType.RightCurlyBrace))
 		{
-			if (!Match(TokenType.RightCurlyBrace)) return;
 			node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
 			Advance();
 		}
-		catch (Exception e)
+		else
 		{
-			_logger.Warning(e.Message);
+			_logger.Error("Syntax Error! Expected \"}\" actual: {@word} ", _tokens[_currentIndex].Word);
+			throw new SyntaxErrorException("Syntax Error! Expected \"}\" at token " + _currentIndex);
 		}
 	}
 
