@@ -15,7 +15,6 @@ using System.Collections.Generic;
 public class Lexer : InterpreterLogger
 {
     private readonly List<Token> _tokens = new(); //TODO - define max with the group
-    private string _input;
     private bool _failed;
     private string[] _lines;
 
@@ -40,9 +39,8 @@ public class Lexer : InterpreterLogger
     {
         _failed = false;
         _tokens.Clear();
-        _input = input;
-        
-        var _whitespace = "";
+
+        var whitespace = "";
 
         input = input.Replace("\r", "");
         _lines = input.Split("\n");
@@ -52,62 +50,64 @@ public class Lexer : InterpreterLogger
             for(int i = 0; i < _lines[j].Length; i++) //character
             {
                 char c = _lines[j][i];
-                var newToken = new Token();
-                newToken.Line = j;
+                var newToken = new Token
+                {
+                    Line = j
+                };
 
                 switch (c)
                 {
                     case ' ':
-                        _whitespace += " ";
+                        whitespace += " ";
                         newToken = null;
                         break;
                     case ';':
                         newToken.Type = TokenType.SemiColon;
-                        newToken.Word = _whitespace + c;
+                        newToken.Word = whitespace + c;
                         break;
                     case '+':
                         newToken.Type = TokenType.Add;
-                        newToken.Word = _whitespace + c;
+                        newToken.Word = whitespace + c;
                         break;
                     case '*':
                         newToken.Type = TokenType.Multi;
-                        newToken.Word = _whitespace + c;
+                        newToken.Word = whitespace + c;
                         break;
                     case '(':
                         newToken.Type = TokenType.LeftParen;
-                        newToken.Word = _whitespace + c;
+                        newToken.Word = whitespace + c;
                         break;
                     case ')':
                         newToken.Type = TokenType.RightParen;
-                        newToken.Word = _whitespace + c;
+                        newToken.Word = whitespace + c;
                         break;
                     case '{':
                         newToken.Type = TokenType.LeftCurlyBrace;
-                        newToken.Word = _whitespace + c;
+                        newToken.Word = whitespace + c;
                         break;
                     case '}':
                         newToken.Type = TokenType.RightCurlyBrace;
-                        newToken.Word = _whitespace + c;
+                        newToken.Word = whitespace + c;
                         break;
                     case '-':
                         newToken.Type = TokenType.Sub;
-                        newToken.Word = _whitespace + c;
+                        newToken.Word = whitespace + c;
                         break;
                     case '/':
                         newToken.Type = TokenType.Divide;
-                        newToken.Word = _whitespace + c;
+                        newToken.Word = whitespace + c;
                         break;
                     case '!':
                         if (_lines[j][i + 1] == '=')
                         {
                             i++;
                             newToken.Type = TokenType.NotEqual;
-                            newToken.Word = _whitespace + c + _lines[j][i];
+                            newToken.Word = whitespace + c + _lines[j][i];
                         }
                         else
                         {
                             newToken.Type = TokenType.Not;
-                            newToken.Word = _whitespace + c;
+                            newToken.Word = whitespace + c;
                         }
                         break;
                     case '=':
@@ -115,47 +115,47 @@ public class Lexer : InterpreterLogger
                         {
                             i++;
                             newToken.Type = TokenType.Equals;
-                            newToken.Word = _whitespace + c + _lines[j][i];
+                            newToken.Word = whitespace + c + _lines[j][i];
                         }
                         else
                         {
                             newToken.Type = TokenType.Assignment;
-                            newToken.Word = _whitespace + c;
+                            newToken.Word = whitespace + c;
                         }
 
                         break;
                     case '&':
                         newToken.Type = TokenType.And;
-                        newToken.Word = _whitespace + c;
+                        newToken.Word = whitespace + c;
                         break;
                     case '|':
                         newToken.Type = TokenType.Or;
-                        newToken.Word = _whitespace + c;
+                        newToken.Word = whitespace + c;
                         break;
                     case '<':
                         newToken.Type = TokenType.Less;
-                        newToken.Word = _whitespace + c;
+                        newToken.Word = whitespace + c;
                         break;
                     case '>':
                         newToken.Type = TokenType.More;
-                        newToken.Word = _whitespace + c;
+                        newToken.Word = whitespace + c;
                         break;
                     default:
                         if (char.IsDigit(c))
                         {
                             newToken.Type = TokenType.Num;
                             var num = ParseNumber(j, i);
-                            newToken.Word = _whitespace + num;
+                            newToken.Word = whitespace + num;
                             i += num.Length - 1;
-                            newToken.Value = double.Parse(newToken.Word);
+                            newToken.Value = double.Parse(num);
                         }
                         else if (char.IsLetter(c))
                         {
                             newToken.Type = TokenType.String;
                             var letters = ParseWord(j, i);
-                            newToken.Word = _whitespace + letters;
+                            newToken.Word = whitespace + letters;
                             i += letters.Length - 1;
-                            newToken.Value = newToken.Word;
+                            newToken.Value = letters;
                         }
                         else
                         {
@@ -163,17 +163,14 @@ public class Lexer : InterpreterLogger
                             _logger.Error("Invalid lexeme encountered! Disregarding: {invalidToken}", c.ToString());
                             _failed = true;
                         }
-
                         break;
                 }
 
-                if (newToken != null)
-                {
-                    _tokens.Add(newToken);
-                    _whitespace = "";
-                }
+                if (newToken == null) continue;
+                _tokens.Add(newToken);
+                whitespace = "";
             }
-            _whitespace = "";
+            whitespace = "";
         }
         return _failed ? 1 : 0;
     }

@@ -50,30 +50,30 @@ public class Parser : InterpreterLogger
     #region Helper Functions
 	private bool CheckBoolLiteral()
 	{
-		var word = _tokens[_currentIndex].Word;
-		if (word.Equals("true") || word.Equals("false")) return true;
-		_logger.Error($"Bool parse error! Expected boolean literal, actual: \"{word}\"");
+		var value = _tokens[_currentIndex].Value;
+		if (value.Equals("true") || value.Equals("false")) return true;
+		_logger.Error($"Bool parse error! Expected boolean literal, actual: \"{value}\"");
 		return false;
 	}
 	private bool CheckIf()
     {
-		var word = _tokens[_currentIndex].Word;
-		if (word.Equals("if")) return true;
-		_logger.Error($"If parse error! Expected if, actual: \"{word}\"");
+		var value = _tokens[_currentIndex].Value;
+		if (value.Equals("if")) return true;
+		_logger.Error($"If parse error! Expected if, actual: \"{value}\"");
 		return false;
 	}
 	private bool CheckElse()
 	{
-		var word = _tokens[_currentIndex].Word;
-		if (word.Equals("else")) return true;
-		_logger.Error($"Else parse error! Expected else, actual: \"{word}\"");
+		var value = _tokens[_currentIndex].Value;
+		if (value.Equals("else")) return true;
+		_logger.Error($"Else parse error! Expected else, actual: \"{value}\"");
 		return false;
 	}
 	private bool CheckWhile()
 	{
-		var word = _tokens[_currentIndex].Word;
-		if (word.Equals("while")) return true;
-		_logger.Error($"While parse error! Expected while, actual: \"{word}\"");
+		var value = _tokens[_currentIndex].Value;
+		if (value.Equals("while")) return true;
+		_logger.Error($"While parse error! Expected while, actual: \"{value}\"");
 		return false;
 	}
 	private bool Match(TokenType tokenType)
@@ -234,12 +234,12 @@ public class Parser : InterpreterLogger
 	//TODO - Probably needs moving to helper methods
 	private bool CheckVarLiteral()
 	{
-		var word = _tokens[_currentIndex].Word;
-		if (word.Equals("var"))
+		var value = _tokens[_currentIndex].Value;
+		if (value.Equals("var"))
 		{
 			return true;
 		}
-		_logger.Error($"Var parse error! Expected variable literal, actual: \"{word}\"");
+		_logger.Error($"Var parse error! Expected variable literal, actual: \"{value}\"");
 		return false;
 	}
 	//TODO - Rename to match ebnf (Declaration)
