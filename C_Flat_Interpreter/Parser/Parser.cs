@@ -371,11 +371,15 @@ public class Parser : InterpreterLogger
 	private void LogicStatement(ParseNode node)
 	{
 		node.AddChild(CreateNode(NodeType.Boolean, Boolean));
-
 		
-		//TODO - Investigate and remove early out
-		if (_currentIndex >= _totalTokens) return;
-		node.AddChild(CreateNode(NodeType.Condition, Condition));
+		try
+		{
+			node.AddChild(CreateNode(NodeType.Condition, Condition));
+		}
+		catch (Exception e)
+		{
+			_logger.Warning(e.Message);
+		}
 	}
 
 	private void Boolean(ParseNode node)
@@ -439,7 +443,7 @@ public class Parser : InterpreterLogger
 	private void Condition(ParseNode node)
 	{
 		if (!Match(TokenType.NotEqual) && !Match(TokenType.Equals) && !Match(TokenType.And) &&
-		    !Match(TokenType.Or)) return;
+		    !Match(TokenType.Or)) throw new SyntaxErrorException("Syntax Error! Unexpected token at token " + _currentIndex);;
 		
 		node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
 		Advance();
