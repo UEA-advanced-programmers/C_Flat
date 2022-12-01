@@ -171,17 +171,6 @@ public class Parser : InterpreterLogger
 		//TODO - Remove expression and logic statements
 		try
 		{
-			node.AddChild(CreateNode(NodeType.Expression, Expression));
-			currentIndex = _currentIndex;
-			return;
-		}
-		catch (Exception e)
-		{
-			_logger.Warning(e.Message);
-			Set(currentIndex);
-		}
-		try
-		{
 			node.AddChild(CreateNode(NodeType.ConditionalStatement, IfStatements));
 			currentIndex = _currentIndex;
 			return;
@@ -226,20 +215,7 @@ public class Parser : InterpreterLogger
 			_logger.Warning(e.Message);
 			Set(currentIndex);
 		}
-
-		try
-		{
-			node.AddChild(CreateNode(NodeType.LogicStatement, LogicStatement));
-			currentIndex = _currentIndex;
-			return;
-		}
-		catch (Exception e)
-		{
-			_logger.Warning(e.Message);
-			Set(currentIndex);
-		}
 		throw new Exception("Syntax error! invalid statement");
-
 	}
 	
 	#region Variables
@@ -530,12 +506,7 @@ public class Parser : InterpreterLogger
 			
 			node.AddChild(CreateNode(NodeType.Block, Block));
 		}
-		else
-		{
-			_logger.Error("Syntax Error! Expected \"else\" actual: {@word} ", _tokens[_currentIndex].Word);
-		}
-
-	}
+    }
 
 	private void WhileStatement(ParseNode node)
 	{
@@ -588,6 +559,15 @@ public class Parser : InterpreterLogger
 			_logger.Error("Syntax Error! Expected \"{\" actual: {@word} ", _tokens[_currentIndex].Word);
 			throw new SyntaxErrorException("Syntax Error! Expected \"{\" at token " + _currentIndex);
 		}
+
+		try
+		{
+			node.AddChild(CreateNode(NodeType.Statement, Statement));
+		}
+		catch (Exception e)
+		{
+			Console.WriteLine(e);
+		}
 		
 		try
 		{
@@ -599,24 +579,7 @@ public class Parser : InterpreterLogger
 		{
 			_logger.Warning(e.Message);
 		}
-		
-		//TODO - For now, blocks cannot contain anything, once variables have been added we can change this
-
-		/* //TODO - Add back in once variables are added
-		if (Match(TokenType.RightCurlyBrace))
-		{
-			ParseNode newNode = new ParseNode(NodeType.Terminal, _tokens[_currentIndex]);
-			Advance(newNode);
-			node.assignChild(newNode);
-		}
-		else
-		{
-			_logger.Error("Syntax Error! Expected \"}\" actual: {@word} ", _tokens[_currentIndex].Word);
-			throw new SyntaxErrorException("Syntax Error! Expected \"}\" at token " + _currentIndex);
-		}
-		*/
 	}
 
 	#endregion
-	//EBNF Functions
 }
