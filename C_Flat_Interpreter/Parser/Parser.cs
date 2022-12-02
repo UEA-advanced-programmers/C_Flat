@@ -50,32 +50,44 @@ public class Parser : InterpreterLogger
     #region Helper Functions
 	private bool CheckBoolLiteral()
 	{
-		var word = _tokens[_currentIndex].Word;
+		var word = _tokens[_currentIndex].Word.Trim();
 		if (word.Equals("true") || word.Equals("false")) return true;
 		_logger.Error($"Bool parse error! Expected boolean literal, actual: \"{word}\"");
 		return false;
 	}
 	private bool CheckIf()
     {
-		var word = _tokens[_currentIndex].Word;
+		var word = _tokens[_currentIndex].Word.Trim();
 		if (word.Equals("if")) return true;
 		_logger.Error($"If parse error! Expected if, actual: \"{word}\"");
 		return false;
 	}
 	private bool CheckElse()
 	{
-		var word = _tokens[_currentIndex].Word;
+		var word = _tokens[_currentIndex].Word.Trim();
 		if (word.Equals("else")) return true;
 		_logger.Error($"Else parse error! Expected else, actual: \"{word}\"");
 		return false;
 	}
 	private bool CheckWhile()
 	{
-		var word = _tokens[_currentIndex].Word;
+		var word = _tokens[_currentIndex].Word.Trim();
 		if (word.Equals("while")) return true;
 		_logger.Error($"While parse error! Expected while, actual: \"{word}\"");
 		return false;
 	}
+	
+	private bool CheckVarLiteral()
+	{
+		var word = _tokens[_currentIndex].Word.Trim();
+		if (word.Equals("var"))
+		{
+			return true;
+		}
+		_logger.Error($"Var parse error! Expected variable literal, actual: \"{word}\"");
+		return false;
+	}
+	
 	private bool Match(TokenType tokenType)
 	{
 		if (_tokenType == TokenType.Null) //only on first call,  TODO - find better way to do this that means we don't need to set to null and/or we don't need this check
@@ -231,17 +243,6 @@ public class Parser : InterpreterLogger
 	}
 	
 	#region Variables
-	//TODO - Probably needs moving to helper methods
-	private bool CheckVarLiteral()
-	{
-		var word = _tokens[_currentIndex].Word;
-		if (word.Equals("var"))
-		{
-			return true;
-		}
-		_logger.Error($"Var parse error! Expected variable literal, actual: \"{word}\"");
-		return false;
-	}
 	//TODO - Rename to match ebnf (Declaration)
 	private void DeclareVariable(ParseNode node)
 	{

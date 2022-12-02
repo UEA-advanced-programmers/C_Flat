@@ -31,7 +31,7 @@ public class Transpiler : InterpreterLogger
             Program += Environment.NewLine;
         }
         //Consider handling empty spaces within lexer
-        Program += tokenToPrint.Word + " ";
+        Program += tokenToPrint.Word;
     }
 
 
