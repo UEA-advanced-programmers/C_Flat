@@ -409,7 +409,7 @@ public class Parser : InterpreterLogger
 			catch (Exception e)
 			{
 				_logger.Warning(e.Message);
-				_currentIndex = index;
+				Set(index);
 
 				if (Match(TokenType.LeftParen))
 				{
