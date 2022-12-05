@@ -38,6 +38,7 @@ public class Transpiler : InterpreterLogger
     {
         //Retrieve program.cs file
         Program = string.Empty;
+        _currentLine = 0;
         var writer = File.CreateText(GetProgramPath());
         foreach (var node in parseTree)
         {
@@ -103,31 +104,30 @@ public class Transpiler : InterpreterLogger
 
     private void TranspileBoolean(ParseNode node)
     {
-        var booleanChild = node.getChildren().First();
-        switch (booleanChild.type)
+        var children = node.getChildren();
+        switch (children.First().type)
         {
+            //Check for !<LogicStatement>, bool literal, ( <Logic-Statement> )
             case NodeType.Terminal:
-                if(booleanChild.getChildren().Count == 1)
-                    //Boolean is true or false literal
-                    PrintTerminal(booleanChild);
-
-                else if(booleanChild.getChildren().First().token?.Type is TokenType.Not)
+            {
+                PrintTerminal(children.First());
+                //Handle !LogicStatement, ( <Logic-Statement> )
+                if (children.Count > 1)
                 {
-                    //It's a !<logic-statement>
-                    PrintTerminal(booleanChild.getChildren().First());
-                    TranspileLogicStatement(booleanChild.getChildren()[1]);
-                }
-                else
-                {
-                    //It's a (Logic-Statement>)
-                    PrintTerminal(booleanChild.getChildren().First());
-                    TranspileLogicStatement(booleanChild.getChildren()[1]);
-                    PrintTerminal(booleanChild.getChildren().Last());
+                    TranspileLogicStatement(children[1]);
+                    if (children.Count > 2)
+                    {
+                        //print R Paren 
+                        PrintTerminal(children.Last());
+                    }
                 }
                 break;
-            
+            }
             case NodeType.ExpressionQuery:
-                TranspileExpressionQuery(booleanChild);
+                TranspileExpressionQuery(children.First());
+                break;
+            default:
+                TranspileIdentifier(children.First());
                 break;
         }
     }
