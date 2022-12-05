@@ -281,6 +281,7 @@ namespace C_Flat
                     });
                 }
                 ExecuteButton.IsEnabled = false;
+ 	            TranspileButton.IsEnabled = true;
                 OutputBorder.BorderBrush = Brushes.DarkRed;
                 Snackbar.Appearance = ControlAppearance.Danger;
                 Snackbar.Show("Execution Failed!");
