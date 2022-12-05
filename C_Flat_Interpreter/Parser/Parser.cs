@@ -90,11 +90,6 @@ public class Parser : InterpreterLogger
 	
 	private bool Match(TokenType tokenType)
 	{
-		if (_tokenType == TokenType.Null) //only on first call,  TODO - find better way to do this that means we don't need to set to null and/or we don't need this check
-        {
-			_tokenType = _tokens[_currentIndex].Type;
-		}
-
 		if (tokenType == _tokenType)
 		{
 			_logger.Information("Token at index {index} matches {tokenType}", _currentIndex, tokenType);
@@ -107,7 +102,7 @@ public class Parser : InterpreterLogger
 		return true;
 	}
 
-	private void Set(int index)
+	private void Reset(int index = 0)
     {
 		_currentIndex = index;
 		_tokenType = _tokens[_currentIndex].Type;
@@ -135,7 +130,7 @@ public class Parser : InterpreterLogger
 		_tokens = tokens;
 		_totalTokens = tokens.Count;
 		_parseTree = new();
-		Set(0);
+		Reset(0);
 		
 		//TODO - investigate better way to do this
 		try
@@ -174,7 +169,7 @@ public class Parser : InterpreterLogger
 		catch (Exception e)
 		{
 			_logger.Warning(e.Message);
-			Set(currentIndex);
+			Reset(currentIndex);
 		}
 		
 		try
@@ -186,7 +181,7 @@ public class Parser : InterpreterLogger
 		catch (Exception e)
 		{
 			_logger.Warning(e.Message);
-			Set(currentIndex);
+			Reset(currentIndex);
 		}
 		
 		try
@@ -198,7 +193,7 @@ public class Parser : InterpreterLogger
 		catch (Exception e)
 		{
 			_logger.Warning(e.Message);
-			Set(currentIndex);
+			Reset(currentIndex);
 		}
 		try
 		{
@@ -209,7 +204,7 @@ public class Parser : InterpreterLogger
 		catch (Exception e)
 		{
 			_logger.Warning(e.Message);
-			Set(currentIndex);
+			Reset(currentIndex);
 		}
 		throw new Exception("Syntax error! invalid statement");
 	}
@@ -239,7 +234,7 @@ public class Parser : InterpreterLogger
 		}
 		catch (Exception e)
 		{
-			Set(Rein);
+			Reset(Rein);
 			_logger.Warning(e.Message);
 		}
 		
@@ -409,7 +404,7 @@ public class Parser : InterpreterLogger
 			catch (Exception e)
 			{
 				_logger.Warning(e.Message);
-				Set(index);
+				Reset(index);
 
 				if (Match(TokenType.LeftParen))
 				{
@@ -451,7 +446,7 @@ public class Parser : InterpreterLogger
 		catch (Exception e)
 		{
 			_logger.Warning(e.Message);
-			Set(index);
+			Reset(index);
 		}
 	}
 
