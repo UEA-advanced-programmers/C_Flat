@@ -50,32 +50,44 @@ public class Parser : InterpreterLogger
     #region Helper Functions
 	private bool CheckBoolLiteral()
 	{
-		var word = _tokens[_currentIndex].Word;
+		var word = _tokens[_currentIndex].Word.Trim();
 		if (word.Equals("true") || word.Equals("false")) return true;
 		_logger.Error($"Bool parse error! Expected boolean literal, actual: \"{word}\"");
 		return false;
 	}
 	private bool CheckIf()
     {
-		var word = _tokens[_currentIndex].Word;
+		var word = _tokens[_currentIndex].Word.Trim();
 		if (word.Equals("if")) return true;
 		_logger.Error($"If parse error! Expected if, actual: \"{word}\"");
 		return false;
 	}
 	private bool CheckElse()
 	{
-		var word = _tokens[_currentIndex].Word;
+		var word = _tokens[_currentIndex].Word.Trim();
 		if (word.Equals("else")) return true;
 		_logger.Error($"Else parse error! Expected else, actual: \"{word}\"");
 		return false;
 	}
 	private bool CheckWhile()
 	{
-		var word = _tokens[_currentIndex].Word;
+		var word = _tokens[_currentIndex].Word.Trim();
 		if (word.Equals("while")) return true;
 		_logger.Error($"While parse error! Expected while, actual: \"{word}\"");
 		return false;
 	}
+	
+	private bool CheckVarLiteral()
+	{
+		var word = _tokens[_currentIndex].Word.Trim();
+		if (word.Equals("var"))
+		{
+			return true;
+		}
+		_logger.Error($"Var parse error! Expected variable literal, actual: \"{word}\"");
+		return false;
+	}
+	
 	private bool Match(TokenType tokenType)
 	{
 		if (_tokenType == TokenType.Null) //only on first call,  TODO - find better way to do this that means we don't need to set to null and/or we don't need this check
@@ -94,17 +106,13 @@ public class Parser : InterpreterLogger
 		}
 		return true;
 	}
-	//TODO - Merge both together
+
 	private void Set(int index)
     {
 		_currentIndex = index;
 		_tokenType = _tokens[_currentIndex].Type;
     }
-	private void Reset()
-	{
-		_currentIndex = 0;
-		_tokenType = TokenType.Null;
-	}
+	
 	private void Advance()
 	{
 		if (++_currentIndex >= _totalTokens) return; //todo - might be able to find a way to exit everything else quicker when we're at the end - EOF token!
@@ -127,7 +135,7 @@ public class Parser : InterpreterLogger
 		_tokens = tokens;
 		_totalTokens = tokens.Count;
 		_parseTree = new();
-		Reset();
+		Set(0);
 		
 		//TODO - investigate better way to do this
 		try
@@ -159,18 +167,7 @@ public class Parser : InterpreterLogger
 		//TODO - Remove expression and logic statements
 		try
 		{
-			node.AddChild(CreateNode(NodeType.Expression, Expression));
-			currentIndex = _currentIndex;
-			return;
-		}
-		catch (Exception e)
-		{
-			_logger.Warning(e.Message);
-			Set(currentIndex);
-		}
-		try
-		{
-			node.AddChild(CreateNode(NodeType.Conditional, IfStatements));
+			node.AddChild(CreateNode(NodeType.ConditionalStatement, IfStatements));
 			currentIndex = _currentIndex;
 			return;
 		}
@@ -214,34 +211,10 @@ public class Parser : InterpreterLogger
 			_logger.Warning(e.Message);
 			Set(currentIndex);
 		}
-
-		try
-		{
-			node.AddChild(CreateNode(NodeType.LogicStatement, LogicStatement));
-			currentIndex = _currentIndex;
-			return;
-		}
-		catch (Exception e)
-		{
-			_logger.Warning(e.Message);
-			Set(currentIndex);
-		}
 		throw new Exception("Syntax error! invalid statement");
-
 	}
 	
 	#region Variables
-	//TODO - Probably needs moving to helper methods
-	private bool CheckVarLiteral()
-	{
-		var word = _tokens[_currentIndex].Word;
-		if (word.Equals("var"))
-		{
-			return true;
-		}
-		_logger.Error($"Var parse error! Expected variable literal, actual: \"{word}\"");
-		return false;
-	}
 	//TODO - Rename to match ebnf (Declaration)
 	private void DeclareVariable(ParseNode node)
 	{
@@ -394,11 +367,15 @@ public class Parser : InterpreterLogger
 	private void LogicStatement(ParseNode node)
 	{
 		node.AddChild(CreateNode(NodeType.Boolean, Boolean));
-
 		
-		//TODO - Investigate and remove early out
-		if (_currentIndex >= _totalTokens) return;
-		node.AddChild(CreateNode(NodeType.Conditional, Condition));
+		try
+		{
+			node.AddChild(CreateNode(NodeType.Condition, Condition));
+		}
+		catch (Exception e)
+		{
+			_logger.Warning(e.Message);
+		}
 	}
 
 	private void Boolean(ParseNode node)
@@ -432,7 +409,7 @@ public class Parser : InterpreterLogger
 			catch (Exception e)
 			{
 				_logger.Warning(e.Message);
-				_currentIndex = index;
+				Set(index);
 
 				if (Match(TokenType.LeftParen))
 				{
@@ -461,13 +438,21 @@ public class Parser : InterpreterLogger
 
 	private void Condition(ParseNode node)
 	{
+		var index = _currentIndex;
 		if (!Match(TokenType.NotEqual) && !Match(TokenType.Equals) && !Match(TokenType.And) &&
-		    !Match(TokenType.Or)) return;
-		
+		    !Match(TokenType.Or)) throw new SyntaxErrorException("Syntax Error! Unexpected token at token " + _currentIndex);
 		node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
 		Advance();
-		node.AddChild(CreateNode(NodeType.Boolean, Boolean)); //todo - only assign if this works
-
+		
+		try
+		{
+			node.AddChild(CreateNode(NodeType.Boolean, Boolean));
+		}
+		catch (Exception e)
+		{
+			_logger.Warning(e.Message);
+			Set(index);
+		}
 	}
 
 	private void ExpressionQuery(ParseNode node)
@@ -522,25 +507,14 @@ public class Parser : InterpreterLogger
 
 		node.AddChild(CreateNode(NodeType.Block, Block));
 		
-		try
+		if (Match(TokenType.String) && CheckElse())
 		{
-			if (Match(TokenType.String) && CheckElse())
-			{
-				node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
-				Advance();
-				
-				node.AddChild(CreateNode(NodeType.Block, Block));
-			}
-			else
-			{
-				_logger.Error("Syntax Error! Expected \"else\" actual: {@word} ", _tokens[_currentIndex].Word);
-			}
+			node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
+			Advance();
+			
+			node.AddChild(CreateNode(NodeType.Block, Block));
 		}
-		catch (Exception e)
-		{
-			_logger.Warning(e.Message);
-		}
-	}
+    }
 
 	private void WhileStatement(ParseNode node)
 	{
@@ -593,35 +567,31 @@ public class Parser : InterpreterLogger
 			_logger.Error("Syntax Error! Expected \"{\" actual: {@word} ", _tokens[_currentIndex].Word);
 			throw new SyntaxErrorException("Syntax Error! Expected \"{\" at token " + _currentIndex);
 		}
-		
+
 		try
 		{
-			if (!Match(TokenType.RightCurlyBrace)) return;
-			node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
-			Advance();
+			while (_currentIndex < _totalTokens && !Match(TokenType.RightCurlyBrace))
+			{
+				node.AddChild(CreateNode(NodeType.Statement, Statement));
+			}
 		}
 		catch (Exception e)
 		{
 			_logger.Warning(e.Message);
+			throw new SyntaxErrorException("Syntax Error!" + _currentIndex); //todo - this message!
 		}
-		
-		//TODO - For now, blocks cannot contain anything, once variables have been added we can change this
 
-		/* //TODO - Add back in once variables are added
 		if (Match(TokenType.RightCurlyBrace))
 		{
-			ParseNode newNode = new ParseNode(NodeType.Terminal, _tokens[_currentIndex]);
-			Advance(newNode);
-			node.assignChild(newNode);
+			node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
+			Advance();
 		}
 		else
 		{
 			_logger.Error("Syntax Error! Expected \"}\" actual: {@word} ", _tokens[_currentIndex].Word);
 			throw new SyntaxErrorException("Syntax Error! Expected \"}\" at token " + _currentIndex);
 		}
-		*/
 	}
 
 	#endregion
-	//EBNF Functions
 }

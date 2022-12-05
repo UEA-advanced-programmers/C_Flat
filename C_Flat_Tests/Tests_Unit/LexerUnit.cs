@@ -30,6 +30,10 @@ public class LexerUnit
                              "}";
         _lexer.Tokenise(input);
         Assert.That(_lexer.GetTokens().Count == 7);
+        Assert.That(_lexer.GetFromTokenList(3).Line == 0);
+        Assert.That(_lexer.GetFromTokenList(4).Line == 1);
+        Assert.That(_lexer.GetFromTokenList(5).Line == 2);
+        Assert.That(_lexer.GetFromTokenList(6).Line == 3);
     }
     
     [Test]
@@ -39,7 +43,7 @@ public class LexerUnit
         _lexer.Tokenise(input);
         var token = _lexer.GetFromTokenList(0);
         Assert.That(token.Type, Is.EqualTo(TokenType.Add));
-        Assert.That(token.Word.ToString(), Is.EqualTo('+'.ToString()));
+        Assert.That(token.Word, Is.EqualTo(" +"));
     }
     [Test]
     public void Lexer_Tokenise_LeftBrace_TokenIsLeftBrace()
@@ -48,7 +52,7 @@ public class LexerUnit
         _lexer.Tokenise(input);
         var token = _lexer.GetFromTokenList(2);
         Assert.That(token.Type, Is.EqualTo(TokenType.LeftCurlyBrace));
-        Assert.That(token.Word.ToString(), Is.EqualTo('{'.ToString()));
+        Assert.That(token.Word, Is.EqualTo('{'.ToString()));
     }
     [Test]
     public void Lexer_Tokenise_RightBrace_TokenIsRightBrace()
@@ -57,7 +61,7 @@ public class LexerUnit
         _lexer.Tokenise(input);
         var token = _lexer.GetFromTokenList(3);
         Assert.That(token.Type, Is.EqualTo(TokenType.RightCurlyBrace));
-        Assert.That(token.Word.ToString(), Is.EqualTo('}'.ToString()));
+        Assert.That(token.Word, Is.EqualTo('}'.ToString()));
     }
     [Test]
     public void Lexer_Tokenise_Semicolon_TokenIsSemicolon()
@@ -66,7 +70,7 @@ public class LexerUnit
         _lexer.Tokenise(input);
         var token = _lexer.GetFromTokenList(4);
         Assert.That(token.Type, Is.EqualTo(TokenType.SemiColon));
-        Assert.That(token.Word.ToString(), Is.EqualTo(";"));
+        Assert.That(token.Word, Is.EqualTo(";"));
     }
     [Test]
     public void Lexer_Tokenise_Multi_TokenIsMulti()
@@ -74,7 +78,7 @@ public class LexerUnit
         const string input = " +*()-/0123456789";
         _lexer.Tokenise(input);
         Assert.That(_lexer.GetFromTokenList(1).Type, Is.EqualTo(TokenType.Multi));
-        Assert.That(_lexer.GetFromTokenList(1).Word.ToString(), Is.EqualTo("*"));
+        Assert.That(_lexer.GetFromTokenList(1).Word, Is.EqualTo("*"));
     }
     
     [Test]
@@ -83,7 +87,7 @@ public class LexerUnit
         const string input = " +*()-/0123456789";
         _lexer.Tokenise(input);
         Assert.That(_lexer.GetFromTokenList(2).Type, Is.EqualTo(TokenType.LeftParen));
-        Assert.That(_lexer.GetFromTokenList(2).Word.ToString(), Is.EqualTo("("));
+        Assert.That(_lexer.GetFromTokenList(2).Word, Is.EqualTo("("));
     }
     
     [Test]
@@ -92,7 +96,7 @@ public class LexerUnit
         const string input = " +*()-/0123456789";
         _lexer.Tokenise(input);
         Assert.That(_lexer.GetFromTokenList(3).Type, Is.EqualTo(TokenType.RightParen));
-        Assert.That(_lexer.GetFromTokenList(3).Word.ToString(), Is.EqualTo(")"));
+        Assert.That(_lexer.GetFromTokenList(3).Word, Is.EqualTo(")"));
     }
     
     [Test]
@@ -101,7 +105,7 @@ public class LexerUnit
         const string input = " +*()-/0123456789";
         _lexer.Tokenise(input);
         Assert.That(_lexer.GetFromTokenList(4).Type, Is.EqualTo(TokenType.Sub));
-        Assert.That(_lexer.GetFromTokenList(4).Word.ToString(), Is.EqualTo("-"));
+        Assert.That(_lexer.GetFromTokenList(4).Word, Is.EqualTo("-"));
     }
     
     [Test]
@@ -109,7 +113,7 @@ public class LexerUnit
     {
         const string input = " +*()-/0123456789";
         _lexer.Tokenise(input);
-        Assert.That(_lexer.GetFromTokenList(5).Word.ToString(), Is.EqualTo("/"));
+        Assert.That(_lexer.GetFromTokenList(5).Word, Is.EqualTo("/"));
         Assert.That(_lexer.GetFromTokenList(5).Type, Is.EqualTo(TokenType.Divide));
     }
     
@@ -118,9 +122,8 @@ public class LexerUnit
     {
         const string input = "69";
         _lexer.Tokenise(input);
-        Assert.That(_lexer.GetFromTokenList(0).Word.ToString(), Is.EqualTo("69"));
+        Assert.That(_lexer.GetFromTokenList(0).Word, Is.EqualTo("69"));
         Assert.That(_lexer.GetFromTokenList(0).Type, Is.EqualTo(TokenType.Num));
-        Assert.That(_lexer.GetFromTokenList(0).Value, Is.EqualTo(69));
     }
     
     [Test]
@@ -128,19 +131,17 @@ public class LexerUnit
     {
         const string input = "69.420";
         _lexer.Tokenise(input);
-        Assert.That(_lexer.GetFromTokenList(0).Word.ToString(), Is.EqualTo("69.420"));
+        Assert.That(_lexer.GetFromTokenList(0).Word, Is.EqualTo("69.420"));
         Assert.That(_lexer.GetFromTokenList(0).Type, Is.EqualTo(TokenType.Num));
-        Assert.That(_lexer.GetFromTokenList(0).Value, Is.EqualTo(69.420));
     }
     
     [Test]
     public void Lexer_Tokenise_InvalidToken_IsHandled()
     {
-        const string input = "5 ^ 3";
+        const string input = "5 ^";
         _lexer.Tokenise(input);
         var errorLogs = _lexer.GetInMemoryLogs().Where(log => log.Level > LogEventLevel.Warning);
-        Assert.That(_lexer.GetFromTokenList(0).Word.ToString(), Is.EqualTo("5"));
+        Assert.That(_lexer.GetFromTokenList(0).Word, Is.EqualTo("5"));
         Assert.That(errorLogs.Any(x => x.RenderMessage().Contains("Invalid lexeme encountered!")));
-        Assert.That(_lexer.GetFromTokenList(1).Word.ToString(), Is.EqualTo("3"));
     }
 }

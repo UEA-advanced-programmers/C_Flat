@@ -12,4 +12,8 @@
       <PackageReference Include="Serilog.Sinks.InMemory" Version="0.11.0" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Execution" />
+    </ItemGroup>
+
 </Project>
