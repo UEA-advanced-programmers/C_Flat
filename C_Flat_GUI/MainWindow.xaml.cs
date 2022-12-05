@@ -103,7 +103,7 @@ namespace C_Flat
 
         private void ButtonTranspile_Click(object sender, RoutedEventArgs e)
         {
-            _codeView.Text = $"{transpiledProgram}";
+            _codeView.Text = "";
             SourceInput.BorderThickness = new Thickness(0);
             OutputBorder.BorderThickness = new Thickness(0);
             ExecuteButton.IsEnabled = false;
@@ -215,6 +215,7 @@ namespace C_Flat
             SourceInput.BorderBrush = new SolidColorBrush(Colors.LawnGreen);
             SourceInput.BorderThickness = new Thickness(2);
             ExecuteButton.IsEnabled = true;
+            _codeView.Text = $"{transpiledProgram}";
             ShowCode_Click(default!, default!);
         }
 
