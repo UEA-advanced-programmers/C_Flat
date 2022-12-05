@@ -17,6 +17,7 @@ using C_Flat_Interpreter.Parser;
 using C_Flat_Interpreter.Transpiler;
 using Microsoft.Win32;
 using Serilog.Events;
+using Wpf.Ui.Common;
 using Button = Wpf.Ui.Controls.Button;
 using MessageBox = System.Windows.MessageBox;
 using TreeViewItem = System.Windows.Controls.TreeViewItem;
@@ -135,6 +136,8 @@ namespace C_Flat
                 SourceInput.BorderBrush = new SolidColorBrush(Colors.DarkRed);
                 SourceInput.BorderThickness = new Thickness(2);
                 _showTree.IsEnabled = false;
+                Snackbar.Appearance = ControlAppearance.Danger;
+                Snackbar.Show("Transpile Failed!");
                 return;
             }
 
@@ -167,6 +170,8 @@ namespace C_Flat
                 SourceInput.BorderBrush = new SolidColorBrush(Colors.DarkRed);
                 SourceInput.BorderThickness = new Thickness(2);
                 _showTree.IsEnabled = false;
+                Snackbar.Appearance = ControlAppearance.Danger;
+                Snackbar.Show("Transpile Failed!");
                 return;
             }
 
@@ -202,6 +207,8 @@ namespace C_Flat
                 return;
             }
             var transpiledProgram = _transpiler.Program;
+            Snackbar.Appearance = ControlAppearance.Success;
+            Snackbar.Show("Transpile Successful!");
             SourceInput.BorderBrush = new SolidColorBrush(Colors.LawnGreen);
             SourceInput.BorderThickness = new Thickness(2);
             ExecuteButton.IsEnabled = true;
@@ -275,13 +282,16 @@ namespace C_Flat
                 }
                 ExecuteButton.IsEnabled = false;
                 OutputBorder.BorderBrush = Brushes.DarkRed;
-
+                Snackbar.Appearance = ControlAppearance.Danger;
+                Snackbar.Show("Execution Failed!");
                 return;
             }
             //Otherwise just copy output directly to text-box and apply a green "success border"
             _executionOutput.Text = output;
             OutputBorder.BorderBrush = Brushes.LawnGreen;
             OutputBorder.BorderThickness = new Thickness(2);
+            Snackbar.Appearance = ControlAppearance.Success;
+            Snackbar.Show("Execution Successful!");
             TranspileButton.IsEnabled = true;
             ExecuteButton.IsEnabled = true;
         }
@@ -293,11 +303,22 @@ namespace C_Flat
                 VerticalAlignment = VerticalAlignment.Stretch,
                 Name = "ParseTree",
             };
+
             foreach (var node in parseNodes)
             {
+                //Add new custom control which takes the treeviewitem as a param.
+                var expandAllButton = new System.Windows.Controls.Button() {Content = "expand all", Background = Brushes.Transparent};
+                expandAllButton.Click += ExpandAll_Click;
                 var treeItem = new TreeViewItem
                 {
-                    Header = node.ToString()
+                    Header = new TextBlock()
+                    {
+                        Inlines =
+                        {
+                            node.ToString(),
+                            expandAllButton
+                        }
+                    }
                 };
                 if (node.type is NodeType.Terminal) continue;
                 foreach (var childNode in node.getChildren())
@@ -324,12 +345,21 @@ namespace C_Flat
             parentTreeItem.Items.Add(treeItem);
         }
 
+        private void ExpandAll_Click(object sender, RoutedEventArgs e)
+        {
+            //Find the tree view item button parent
+            if (sender is System.Windows.Controls.Button {Parent: InlineUIContainer {Parent: TextBlock {Parent: TreeViewItem treeViewItem}}})
+            {
+                treeViewItem.ExpandSubtree();
+            }
+        }
         private void ShowTree_Click(object sender, RoutedEventArgs e)
         {
             _showOutput.IsEnabled = _executionOutput != null;
             LeftButton.Content = _showOutput;
             RightButton.Content = _showCode;
             OutputBorder.Child = _parseTree;
+            OutputWindow.Content = "Parse Tree Output";
         }
 
         private void ShowOutput_Click(object sender, RoutedEventArgs e)
@@ -337,6 +367,7 @@ namespace C_Flat
             LeftButton.Content = _showCode;
             RightButton.Content = _showTree;
             OutputBorder.Child = _executionOutput;
+            OutputWindow.Content = "Execution Output";
         }
 
         private void ShowCode_Click(object sender, RoutedEventArgs e)
@@ -346,6 +377,7 @@ namespace C_Flat
             _showOutput.IsEnabled = _executionOutput != null;
             RightButton.Content = _showOutput;
             OutputBorder.Child = _codeView;
+            OutputWindow.Content = "Transpiled code Output";
         }
 
         private void CreateExecuteAnimation()

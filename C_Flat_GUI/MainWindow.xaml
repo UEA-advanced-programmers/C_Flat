@@ -90,7 +90,7 @@
                                                         <RowDefinition Height="Auto" />
                                                         <RowDefinition Height="*" />
                                                 </Grid.RowDefinitions>
-                                                <Label HorizontalAlignment="Center" Foreground="#C8FFFFFF">Transpiler Output</Label>
+                                                <Label HorizontalAlignment="Center" Name="OutputWindow" Foreground="#C8FFFFFF">Transpiler Output</Label>
                                                 <Grid Grid.Row="1" VerticalAlignment="Stretch">
                                                         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" VerticalAlignment="Stretch">
                                                                 <Border Name="OutputBorder" CornerRadius="3" Background="#2CFFFFFF" Padding="5" BorderBrush="#2CFFFFFF" BorderThickness="2">
@@ -120,6 +120,7 @@
                                 </Grid>
                                 
                         </Grid>
+                        <ui:Snackbar Grid.Column="0" Grid.ColumnSpan="2" VerticalAlignment="Top" HorizontalAlignment="Right" MinWidth="200" Name="Snackbar"></ui:Snackbar>
                 </Grid>
         </Grid>
 </ui:UiWindow>

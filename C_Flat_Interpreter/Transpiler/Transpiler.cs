@@ -30,7 +30,6 @@ public class Transpiler : InterpreterLogger
             _currentLine = tokenToPrint.Line;
             Program += Environment.NewLine;
         }
-        //Consider handling empty spaces within lexer
         Program += tokenToPrint.Word;
     }
 
@@ -39,40 +38,21 @@ public class Transpiler : InterpreterLogger
     {
         //Retrieve program.cs file
         Program = string.Empty;
+        _currentLine = 0;
         var writer = File.CreateText(GetProgramPath());
         foreach (var node in parseTree)
         {
-            foreach (var statement in node.getChildren())
+            try
             {
-                switch (statement.type)
-                {
-                    //TODO - Remove these once they are removed from Statement
-                    case NodeType.LogicStatement:
-                        Program += @"Console.WriteLine(";
-                        TranspileLogicStatement(statement);
-                        Program += @");";
-                        break;
-                    case NodeType.Expression:
-                        Program += @"Console.WriteLine(";
-                        TranspileExpression(statement);
-                        Program += @");";
-                        break;
-                    //TODO - Implement Conditional Transpile method
-                    case NodeType.ConditionalStatement:
-                        break;
-                    case NodeType.WhileStatement:
-                        break;
-                    case NodeType.DeclareVariable:
-                        TranspileDeclaration(statement);
-                        break;
-                    case NodeType.VarAssignment:
-                        TranspileAssignment(statement);
-                        break;
-                    default:
-                        _logger.Error("Unhandled statement");
-                        writer.Close();
-                        return 1;
-                }
+                TranspileStatement(node);
+            }
+            catch(Exception e)
+            {
+                //if we catch an error write to output and return a failed status code
+                _logger.Error(e.Message);
+                writer.Write(Program);
+                writer.Close();
+                return 1;
             }
         }
         writer.Write(Program);
@@ -80,6 +60,27 @@ public class Transpiler : InterpreterLogger
         return 0;
     }
 
+    private void TranspileStatement(ParseNode node)
+    {
+        var statement = node.getChildren().First();
+        switch (statement.type)
+        {
+            //If and Whiles are functionally the same except while doesn't contain else
+            case NodeType.ConditionalStatement:
+            case NodeType.WhileStatement:
+                TranspileConditionalStatement(statement);
+                break;
+            case NodeType.DeclareVariable:
+                TranspileDeclaration(statement);
+                break;
+            case NodeType.VarAssignment:
+                TranspileAssignment(statement);
+                break;
+            default:
+                throw new Exception("Unhandled statement");
+        }
+    }
+    
     private void TranspileExpression(ParseNode node)
     {
         List<ParseNode> terminals = new List<ParseNode>();
@@ -103,31 +104,30 @@ public class Transpiler : InterpreterLogger
 
     private void TranspileBoolean(ParseNode node)
     {
-        var booleanChild = node.getChildren().First();
-        switch (booleanChild.type)
+        var children = node.getChildren();
+        switch (children.First().type)
         {
+            //Check for !<LogicStatement>, bool literal, ( <Logic-Statement> )
             case NodeType.Terminal:
-                if(booleanChild.getChildren().Count == 1)
-                    //Boolean is true or false literal
-                    PrintTerminal(booleanChild);
-
-                else if(booleanChild.getChildren().First().token?.Type is TokenType.Not)
+            {
+                PrintTerminal(children.First());
+                //Handle !LogicStatement, ( <Logic-Statement> )
+                if (children.Count > 1)
                 {
-                    //It's a !<logic-statement>
-                    PrintTerminal(booleanChild.getChildren().First());
-                    TranspileLogicStatement(booleanChild.getChildren()[1]);
-                }
-                else
-                {
-                    //It's a (Logic-Statement>)
-                    PrintTerminal(booleanChild.getChildren().First());
-                    TranspileLogicStatement(booleanChild.getChildren()[1]);
-                    PrintTerminal(booleanChild.getChildren().Last());
+                    TranspileLogicStatement(children[1]);
+                    if (children.Count > 2)
+                    {
+                        //print R Paren 
+                        PrintTerminal(children.Last());
+                    }
                 }
                 break;
-            
+            }
             case NodeType.ExpressionQuery:
-                TranspileExpressionQuery(booleanChild);
+                TranspileExpressionQuery(children.First());
+                break;
+            default:
+                TranspileIdentifier(children.First());
                 break;
         }
     }
@@ -194,6 +194,44 @@ public class Transpiler : InterpreterLogger
         {
             TranspileAssignment(children.Last());
         }
+    }
+    private void TranspileBlock(ParseNode node)
+    {
+        var children = node.getChildren();
+        //Print L Curly
+        PrintTerminal(children.First());
+        foreach (var statement in children.Where(child => child.type == NodeType.Statement))
+        {
+            TranspileStatement(statement);
+        }
+        //Print R Curly
+        PrintTerminal(children.Last());
+    }
+
+    private void TranspileConditionalStatement(ParseNode node)
+    {
+        var children = node.getChildren();
+        //Print if/while keyword
+        PrintTerminal(children.First());
+        
+        //Print L Paren
+        PrintTerminal(children[1]);
+        
+        //Transpile condition (logic statement)
+        TranspileLogicStatement(children[2]);
+        
+        //Print R Paren
+        PrintTerminal(children[3]);
+        
+        //Transpile block
+        TranspileBlock(children[4]);
+
+        //Check for else
+        if (children.Count <= 5) return;
+        //Print else
+        PrintTerminal(children[5]);
+        //Transpile block
+        TranspileBlock(children.Last());
     }
 
     public string GetProgramPath()
