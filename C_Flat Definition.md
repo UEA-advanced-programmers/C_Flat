@@ -188,16 +188,16 @@ A loop can be created using the keyword `while`, followed by a logic statement w
     </tr>
 </table>
 
-## Simplified EBNF as of Week 7:
+## Simplified EBNF:
 
 ### Statements:
 `<Statement>::= <Declaration> | <Assignment> | <Function-Definition> | <Function-Call> | <Conditional-Statement> | <While-Loop>`
 
 ### Numerical expressions:
 
-`<Expression>::= <Term> {('+'|'-') <Term>}`
+`<Expression>::= <Term> *{('+'|'-') <Term>}`
 
-`<Term>::= <Factor> {('*'|'/') <Factor>}`
+`<Term>::= <Factor> *{('*'|'/') <Factor}`
 
 `<Factor>::= '('<Expression>')' | <Number> | '-'<Factor>`
 
@@ -227,7 +227,7 @@ A loop can be created using the keyword `while`, followed by a logic statement w
 
 `<Word>::= 1*(a-zA-Z) - <Keywords>`
 
-`<Assignment>::= <Identifier> '=' (<Expression> | ' " '<Word>' " ' | <Logic-Statement>) ‘;’`
+`<Assignment>::= <Identifier> '=' (<Expression> | ' " '<Word>' " ' | <Logic-Statement> | <Identifier>) ‘;’`
 
 ### Functions:
 
