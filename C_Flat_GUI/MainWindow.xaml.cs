@@ -103,7 +103,7 @@ namespace C_Flat
 
         private void ButtonTranspile_Click(object sender, RoutedEventArgs e)
         {
-            _codeView.Text = "";
+            _codeView.Text = $"{transpiledProgram}";
             SourceInput.BorderThickness = new Thickness(0);
             OutputBorder.BorderThickness = new Thickness(0);
             ExecuteButton.IsEnabled = false;
@@ -117,7 +117,7 @@ namespace C_Flat
                 _codeView.Inlines.Clear();
                 var run = new Run
                 {
-                    Text = "Parsing Failed! Printing logs: \n",
+                    Text = "Lexing Failed! Printing logs: \n",
                     Background = Brushes.DarkRed,
                     Foreground = Brushes.White
                 };
@@ -137,7 +137,8 @@ namespace C_Flat
                 SourceInput.BorderThickness = new Thickness(2);
                 _showTree.IsEnabled = false;
                 Snackbar.Appearance = ControlAppearance.Danger;
-                Snackbar.Show("Transpile Failed!");
+                Snackbar.Show("Lexing Failed!");
+	            ShowCode_Click(default!, default!);
                 return;
             }
 
@@ -171,7 +172,8 @@ namespace C_Flat
                 SourceInput.BorderThickness = new Thickness(2);
                 _showTree.IsEnabled = false;
                 Snackbar.Appearance = ControlAppearance.Danger;
-                Snackbar.Show("Transpile Failed!");
+                Snackbar.Show("Parsing Failed!");
+	            ShowCode_Click(default!, default!);
                 return;
             }
 
@@ -204,6 +206,7 @@ namespace C_Flat
                 }
                 SourceInput.BorderBrush = new SolidColorBrush(Colors.DarkRed);
                 SourceInput.BorderThickness = new Thickness(2);
+	            ShowCode_Click(default!, default!);
                 return;
             }
             var transpiledProgram = _transpiler.Program;
@@ -212,7 +215,6 @@ namespace C_Flat
             SourceInput.BorderBrush = new SolidColorBrush(Colors.LawnGreen);
             SourceInput.BorderThickness = new Thickness(2);
             ExecuteButton.IsEnabled = true;
-            _codeView.Text = $"{transpiledProgram}";
             ShowCode_Click(default!, default!);
         }
 
