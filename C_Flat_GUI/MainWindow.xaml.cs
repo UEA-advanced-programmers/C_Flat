@@ -53,7 +53,7 @@ namespace C_Flat
             CreateExecuteAnimation();
 
             ExecuteButton.IsEnabled = false;
-            
+
             _showTree = new Button()
             {
                 Content = "Show parse tree",
@@ -64,7 +64,7 @@ namespace C_Flat
                 Background = new SolidColorBrush(Color.FromRgb(106, 27, 154)),
             };
             _showTree.Click += ShowTree_Click;
-            
+
             _showOutput = new Button()
             {
                 Content = "Show execution output",
@@ -75,7 +75,7 @@ namespace C_Flat
                 Background = new SolidColorBrush(Color.FromRgb(106, 27, 154)),
             };
             _showOutput.Click += ShowOutput_Click;
-            
+
             _showCode = new Button()
             {
                 Content = "Show transpiled code",
@@ -86,7 +86,7 @@ namespace C_Flat
                 Background = new SolidColorBrush(Color.FromRgb(106, 27, 154)),
             };
             _showCode.Click += ShowCode_Click;
-            
+
             LeftButton.Content = _showTree;
             RightButton.Content = _showOutput;
 
@@ -99,6 +99,7 @@ namespace C_Flat
                 IsEnabled = false,
             };
             OutputBorder.Child = _codeView;
+            ExpandAll.Visibility = Visibility.Hidden;
         }
 
         private void ButtonTranspile_Click(object sender, RoutedEventArgs e)
@@ -307,20 +308,16 @@ namespace C_Flat
                 VerticalAlignment = VerticalAlignment.Stretch,
                 Name = "ParseTree",
             };
-
+            _parseTree.PreviewMouseWheel += treeView_PreviewMouseWheel;
             foreach (var node in parseNodes)
             {
-                //Add new custom control which takes the treeviewitem as a param.
-                var expandAllButton = new System.Windows.Controls.Button() {Content = "expand all", Background = Brushes.Transparent};
-                expandAllButton.Click += ExpandAll_Click;
                 var treeItem = new TreeViewItem
                 {
                     Header = new TextBlock()
                     {
                         Inlines =
                         {
-                            node.ToString(),
-                            expandAllButton
+                            node.ToString()
                         }
                     }
                 };
@@ -333,6 +330,19 @@ namespace C_Flat
             }
         }
 
+        private void treeView_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            if (sender is TreeView && !e.Handled)
+            {
+                e.Handled = true;
+                var eventArg = new MouseWheelEventArgs(e.MouseDevice, e.Timestamp, e.Delta);
+                eventArg.RoutedEvent = UIElement.MouseWheelEvent;
+                eventArg.Source = sender;
+                var parent = ((Control)sender).Parent as UIElement;
+                parent.RaiseEvent(eventArg);
+            }
+        }
+        
         private void AddNodeTreeItems(TreeViewItem parentTreeItem, ParseNode node)
         {
             var treeItem = new TreeViewItem
@@ -351,10 +361,12 @@ namespace C_Flat
 
         private void ExpandAll_Click(object sender, RoutedEventArgs e)
         {
-            //Find the tree view item button parent
-            if (sender is System.Windows.Controls.Button {Parent: InlineUIContainer {Parent: TextBlock {Parent: TreeViewItem treeViewItem}}})
+            if (_parseTree != null && _parseTree.Items.Count > 0)
             {
-                treeViewItem.ExpandSubtree();
+                foreach (TreeViewItem treeItem in _parseTree.Items)
+                {
+                    treeItem.ExpandSubtree();
+                }
             }
         }
         private void ShowTree_Click(object sender, RoutedEventArgs e)
@@ -363,7 +375,8 @@ namespace C_Flat
             LeftButton.Content = _showOutput;
             RightButton.Content = _showCode;
             OutputBorder.Child = _parseTree;
-            OutputWindow.Content = "Parse Tree Output";
+            OutputWindowLabel.Content = "Parse Tree Output";
+            ExpandAll.Visibility = Visibility.Visible;
         }
 
         private void ShowOutput_Click(object sender, RoutedEventArgs e)
@@ -371,7 +384,8 @@ namespace C_Flat
             LeftButton.Content = _showCode;
             RightButton.Content = _showTree;
             OutputBorder.Child = _executionOutput;
-            OutputWindow.Content = "Execution Output";
+            OutputWindowLabel.Content = "Execution Output";
+            ExpandAll.Visibility = Visibility.Hidden;
         }
 
         private void ShowCode_Click(object sender, RoutedEventArgs e)
@@ -381,7 +395,8 @@ namespace C_Flat
             _showOutput.IsEnabled = _executionOutput != null;
             RightButton.Content = _showOutput;
             OutputBorder.Child = _codeView;
-            OutputWindow.Content = "Transpiled code Output";
+            OutputWindowLabel.Content = "Transpiled code Output";
+            ExpandAll.Visibility = Visibility.Hidden;
         }
 
         private void CreateExecuteAnimation()
