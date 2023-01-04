@@ -199,7 +199,7 @@ A loop can be created using the keyword `while`, followed by a logic statement w
 
 `<Term>::= <Factor> *{('*'|'/') <Factor}`
 
-`<Factor>::= '('<Expression>')' | <Number> | '-'<Factor>`
+`<Factor>::= '('<Expression>')' | <Number> | '-'<Factor> | <Identifier>`
 
 `<Number>::= <Digit> { '.' <Digit>}`
 
@@ -213,7 +213,7 @@ A loop can be created using the keyword `while`, followed by a logic statement w
 
 `<Boolean>::= '!’<Logic-Statement> | 'true' | 'false' | <Expression-Query> | '('<Logic-Statement>')' | <Identifier>`
 
-`<Expression-Query> ::= (<Expression> | <Identifier>) ( '==' | '!=' | '>'| '<' ) (<Expression> | <Identifier>)`
+`<Expression-Query> ::= (<Expression>) ( '==' | '!=' | '>'| '<' ) (<Expression>)`
 
 ### Conditional Statements:
 
