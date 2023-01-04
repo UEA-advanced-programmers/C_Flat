@@ -32,7 +32,7 @@ namespace C_Flat
         private readonly Lexer _lexer;
         private readonly Parser _parser;
         private readonly Transpiler _transpiler;
-        private bool _programChanged;
+        private bool _unsavedChanges;
         
         private LinearGradientBrush? _executionBrush;
         private Storyboard? _executionAnim;
@@ -110,7 +110,7 @@ namespace C_Flat
             ExecuteButton.IsEnabled = false;
             _executionOutput = null;
             _parseTree = null;
-            _programChanged = true;
+            _unsavedChanges = true;
             _lexer.ClearLogs();
             if (_lexer.Tokenise(SourceInput.Text) != 0)
             {
@@ -222,7 +222,6 @@ namespace C_Flat
 
         private async void ButtonExecuteCode_Click(object sender, RoutedEventArgs e)
         {
-            
             TranspileButton.IsEnabled = false;
             ExecuteButton.IsEnabled = false;
             _executionOutput = new TextBlock
@@ -377,6 +376,7 @@ namespace C_Flat
             OutputBorder.Child = _parseTree;
             OutputWindowLabel.Content = "Parse Tree Output";
             ExpandAll.Visibility = Visibility.Visible;
+            SaveOutput.Visibility = Visibility.Hidden;
         }
 
         private void ShowOutput_Click(object sender, RoutedEventArgs e)
@@ -386,6 +386,8 @@ namespace C_Flat
             OutputBorder.Child = _executionOutput;
             OutputWindowLabel.Content = "Execution Output";
             ExpandAll.Visibility = Visibility.Hidden;
+            SaveOutput.Visibility = Visibility.Hidden;
+
         }
 
         private void ShowCode_Click(object sender, RoutedEventArgs e)
@@ -397,6 +399,7 @@ namespace C_Flat
             OutputBorder.Child = _codeView;
             OutputWindowLabel.Content = "Transpiled code Output";
             ExpandAll.Visibility = Visibility.Hidden;
+            SaveOutput.Visibility = Visibility.Visible;
         }
 
         private void CreateExecuteAnimation()
@@ -462,12 +465,12 @@ namespace C_Flat
         private void OnWindowClose(object sender, CancelEventArgs e)
         {
             // If the user has transpiled something ask if they want to save
-            if (_programChanged)
+            if (_unsavedChanges)
             {
                 var result = 
                     MessageBox.Show(
                         "Would you like to save your compiled program? \r(Yes will prompt you to choose a save location)", 
-                        "Closing C_Flat Transpiler", 
+                        "Unsaved changes!", 
                         MessageBoxButton.YesNo, 
                         MessageBoxImage.Warning);
                 if (result == MessageBoxResult.No)
@@ -477,17 +480,30 @@ namespace C_Flat
                 }
                 else
                 {
-                    // User wants to save their program elsewhere
-                    SaveFileDialog saveFileDialog = new()
-                    {
-                        Filter = "C# file (*.cs)|*.cs|Text file (*.txt)|*.txt",
-                        InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
-                    };
-                    if(saveFileDialog.ShowDialog() == true)
-                        File.Copy(_transpiler.GetProgramPath(), saveFileDialog.FileName);
-                    _transpiler.ResetOutput();
+                    SaveProgram();
                 }
             }
+        }
+        private void SaveProgram()
+        {
+            // User wants to save their program elsewhere
+            SaveFileDialog saveFileDialog = new()
+            {
+                Filter = "C# file (*.cs)|*.cs|Text file (*.txt)|*.txt",
+                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+            };
+            if (saveFileDialog.ShowDialog() == true)
+            {
+                File.Copy(_transpiler.GetProgramPath(), saveFileDialog.FileName, true);
+                _unsavedChanges = false;
+            }
+            _transpiler.ResetOutput();
+        }
+
+        private void SaveOutput_OnClick(object sender, RoutedEventArgs e)
+        {
+            if(_unsavedChanges) 
+                SaveProgram();
         }
     }
 }
