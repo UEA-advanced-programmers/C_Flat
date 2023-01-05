@@ -111,6 +111,7 @@ public class Parser : InterpreterLogger
     {
 	    ParseNode newNode = new ParseNode(type);
 	    func(newNode);
+	    _logger.Information($"Successfully parsed {newNode.type}!");
 	    return newNode;
     }
 
