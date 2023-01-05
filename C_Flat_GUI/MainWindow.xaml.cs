@@ -195,7 +195,7 @@ namespace C_Flat
             _codeView.Inlines.Add(new Run()
             {
                 Text = $"{stage} Failed! Printing logs: \n",
-                FontWeight = FontWeights.Bold,
+                FontWeight = FontWeights.DemiBold,
                 TextDecorations = TextDecorations.Underline,
                 FontSize = 24,
                 Background = Brushes.Transparent,
@@ -290,7 +290,7 @@ namespace C_Flat
                     _executionOutput.Inlines.Add(new Run()
                     {
                         Text = trimmedError + "\n",
-                        Background = trimmedError.Contains("error")? Brushes.DarkRed : Brushes.Goldenrod,
+                        Background = trimmedError.Contains("error") ? Brushes.DarkRed : Brushes.Goldenrod,
                     });
                 }
                 ExecuteButton.IsEnabled = false;
