@@ -50,17 +50,32 @@
                                                 <Label Foreground="#C8FFFFFF" HorizontalAlignment="Center">C__Flat Source Input</Label>
                                                 <Grid Grid.Row="1" VerticalAlignment="Stretch">
                                                         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" VerticalAlignment="Stretch">
-                                                                <ui:TextBox
-                                                                Background="#2CFFFFFF"
-                                                                Foreground="White"
-                                                                Name="SourceInput"
-                                                                TextWrapping="NoWrap"
-                                                                AcceptsReturn="True"
-                                                                AcceptsTab="True"
-                                                                VerticalScrollBarVisibility="Visible"
-                                                                HorizontalScrollBarVisibility="Visible"
-                                                                BorderThickness="0"
-                                                                VerticalAlignment="Stretch"/>
+                                                                <Grid>
+                                                                        <Grid.ColumnDefinitions>
+                                                                                <ColumnDefinition Width="35" />
+                                                                                <ColumnDefinition Width="*"/> 
+                                                                        </Grid.ColumnDefinitions>
+                                                                        <Border
+                                                                                Background="#65636363"
+                                                                                CornerRadius="3" Padding="3" Margin="0,0,3,0">
+                                                                                <TextBlock Name="LineNumbers" Padding="0,5,0,4" TextAlignment="Center">
+                                                                                        1
+                                                                                </TextBlock>
+                                                                        </Border>
+                                                                       
+                                                                        <ui:TextBox
+                                                                                Grid.Column="1"
+                                                                                Background="#2CFFFFFF"
+                                                                                Foreground="White"
+                                                                                Name="SourceInput"
+                                                                                TextWrapping="NoWrap"
+                                                                                AcceptsReturn="True"
+                                                                                AcceptsTab="True"
+                                                                                VerticalScrollBarVisibility="Visible"
+                                                                                HorizontalScrollBarVisibility="Visible"
+                                                                                BorderThickness="0"
+                                                                                VerticalAlignment="Stretch"/>
+                                                                </Grid>
                                                         </ScrollViewer>
                                                 </Grid>
                                         </Grid>
@@ -126,10 +141,10 @@
                                                 <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
                                         <ui:Card Grid.Column="0" Name="LeftButton" VerticalAlignment="Center" Background="Transparent" Padding="2,10" BorderThickness="0">
-                                                <ui:Button Name="test" Margin="5" HorizontalAlignment="Stretch" Background="#C86A1B9A">Transpile Source Input</ui:Button>
+                                                <ui:Button Margin="5" HorizontalAlignment="Stretch" Background="#C86A1B9A"> Placeholder </ui:Button>
                                         </ui:Card>
                                         <ui:Card Grid.Column="1" Name="RightButton" VerticalAlignment="Center" Background="Transparent" Padding="2,10" BorderThickness="0">
-                                                <ui:Button  Name="anotherTest" Margin="5" HorizontalAlignment="Stretch" Background="#C86A1B9A">Transpile Source Input</ui:Button>
+                                                <ui:Button Margin="5" HorizontalAlignment="Stretch" Background="#C86A1B9A"> Placeholder </ui:Button>
                                         </ui:Card>
                                 </Grid>
                                 

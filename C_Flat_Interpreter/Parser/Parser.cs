@@ -30,6 +30,7 @@ public class Parser : InterpreterLogger
 {
 	private TokenType _tokenType;
 	private int _currentIndex;
+	private int _currentLine = 1;
 	private int _totalTokens;
 	private List<Token> _tokens;
 	private List<ParseNode> _parseTree = new();
@@ -97,12 +98,14 @@ public class Parser : InterpreterLogger
     {
 		_currentIndex = index;
 		_tokenType = _tokens[_currentIndex].Type;
+		_currentLine = _tokens[_currentIndex].Line +1;
     }
 	
 	private void Advance()
 	{
 		if (++_currentIndex >= _totalTokens) return; //todo - might be able to find a way to exit everything else quicker when we're at the end - EOF token!
 		_tokenType = _tokens[_currentIndex].Type;
+		_currentLine =_tokens[_currentIndex].Line +1;
 	}
     #endregion
 
@@ -209,7 +212,7 @@ public class Parser : InterpreterLogger
 		}
 		else
 		{
-			throw new InvalidSyntaxException($"Expected keyword 'var'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'");
+			throw new InvalidSyntaxException($"Expected keyword 'var'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
 		}
 		
 		int Rein = _currentIndex;
@@ -233,7 +236,7 @@ public class Parser : InterpreterLogger
 		}
 		else
 		{
-			throw new SyntaxErrorException($"Variable declaration is not terminated, expected ';'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'");
+			throw new SyntaxErrorException($"Variable declaration is not terminated, expected ';'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
 		}
 	}
 	//TODO - Rename to match ebnf (Identifier)
@@ -246,7 +249,7 @@ public class Parser : InterpreterLogger
 		}
 		else
 		{
-			throw new SyntaxErrorException($"Invalid variable identifier! Expected token type 'string'. Actual: '{_tokenType}'");
+			throw new SyntaxErrorException($"Invalid variable identifier! Expected token type 'string'. Actual: '{_tokenType}'", _currentLine);
 		}
 	}
 	//TODO - Rename to match ebnf (Assignment)
@@ -256,7 +259,7 @@ public class Parser : InterpreterLogger
 		node.AddChild(CreateNode(NodeType.VarIdentifier, VarIdentifier));
 
 		if (!Match(TokenType.Assignment)) 
-			throw new SyntaxErrorException($"Invalid variable assignment! Expected token type 'Assignment'. Actual '{_tokenType}'");
+			throw new InvalidSyntaxException($"Invalid variable assignment, expected '='. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
 		
 		node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
 		Advance();
@@ -269,9 +272,8 @@ public class Parser : InterpreterLogger
 		catch (InvalidSyntaxException e)
 		{
 			_logger.Warning(e.Message);
-			throw;
 		}
-		
+
 		if (Match(TokenType.SemiColon))
 		{
 			node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
@@ -279,7 +281,7 @@ public class Parser : InterpreterLogger
 		}
 		else
 		{
-			throw new SyntaxErrorException($"Unterminated assignment, expected ';'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'");
+			throw new SyntaxErrorException($"Unterminated assignment, expected ';'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
 		}
 	}
 	#endregion
@@ -342,7 +344,7 @@ public class Parser : InterpreterLogger
 			}
 			else
 			{
-				throw new SyntaxErrorException($"Mismatched parentheses, expected ')'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'");
+				throw new SyntaxErrorException($"Mismatched parentheses, expected ')'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
 			}
 		}
 		else
@@ -376,8 +378,16 @@ public class Parser : InterpreterLogger
 		{
 			node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
 			Advance();
-			//	Parse the proceeding logic statement
-			node.AddChild(CreateNode(NodeType.LogicStatement, LogicStatement));
+			//	Parse the proceeding logic statement throwing if it fails
+			try
+			{
+				node.AddChild(CreateNode(NodeType.LogicStatement, LogicStatement));
+			}
+			catch (InvalidSyntaxException e)
+			{
+				_logger.Warning(e.Message);
+				throw new SyntaxErrorException($"Invalid logic statement!");
+			}
 		}
 		//	Otherwise check for a boolean literal
 		else if (Match(TokenType.String))
@@ -389,7 +399,7 @@ public class Parser : InterpreterLogger
 			}
 			else
 			{
-				throw new SyntaxErrorException($"Invalid Boolean literal, expected 'true' or 'false'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'");
+				throw new SyntaxErrorException($"Invalid Boolean literal, expected 'true' or 'false'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
 			}
 		}
 		//	Otherwise check for expression query
@@ -421,7 +431,7 @@ public class Parser : InterpreterLogger
 					}
 					else
 					{
-						throw new SyntaxErrorException($"Mismatched parentheses, expected ')'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'");
+						throw new SyntaxErrorException($"Mismatched parentheses, expected ')'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
 					}
 				}
 				else
@@ -453,7 +463,7 @@ public class Parser : InterpreterLogger
 		//TODO: check whether this could cause out of bounds exception!
 		//	Throw exception if token doesn't match any operators
 		if (!Match(TokenType.NotEqual) && !Match(TokenType.Equals) && !Match(TokenType.More) &&
-		    !Match(TokenType.Less)) throw new SyntaxErrorException($"Invalid operator token, expected '!=' | '==' | '>' | '<'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'");
+		    !Match(TokenType.Less)) throw new SyntaxErrorException($"Invalid operator token, expected '!=' | '==' | '>' | '<'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
 		
 		node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
 		Advance();
@@ -491,7 +501,7 @@ public class Parser : InterpreterLogger
 		}
 		else
 		{
-			throw new SyntaxErrorException($"Mismatched parentheses, expected '('. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'");
+			throw new SyntaxErrorException($"Mismatched parentheses, expected '('. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
 	    }
 
 		//	Throw an invalid syntax error if we fail to parse a logic statement
@@ -512,7 +522,7 @@ public class Parser : InterpreterLogger
 		}
 		else
         {
-	        throw new SyntaxErrorException($"Mismatched parentheses, expected ')'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'");
+	        throw new SyntaxErrorException($"Mismatched parentheses, expected ')'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
         }
 
 		try
@@ -562,7 +572,7 @@ public class Parser : InterpreterLogger
 		}
 		else
 		{
-			throw new SyntaxErrorException($"Mismatched parentheses, expected '('. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'");
+			throw new SyntaxErrorException($"Mismatched parentheses, expected '('. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
 		}
 		
 		//	Throw an invalid syntax error if we fail to parse a logic statement
@@ -583,7 +593,7 @@ public class Parser : InterpreterLogger
 		}
 		else
 		{
-			throw new SyntaxErrorException($"Mismatched parentheses, expected ')'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'");
+			throw new SyntaxErrorException($"Mismatched parentheses, expected ')'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
 		}
 		
 		//	Parse while statement block, throwing if invalid
@@ -630,7 +640,7 @@ public class Parser : InterpreterLogger
 		}
 		else
 		{
-			throw new SyntaxErrorException("Block not terminated! Expected '}'."+ $" Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'");
+			throw new SyntaxErrorException("Block not terminated! Expected '}'."+ $" Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
 		}
 	}
 	#endregion

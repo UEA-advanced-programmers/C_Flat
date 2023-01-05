@@ -100,8 +100,22 @@ namespace C_Flat
             };
             OutputBorder.Child = _codeView;
             ExpandAll.Visibility = Visibility.Hidden;
+            SourceInput.TextChanged += UpdateLineNumbers;
+            LineNumbers.FontSize = SourceInput.FontSize;
         }
 
+        private void UpdateLineNumbers(object sender, TextChangedEventArgs e)
+        {
+            if (LineNumbers.Inlines.Count != SourceInput.LineCount)
+            {
+                LineNumbers.Inlines.Clear();
+                for (int i = 1; i <= SourceInput.LineCount; i++)
+                {
+                    LineNumbers.Inlines.Add(new Run(i.ToString() + "\n"));
+                }
+            }
+            
+        }
         private void ButtonTranspile_Click(object sender, RoutedEventArgs e)
         {
             _codeView.Text = "";
