@@ -31,7 +31,7 @@ public class Parser : InterpreterLogger
 	private int _totalTokens;
 	private List<Token> _tokens;
 	private List<ParseNode> _parseTree = new();
-	private VariableLUT _variableLut = new();
+	private VariableTable _variableTable = new();
 
 	private delegate void Delegate(ParseNode node);
 
@@ -123,7 +123,7 @@ public class Parser : InterpreterLogger
 		_tokens = tokens;
 		_totalTokens = tokens.Count;
 		_parseTree = new();
-		_variableLut = new();
+		_variableTable = new();
 		Reset(0);
 		
 		//TODO - investigate better way to do this
@@ -189,16 +189,17 @@ public class Parser : InterpreterLogger
 		}
 		try
 		{
-			var word = _tokens[_currentIndex].Word.Trim();
+			var identifier = _tokens[_currentIndex].Word.Trim();
 
-			if (_variableLut.IsDeclared(word))
+			if (_variableTable.Exists(identifier))
 			{
 				ParseNode childNode = CreateNode(NodeType.VarAssignment, VarAssignment);
 				node.AddChild(childNode);
 
-				if (_variableLut.GetVarType(word).type != NodeType.Null && _variableLut.GetVarType(word) != childNode.getChildren()[2]) //gets the third child which is what the variable is assigned to
+				ParseNode valueNode = childNode.getChildren()[2]; //gets the value the variable is assigned to
+				if (_variableTable.GetType(identifier).type != NodeType.Null && _variableTable.GetType(identifier) != valueNode)
 				{
-					_logger.Error("Syntax Error! variable is not of type: {@type} ", childNode.getChildren()[2]); //todo - clean this!
+					_logger.Error("Syntax Error! variable is not of type: {@type} ", valueNode);
 				}
 				currentIndex = _currentIndex;
 				return;
@@ -228,8 +229,14 @@ public class Parser : InterpreterLogger
 			throw new Exception($"Syntax Error! Expected 'var' keyword, actual: {_tokens[_currentIndex].Word}");
 		}
 		
-		var word = _tokens[_currentIndex].Word.Trim();
+		var identifier = _tokens[_currentIndex].Word.Trim();
 		int Rein = _currentIndex;
+		
+		if (_variableTable.Exists(identifier))
+		{
+			_logger.Error("Syntax Error! variable has already been declared: {@word} ", _tokens[_currentIndex].Word);
+			throw new SyntaxErrorException();
+		}
 		
 		// check if a value is being assigned
 		try
@@ -237,12 +244,7 @@ public class Parser : InterpreterLogger
 			ParseNode childNode = CreateNode(NodeType.VarAssignment, VarAssignment);
 			node.AddChild(childNode);
 			
-			if (_variableLut.IsDeclared(word))
-			{
-				_logger.Error("Syntax Error! variable has already been declared: {@word} ", _tokens[_currentIndex].Word);
-				throw new SyntaxErrorException();
-			}
-			_variableLut.AddToLut(word, childNode.getChildren()[2]); //this gets the third child which is what the variable is assigned to
+			_variableTable.Add(identifier, childNode.getChildren()[2]); //gets the value the variable is assigned to
 			return;
 		}
 		catch (Exception e)
@@ -251,16 +253,9 @@ public class Parser : InterpreterLogger
 			_logger.Warning(e.Message);
 		}
 
-		ParseNode childNode2 = CreateNode(NodeType.VarIdentifier, VarIdentifier); //todo - rename
-		node.AddChild(childNode2);
-
-		if (_variableLut.IsDeclared(word))
-		{
-			_logger.Error("Syntax Error! variable has already been declared: {@word} ", _tokens[_currentIndex].Word);
-			throw new SyntaxErrorException();
-		}
-
-		_variableLut.AddToLut(word);
+		node.AddChild(CreateNode(NodeType.VarIdentifier, VarIdentifier));
+		
+		_variableTable.Add(identifier);
 
 		if (Match(TokenType.SemiColon))
 		{
