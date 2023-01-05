@@ -5,7 +5,7 @@ namespace C_Flat_Interpreter.Common;
 
 public class VariableLUT //todo - rename
 {
-    private Dictionary<string, ParseNode>? _dictionary; //todo - rename maybe?
+    private Dictionary<string, ParseNode> _dictionary; //todo - rename maybe?
     public VariableLUT()
     {
         _dictionary = new Dictionary<string, ParseNode>();
@@ -18,18 +18,22 @@ public class VariableLUT //todo - rename
     
     public void AddToLut(string word)
     {
-        _dictionary?.Add(word, new ParseNode(NodeType.Null, null));
+        _dictionary.Add(word, new ParseNode(NodeType.Null));
     }
 
     public bool IsDeclared(string identifier)
     {
-        return _dictionary != null && _dictionary.ContainsKey(identifier);
+        return _dictionary.ContainsKey(identifier);
     }
-    
+
     public ParseNode GetVarType(string identifier)
     {
-        var node = _dictionary?[identifier];
+        while (true)
+        {
+            var node = _dictionary[identifier];
 
-        return node.type == NodeType.VarIdentifier ? GetVarType(node.token.Word) : node;
+            if (node.type != NodeType.VarIdentifier) return node;
+            if (node.token != null) identifier = node.token.Word;
+        }
     }
 }
