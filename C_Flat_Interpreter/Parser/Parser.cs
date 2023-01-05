@@ -51,41 +51,33 @@ public class Parser : InterpreterLogger
 	private bool CheckBoolLiteral()
 	{
 		var word = _tokens[_currentIndex].Word.Trim();
-		if (word.Equals("true") || word.Equals("false")) return true;
-		_logger.Error($"Bool parse error! Expected boolean literal, actual: \"{word}\"");
-		return false;
+		if(word is "true" or "false") return true;
+		throw new Exception("Expected a boolean literal, actual: {word}");
 	}
 	private bool CheckIf()
     {
 		var word = _tokens[_currentIndex].Word.Trim();
-		if (word.Equals("if")) return true;
-		_logger.Error($"If parse error! Expected if, actual: \"{word}\"");
-		return false;
-	}
+		if (word is "if") return true;
+		throw new Exception($"Parser error! Expected if, actual: {word}");
+    }
 	private bool CheckElse()
 	{
 		var word = _tokens[_currentIndex].Word.Trim();
-		if (word.Equals("else")) return true;
-		_logger.Error($"Else parse error! Expected else, actual: \"{word}\"");
-		return false;
+		if (word is "else") return true;
+		throw new Exception($"Parser error! Expected else, actual: {word}");
 	}
 	private bool CheckWhile()
 	{
 		var word = _tokens[_currentIndex].Word.Trim();
-		if (word.Equals("while")) return true;
-		_logger.Error($"While parse error! Expected while, actual: \"{word}\"");
-		return false;
+		if (word is "while") return true;
+		throw new Exception($"Parser error! Expected while, actual: {word}");
 	}
 	
 	private bool CheckVarLiteral()
 	{
 		var word = _tokens[_currentIndex].Word.Trim();
-		if (word.Equals("var"))
-		{
-			return true;
-		}
-		_logger.Error($"Var parse error! Expected variable literal, actual: \"{word}\"");
-		return false;
+		if (word is "var") return true;
+		throw new Exception($"Parser error! Expected var, actual: {word}");
 	}
 	
 	private bool Match(TokenType tokenType)
@@ -96,7 +88,7 @@ public class Parser : InterpreterLogger
 		}
 		else
 		{
-			_logger.Information("Token at index {index} does NOT MATCH {tokenType}", _currentIndex, tokenType);
+			_logger.Debug("Token at index {index} does NOT MATCH {tokenType}", _currentIndex, tokenType);
 			return false;
 		}
 		return true;
@@ -144,13 +136,12 @@ public class Parser : InterpreterLogger
 		}
 		catch (Exception e)
 		{
-			_logger.Warning(e.Message);
+			_logger.Error(e.Message);
 		}
-		
 		if (_currentIndex >= _totalTokens) return 0;
 		
 		//TODO - Improve logging overall
-		_logger.Error("Syntax error! Could not parse Token: {@token}", _tokens[_currentIndex]); //todo - Create test for this!
+		//_logger.Error("Syntax error! Could not parse Token: {@token}", _tokens[_currentIndex]); //todo - Create test for this!
 		return 1;
 	}
 	
@@ -221,8 +212,7 @@ public class Parser : InterpreterLogger
 		}
 		else
 		{
-			_logger.Error("Syntax Error! variable is not declared, expected \"var\" actual: {@word} ", _tokens[_currentIndex].Word);
-			throw new SyntaxErrorException();
+			throw new Exception($"Syntax Error! Expected 'var' keyword, actual: {_tokens[_currentIndex].Word}");
 		}
 		
 		int Rein = _currentIndex;
@@ -246,8 +236,7 @@ public class Parser : InterpreterLogger
 		}
 		else
 		{
-			_logger.Error("Syntax Error! declaration is not closed, expected \";\" actual: {@word} ", _tokens[_currentIndex].Word);
-			throw new SyntaxErrorException();
+			throw new Exception($"Syntax Error! Declaration is not terminated, expected ';', actual: {_tokens[_currentIndex].Word}");
 		}
 	}
 	//TODO - Rename to match ebnf (Identifier)
@@ -260,8 +249,7 @@ public class Parser : InterpreterLogger
 		}
 		else
 		{
-			_logger.Error("Syntax Error! variable does not have a name, expected \"X\" actual: {@word} ", _tokens[_currentIndex].Word);
-			throw new SyntaxErrorException();
+			throw new Exception($"Syntax Error! variable missing an identifier expected 'string', actual: {_tokenType}");
 		}
 	}
 	//TODO - Rename to match ebnf (Assignment)
@@ -282,7 +270,7 @@ public class Parser : InterpreterLogger
 		catch (Exception e)
 		{
 			_logger.Warning(e.Message);
-			throw new SyntaxErrorException("invalid assignment expression");
+			throw new Exception("Invalid assignment expression");
 		}
 		
 		if (Match(TokenType.SemiColon))
@@ -292,8 +280,8 @@ public class Parser : InterpreterLogger
 		}
 		else
 		{
-			_logger.Error("Syntax Error! declaration is not closed, expected \";\" actual: {@word} ", _tokens[_currentIndex].Word);
-			throw new SyntaxErrorException();
+			throw new Exception(
+				$"Syntax error! Declaration is not terminated, expected ';' actual: {_tokens[_currentIndex].Word}");
 		}
 	}
 	#endregion
@@ -348,7 +336,7 @@ public class Parser : InterpreterLogger
 			}
 			else
 			{
-				throw new SyntaxErrorException("Syntax Error! Mismatched parentheses at token " + _currentIndex);
+				throw new Exception("Syntax Error! Mismatched parentheses at token " + _currentIndex);
 			}
 		}
 		else
@@ -420,7 +408,7 @@ public class Parser : InterpreterLogger
 					}
 					else
 					{
-						_logger.Error("Syntax Error! Mismatched parentheses at token {index}", _currentIndex);
+						throw new SyntaxErrorException($"Syntax error! Mismatched parentheses at token {_currentIndex}");
 					}
 				}
 				else
@@ -472,8 +460,7 @@ public class Parser : InterpreterLogger
 			Advance();
 		}
 		else {
-			_logger.Error("Syntax Error! Expected \"if\" actual: {@word} ", _tokens[_currentIndex].Word);
-			throw new SyntaxErrorException("Syntax Error! Expected \"if\" at token " + _currentIndex);
+		    throw new SyntaxErrorException($"Syntax Error! Expected 'if' at token {_currentIndex} ");
 		}
 
 		if (Match(TokenType.LeftParen))
@@ -482,10 +469,9 @@ public class Parser : InterpreterLogger
 			Advance();
 		}
 		else
-        {
-            _logger.Error("Syntax Error! Expected \"(\" actual: {@word} ", _tokens[_currentIndex].Word);
-			throw new SyntaxErrorException("Syntax Error! Expected \"(\" at token " + _currentIndex);
-        }
+		{
+			throw new SyntaxErrorException($"Syntax Error! Expected '(' actual: {_tokens[_currentIndex].Word}");
+	    }
 
 		node.AddChild(CreateNode(NodeType.LogicStatement, LogicStatement));
 		
@@ -496,9 +482,8 @@ public class Parser : InterpreterLogger
 		}
 		else
         {
-			_logger.Error("Syntax Error! Expected \"(\" actual: {@word} ", _tokens[_currentIndex].Word);
-			throw new SyntaxErrorException("Syntax Error! Expected \")\" at token " + _currentIndex);
-		}
+	        throw new SyntaxErrorException($"Syntax Error! Expected ')' actual: {_tokens[_currentIndex].Word}");
+        }
 
 		node.AddChild(CreateNode(NodeType.Block, Block));
 		
@@ -520,8 +505,7 @@ public class Parser : InterpreterLogger
 		}
 		else
 		{
-			_logger.Error("Syntax Error! Expected \"while\" actual: {@word} ", _tokens[_currentIndex].Word);
-			throw new SyntaxErrorException("Syntax Error! Expected \"while\" at token " + _currentIndex);
+			throw new SyntaxErrorException($"Syntax Error! Expected 'while' actual: {_tokens[_currentIndex].Word}");
 		}
 
 		if (Match(TokenType.LeftParen))
@@ -531,8 +515,7 @@ public class Parser : InterpreterLogger
 		}
 		else
 		{
-			_logger.Error("Syntax Error! Expected \"(\" actual: {@word} ", _tokens[_currentIndex].Word);
-			throw new SyntaxErrorException("Syntax Error! Expected \"(\" at token " + _currentIndex);
+			throw new SyntaxErrorException($"Syntax Error! Expected '(' actual: {_tokens[_currentIndex].Word}");
 		}
 		
 		node.AddChild(CreateNode(NodeType.LogicStatement, LogicStatement));
@@ -544,8 +527,7 @@ public class Parser : InterpreterLogger
 		}
 		else
 		{
-			_logger.Error("Syntax Error! Expected \"(\" actual: {@word} ", _tokens[_currentIndex].Word);
-			throw new SyntaxErrorException("Syntax Error! Expected \")\" at token " + _currentIndex);
+			throw new SyntaxErrorException($"Syntax Error! Expected ')' actual: {_tokens[_currentIndex].Word}");
 		}
 
 		node.AddChild(CreateNode(NodeType.Block, Block));
@@ -559,23 +541,13 @@ public class Parser : InterpreterLogger
 		}
 		else
 		{
-			_logger.Error("Syntax Error! Expected \"{\" actual: {@word} ", _tokens[_currentIndex].Word);
-			throw new SyntaxErrorException("Syntax Error! Expected \"{\" at token " + _currentIndex);
+			throw new SyntaxErrorException("Syntax Error! Expected " + @"{" + $"actual: {_tokens[_currentIndex].Word}");
 		}
 
-		try
+		while (_currentIndex < _totalTokens && !Match(TokenType.RightCurlyBrace))
 		{
-			while (_currentIndex < _totalTokens && !Match(TokenType.RightCurlyBrace))
-			{
-				node.AddChild(CreateNode(NodeType.Statement, Statement));
-			}
+			node.AddChild(CreateNode(NodeType.Statement, Statement));
 		}
-		catch (Exception e)
-		{
-			_logger.Warning(e.Message);
-			throw new SyntaxErrorException("Syntax Error!" + _currentIndex); //todo - this message!
-		}
-
 		if (Match(TokenType.RightCurlyBrace))
 		{
 			node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
@@ -583,10 +555,8 @@ public class Parser : InterpreterLogger
 		}
 		else
 		{
-			_logger.Error("Syntax Error! Expected \"}\" actual: {@word} ", _tokens[_currentIndex].Word);
-			throw new SyntaxErrorException("Syntax Error! Expected \"}\" at token " + _currentIndex);
+			throw new SyntaxErrorException("Syntax Error! Expected " + @"}" + $"actual: {_tokens[_currentIndex].Word}");
 		}
 	}
-
 	#endregion
 }
