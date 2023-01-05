@@ -13,4 +13,9 @@ public class Token
         Word = word;
         Line = line;
     }
+
+    public override string ToString()
+    {
+        return Word.Trim();
+    }
 }
