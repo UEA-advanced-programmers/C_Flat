@@ -290,7 +290,7 @@ namespace C_Flat
                     _executionOutput.Inlines.Add(new Run()
                     {
                         Text = trimmedError + "\n",
-                        Background = Brushes.DarkRed,
+                        Background = trimmedError.Contains("error")? Brushes.DarkRed : Brushes.Goldenrod,
                     });
                 }
                 ExecuteButton.IsEnabled = false;
