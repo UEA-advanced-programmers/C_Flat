@@ -46,6 +46,6 @@ public class ParseNode
     
     public override string ToString()
     {
-        return token != null ? $"{type.ToString()}: {token.Word}" : type.ToString();
+        return token != null ? $"{type.ToString()}: {token.Word.Trim()}" : type.ToString();
     }
 }
