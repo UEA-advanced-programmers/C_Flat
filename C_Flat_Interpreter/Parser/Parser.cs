@@ -159,7 +159,7 @@ public class Parser : InterpreterLogger
 		}
 		catch (InvalidSyntaxException e)
 		{
-			_logger.Warning(e.Message);
+			_logger.Debug(e.Message);
 			Reset(currentIndex);
 		}
 		
@@ -171,7 +171,7 @@ public class Parser : InterpreterLogger
 		}
 		catch (InvalidSyntaxException e)
 		{
-			_logger.Warning(e.Message);
+			_logger.Debug(e.Message);
 			Reset(currentIndex);
 		}
 		
@@ -183,7 +183,7 @@ public class Parser : InterpreterLogger
 		}
 		catch (InvalidSyntaxException e)
 		{
-			_logger.Warning(e.Message);
+			_logger.Debug(e.Message);
 			Reset(currentIndex);
 		}
 		try
@@ -194,7 +194,7 @@ public class Parser : InterpreterLogger
 		}
 		catch (InvalidSyntaxException e)
 		{
-			_logger.Warning(e.Message);
+			_logger.Debug(e.Message);
 			Reset(currentIndex);
 		}
 		throw new SyntaxErrorException("Unable to parse statement!");
