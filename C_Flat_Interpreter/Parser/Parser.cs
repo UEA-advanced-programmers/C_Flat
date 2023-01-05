@@ -1,23 +1,3 @@
-/*
- *	Statements:
- *	<Statement>::=<Expression> | <Logic-Statement> | <Conditional> | <While>
-
- *	Numerical expressions:
-	 *  <Expression>::= <Term> {('+'|'-') <Term>}
-	 *	<Term>::= <Value> {('*'|'/') <Value>}
-	 *	<Value>::= '('<Expression>')' | <Number> | '-'<Value>
-
- *	Logical expressions:
-	 *	<Logic-Statement>::= <Boolean> {<Condition>}
-	 *  <Condition>::= ('==' | '&' | '|') <Boolean>
-	 *	<Boolean>::= '!’<Logic-Statement> | 'true' | 'false' | <Expression-Query> | '('<Logic-Statement>')'
-	 *	<Expression-Query> ::= <Expression> ('=='|'>'|'<') <Expression>
- *	Conditional expressions:
-	*	<Conditional>::= 'if(' <Logic-Statement> ')' <block> {'else'}
-	*	<While>::= 'while(' <Logic-Statement>')'<block>
-	*	<block>::= '{' {<Statement>} '}'
- * */
-
 using System.Data;
 using C_Flat_Interpreter.Common;
 using C_Flat_Interpreter.Common.Enums;
@@ -33,7 +13,7 @@ public class Parser : InterpreterLogger
 	private List<ParseNode> _parseTree = new();
 	private VariableTable _variableTable = new();
 
-	private delegate void Delegate(ParseNode node);
+	private delegate void NodeFuncDelegate(ParseNode node);
 
 	//constructor
 	public Parser()
@@ -107,12 +87,11 @@ public class Parser : InterpreterLogger
 		_tokenType = _tokens[_currentIndex].Type;
 	}
     #endregion
-
-    //TODO - Investigate if this is correct use of delegates
-    private ParseNode CreateNode(NodeType type, Delegate func)
+    
+    private ParseNode CreateNode(NodeType type, NodeFuncDelegate nodeFunc)
     {
 	    ParseNode newNode = new ParseNode(type);
-	    func(newNode);
+	    nodeFunc(newNode);
 	    return newNode;
     }
 
@@ -122,8 +101,8 @@ public class Parser : InterpreterLogger
 	{
 		_tokens = tokens;
 		_totalTokens = tokens.Count;
-		_parseTree = new();
-		_variableTable = new();
+		_parseTree = new List<ParseNode>();
+		_variableTable = new VariableTable();
 		Reset(0);
 		
 		//TODO - investigate better way to do this
@@ -146,54 +125,41 @@ public class Parser : InterpreterLogger
 		//_logger.Error("Syntax error! Could not parse Token: {@token}", _tokens[_currentIndex]); //todo - Create test for this!
 		return 1;
 	}
-	
+
 	//EBNF Functions
 	private void Statement(ParseNode node)
 	{
 		int currentIndex = _currentIndex;
-		
-		try
+
+		Dictionary<NodeType, NodeFuncDelegate> statements = new Dictionary<NodeType, NodeFuncDelegate>
 		{
-			node.AddChild(CreateNode(NodeType.ConditionalStatement, IfStatements));
-			currentIndex = _currentIndex;
-			return;
-		}
-		catch (Exception e)
+			{ NodeType.ConditionalStatement, ConditionalStatement },
+			{ NodeType.WhileStatement, WhileStatement },
+			{ NodeType.DeclareVariable, Declaration }
+		};
+
+		foreach (var statement in statements)
 		{
-			_logger.Warning(e.Message);
-			Reset(currentIndex);
+			try
+			{
+				node.AddChild(CreateNode(statement.Key, statement.Value));
+				currentIndex = _currentIndex;
+				return;
+			}
+			catch (Exception e)
+			{
+				_logger.Warning(e.Message);
+				Reset(currentIndex);
+			}
 		}
-		
-		try
-		{
-			node.AddChild(CreateNode(NodeType.WhileStatement, WhileStatement));
-			currentIndex = _currentIndex;
-			return;
-		}
-		catch (Exception e)
-		{
-			_logger.Warning(e.Message);
-			Reset(currentIndex);
-		}
-		
-		try
-		{
-			node.AddChild(CreateNode(NodeType.DeclareVariable, DeclareVariable));
-			currentIndex = _currentIndex;
-			return;
-		}
-		catch (Exception e)
-		{
-			_logger.Warning(e.Message);
-			Reset(currentIndex);
-		}
+
 		try
 		{
 			var identifier = _tokens[_currentIndex].Word.Trim();
 
 			if (_variableTable.Exists(identifier))
 			{
-				ParseNode childNode = CreateNode(NodeType.VarAssignment, VarAssignment);
+				ParseNode childNode = CreateNode(NodeType.VarAssignment, Assignment);
 				node.AddChild(childNode);
 
 				ParseNode valueNode = childNode.getChildren()[2]; //gets the value the variable is assigned to
@@ -215,8 +181,7 @@ public class Parser : InterpreterLogger
 	}
 	
 	#region Variables
-	//TODO - Rename to match ebnf (Declaration)
-	private void DeclareVariable(ParseNode node)
+	private void Declaration(ParseNode node)
 	{
 		// check for String token with the name "var"
 		if (Match(TokenType.String) && CheckVarLiteral())
@@ -230,7 +195,7 @@ public class Parser : InterpreterLogger
 		}
 		
 		var identifier = _tokens[_currentIndex].Word.Trim();
-		int Rein = _currentIndex;
+		int currentIndex = _currentIndex;
 		
 		if (_variableTable.Exists(identifier))
 		{
@@ -241,7 +206,7 @@ public class Parser : InterpreterLogger
 		// check if a value is being assigned
 		try
 		{
-			ParseNode childNode = CreateNode(NodeType.VarAssignment, VarAssignment);
+			ParseNode childNode = CreateNode(NodeType.VarAssignment, Assignment);
 			node.AddChild(childNode);
 			
 			_variableTable.Add(identifier, childNode.getChildren()[2]); //gets the value the variable is assigned to
@@ -249,11 +214,11 @@ public class Parser : InterpreterLogger
 		}
 		catch (Exception e)
 		{
-			Reset(Rein);
+			Reset(currentIndex);
 			_logger.Warning(e.Message);
 		}
 
-		node.AddChild(CreateNode(NodeType.VarIdentifier, VarIdentifier));
+		node.AddChild(CreateNode(NodeType.VarIdentifier, Identifier));
 		
 		_variableTable.Add(identifier);
 
@@ -268,8 +233,7 @@ public class Parser : InterpreterLogger
 		}
 	}
 	
-	//TODO - Rename to match ebnf (Identifier)
-	private void VarIdentifier(ParseNode node)
+	private void Identifier(ParseNode node)
 	{
 		if (Match(TokenType.String))
 		{
@@ -281,11 +245,10 @@ public class Parser : InterpreterLogger
 			throw new Exception($"Syntax Error! variable missing an identifier expected 'string', actual: {_tokenType}");
 		}
 	}
-	//TODO - Rename to match ebnf (Assignment)
-	private void VarAssignment(ParseNode node)
+	private void Assignment(ParseNode node)
 	{
 		// check for identifier
-		node.AddChild(CreateNode(NodeType.VarIdentifier, VarIdentifier));
+		node.AddChild(CreateNode(NodeType.VarIdentifier, Identifier));
 
 		if (!Match(TokenType.Assignment)) throw new SyntaxErrorException();
 		node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
@@ -413,7 +376,7 @@ public class Parser : InterpreterLogger
 		}
 		else
 		{
-			var index = _currentIndex;
+			var currentIndex = _currentIndex;
 			try
 			{
 				node.AddChild(CreateNode(NodeType.ExpressionQuery, ExpressionQuery));
@@ -421,7 +384,7 @@ public class Parser : InterpreterLogger
 			catch (Exception e)
 			{
 				_logger.Warning(e.Message);
-				Reset(index);
+				Reset(currentIndex);
 
 				if (Match(TokenType.LeftParen))
 				{
@@ -480,8 +443,7 @@ public class Parser : InterpreterLogger
     #endregion
     #region Condition-Statements and iterators
     
-    //TODO - Rename to match EBNF
-	private void IfStatements(ParseNode node)
+	private void ConditionalStatement(ParseNode node)
     {
 	    if (Match(TokenType.String) && CheckIf())
 		{
@@ -515,14 +477,12 @@ public class Parser : InterpreterLogger
         }
 
 		node.AddChild(CreateNode(NodeType.Block, Block));
-		
-		if (Match(TokenType.String) && CheckElse())
-		{
-			node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
-			Advance();
+
+		if (!Match(TokenType.String) || !CheckElse()) return;
+		node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
+		Advance();
 			
-			node.AddChild(CreateNode(NodeType.Block, Block));
-		}
+		node.AddChild(CreateNode(NodeType.Block, Block));
     }
 
 	private void WhileStatement(ParseNode node)
@@ -577,6 +537,7 @@ public class Parser : InterpreterLogger
 		{
 			node.AddChild(CreateNode(NodeType.Statement, Statement));
 		}
+		
 		if (Match(TokenType.RightCurlyBrace))
 		{
 			node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));

@@ -42,6 +42,23 @@ public class Lexer : InterpreterLogger
 
         var whitespace = "";
 
+        Dictionary<char, TokenType> tokenTypes = new Dictionary<char, TokenType>
+        {
+            { ';', TokenType.SemiColon },
+            { '+', TokenType.Add },
+            {'*', TokenType.Multi},
+            {'(', TokenType.LeftParen},
+            {')', TokenType.RightParen},
+            {'{', TokenType.LeftCurlyBrace},
+            {'}', TokenType.RightCurlyBrace},
+            {'-', TokenType.Sub},
+            {'/', TokenType.Divide},
+            {'&', TokenType.And},
+            {'|', TokenType.Or},
+            {'<', TokenType.Less},
+            {'>', TokenType.More}
+        };
+        
         input = input.Replace("\r", "");
         _lines = input.Split("\n");
 
@@ -57,47 +74,11 @@ public class Lexer : InterpreterLogger
 
                 switch (c)
                 {
-                    case ' ':
+                    case ' ' :
                         whitespace += c;
                         newToken = null;
                         break;
-                    case ';':
-                        newToken.Type = TokenType.SemiColon;
-                        newToken.Word = whitespace + c;
-                        break;
-                    case '+':
-                        newToken.Type = TokenType.Add;
-                        newToken.Word = whitespace + c;
-                        break;
-                    case '*':
-                        newToken.Type = TokenType.Multi;
-                        newToken.Word = whitespace + c;
-                        break;
-                    case '(':
-                        newToken.Type = TokenType.LeftParen;
-                        newToken.Word = whitespace + c;
-                        break;
-                    case ')':
-                        newToken.Type = TokenType.RightParen;
-                        newToken.Word = whitespace + c;
-                        break;
-                    case '{':
-                        newToken.Type = TokenType.LeftCurlyBrace;
-                        newToken.Word = whitespace + c;
-                        break;
-                    case '}':
-                        newToken.Type = TokenType.RightCurlyBrace;
-                        newToken.Word = whitespace + c;
-                        break;
-                    case '-':
-                        newToken.Type = TokenType.Sub;
-                        newToken.Word = whitespace + c;
-                        break;
-                    case '/':
-                        newToken.Type = TokenType.Divide;
-                        newToken.Word = whitespace + c;
-                        break;
-                    case '!':
+                    case '!' :
                         if (_lines[j][i + 1] == '=')
                         {
                             i++;
@@ -110,7 +91,7 @@ public class Lexer : InterpreterLogger
                             newToken.Word = whitespace + c;
                         }
                         break;
-                    case '=':
+                    case '=' :
                         if (_lines[j][i + 1] == '=')
                         {
                             i++;
@@ -122,22 +103,6 @@ public class Lexer : InterpreterLogger
                             newToken.Type = TokenType.Assignment;
                             newToken.Word = whitespace + c;
                         }
-                        break;
-                    case '&':
-                        newToken.Type = TokenType.And;
-                        newToken.Word = whitespace + c;
-                        break;
-                    case '|':
-                        newToken.Type = TokenType.Or;
-                        newToken.Word = whitespace + c;
-                        break;
-                    case '<':
-                        newToken.Type = TokenType.Less;
-                        newToken.Word = whitespace + c;
-                        break;
-                    case '>':
-                        newToken.Type = TokenType.More;
-                        newToken.Word = whitespace + c;
                         break;
                     default:
                         if (char.IsDigit(c))
@@ -156,9 +121,17 @@ public class Lexer : InterpreterLogger
                         }
                         else
                         {
-                            newToken = null;
-                            _logger.Error("Invalid lexeme encountered! Disregarding: {invalidToken}", c.ToString());
-                            _failed = true;
+                            if (tokenTypes.ContainsKey(c))
+                            {
+                                newToken.Type = tokenTypes.GetValueOrDefault(c);
+                                newToken.Word = whitespace + c;
+                            }
+                            else
+                            {
+                                newToken = null;
+                                _logger.Error("Invalid lexeme encountered! Disregarding: {invalidToken}", c.ToString());
+                                _failed = true;
+                            }
                         }
                         break;
                 }
