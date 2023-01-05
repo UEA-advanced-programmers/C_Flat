@@ -138,11 +138,7 @@ namespace C_Flat
             //  Null all relevant variables
             _executionOutput = null;
             _parseTree = null;
-            
-            //TODO: Consider moving this to after a successful transpile
-            //  Mark new changes to the transpiled program.
-            _unsavedChanges = true;
-            
+
             //  Clear lexer logs before lexing input
             _lexer.ClearLogs();
             if (_lexer.Tokenise(SourceInput.Text) != 0)
@@ -176,6 +172,9 @@ namespace C_Flat
                     .Where(log => log.Level > LogEventLevel.Information));
                 return;
             }
+            
+            //  Mark new changes to the transpiled program.
+            _unsavedChanges = true;
             
             var transpiledProgram = _transpiler.Program;
             Snackbar.Appearance = ControlAppearance.Success;
