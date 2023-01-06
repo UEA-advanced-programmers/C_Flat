@@ -18,3 +18,10 @@ public class SyntaxErrorException : ParserException
     public SyntaxErrorException(string? message) : base("Syntax Error!", message) { }
     public SyntaxErrorException(string? message, int line) : base("Syntax Error!", line, message) { }
 }
+public class IncorrectTypeException : ParserException
+{
+    public IncorrectTypeException(string? message) : base("Incorrect Type!", message) { }
+
+    public IncorrectTypeException(string? message, int line) : base("Incorrect Type!", line, message) { }
+
+}

@@ -13,12 +13,18 @@ public class VariableTable
 
     public void Add(string word, ParseNode node)
     {
-        _table.Add(word, node);
+        if (_table.ContainsKey(word))
+            _table[word] = node;
+        else
+            _table.Add(word, node);
     }
     
     public void Add(string word)
     {
-        _table.Add(word, new ParseNode(NodeType.Null));
+        if (_table.ContainsKey(word))
+            _table[word] = new(NodeType.Null);
+        else
+            _table.Add(word, new(NodeType.Null));
     }
 
     public bool Exists(string identifier)

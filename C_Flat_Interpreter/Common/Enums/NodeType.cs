@@ -17,5 +17,7 @@ public enum NodeType //will be added to
     WhileStatement,
     VarIdentifier,
     VarAssignment,
-    DeclareVariable
+    AssignmentValue,
+    DeclareVariable,
+    String,
 }
