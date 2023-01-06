@@ -29,10 +29,10 @@ public class TranspilerUnit : TestLogger
         var statement = new ParseNode(NodeType.Statement);
         var declaration = new ParseNode(NodeType.DeclareVariable);
         
-        declaration.AddChild(new (NodeType.Terminal, new Token(TokenType.String){Word = "var"}));
+        declaration.AddChild(new (NodeType.Terminal, new Token(TokenType.Word){Word = "var"}));
         
         var identifier = new ParseNode(NodeType.VarIdentifier);
-        identifier.AddChild(new(NodeType.Terminal, new Token(TokenType.String) {Word = " test"}));
+        identifier.AddChild(new(NodeType.Terminal, new Token(TokenType.Word) {Word = " test"}));
         declaration.AddChild(identifier);
         
         declaration.AddChild(new (NodeType.Terminal, new Token(TokenType.SemiColon){Word = ";"}));

@@ -221,7 +221,7 @@ public class Parser : InterpreterLogger
 	private void DeclareVariable(ParseNode node)
 	{
 		// check for String token with the name "var"
-		if (Match(TokenType.String) && CheckVarLiteral())
+		if (Match(TokenType.Word) && CheckVarLiteral())
 		{
 			node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
 			Advance();
@@ -273,14 +273,14 @@ public class Parser : InterpreterLogger
 	//TODO - Rename to match ebnf (Identifier)
 	private void VarIdentifier(ParseNode node)
 	{
-		if (Match(TokenType.String))
+		if (Match(TokenType.Word))
 		{
 			node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
 			Advance();
 		}
 		else
 		{
-			throw new SyntaxErrorException($"Invalid variable identifier! Expected token type 'string'. Actual: '{_tokenType}'", _currentLine);
+			throw new InvalidSyntaxException($"Invalid variable identifier! Expected token type word. Actual: '{_tokenType}'", _currentLine);
 		}
 	}
 	//TODO - Rename to match ebnf (Assignment)
@@ -335,6 +335,34 @@ public class Parser : InterpreterLogger
 			Reset(Rein);
 			_logger.Warning(e2.Message);
 		}
+        try
+        {
+			if (Match(TokenType.String))
+			{
+				node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
+				Advance();
+			}
+            else
+            {
+				throw new InvalidSyntaxException($"invalid assignment, expected 'String'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
+			}
+			if (Match(TokenType.SemiColon))
+			{
+				node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
+				Advance();
+				return;
+			}
+			else
+			{
+				throw new InvalidSyntaxException($"Unterminated assignment, expected ';'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
+			}
+		}
+		catch (InvalidSyntaxException e2)
+		{
+			Reset(Rein);
+			_logger.Warning(e2.Message);
+		}
+
 		try
 		{
 			node.AddChild(CreateNode(NodeType.VarIdentifier, VarIdentifier));
@@ -356,10 +384,16 @@ public class Parser : InterpreterLogger
 			throw new SyntaxErrorException($"Unterminated assignment, expected ';'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
 		}
 	}
-	#endregion
-	
-	#region Expressions
-	private void Expression(ParseNode node)
+    #endregion
+
+    #region Strings
+
+
+
+    #endregion
+
+    #region Expressions
+    private void Expression(ParseNode node)
 	{
 		//	Try add first term node
 		node.AddChild(CreateNode(NodeType.Term, Term));
@@ -395,7 +429,7 @@ public class Parser : InterpreterLogger
 			node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
 			Advance();
 		}
-		else if (Match(TokenType.String))
+		else if (Match(TokenType.Word))
 		{
 			node.AddChild(CreateNode(NodeType.VarIdentifier, VarIdentifier));
 		}
@@ -466,7 +500,7 @@ public class Parser : InterpreterLogger
 			}
 		}
 		//	Otherwise check for a boolean literal
-		else if (Match(TokenType.String) && CheckBoolLiteral())
+		else if (Match(TokenType.Word) && CheckBoolLiteral())
 		{
 			node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
 			Advance();
@@ -565,7 +599,7 @@ public class Parser : InterpreterLogger
     //TODO - Rename to match EBNF
 	private void IfStatements(ParseNode node)
     {
-	    if (Match(TokenType.String) && CheckIf())
+	    if (Match(TokenType.Word) && CheckIf())
 		{
 			node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
 			Advance();
@@ -615,7 +649,7 @@ public class Parser : InterpreterLogger
 			throw new SyntaxErrorException($"Invalid block within if statement!");
 		}
 		
-		if (Match(TokenType.String) && CheckElse())
+		if (Match(TokenType.Word) && CheckElse())
 		{
 			node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
 			Advance();
@@ -635,7 +669,7 @@ public class Parser : InterpreterLogger
 
 	private void WhileStatement(ParseNode node)
 	{
-		if (Match(TokenType.String) && CheckWhile())
+		if (Match(TokenType.Word) && CheckWhile())
 		{
 			node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
 			Advance();

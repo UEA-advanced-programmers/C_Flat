@@ -139,6 +139,14 @@ public class Lexer : InterpreterLogger
                         newToken.Type = TokenType.More;
                         newToken.Word = whitespace + c;
                         break;
+                    case '"':
+                        newToken.Type = TokenType.String;
+                        newToken.Word = whitespace + c;
+                        i++;
+                        var letters2 = ParseString(j, i);
+                        newToken.Word += letters2;
+                        i += letters2.Length - 1;
+                        break;
                     default:
                         if (char.IsDigit(c))
                         {
@@ -149,8 +157,8 @@ public class Lexer : InterpreterLogger
                         }
                         else if (char.IsLetter(c))
                         {
-                            newToken.Type = TokenType.String;
-                            var letters = ParseString(j, i);
+                            newToken.Type = TokenType.Word;
+                            var letters = ParseWord(j, i);
                             newToken.Word = whitespace + letters;
                             i += letters.Length - 1;
                         }
@@ -195,7 +203,7 @@ public class Lexer : InterpreterLogger
         }
         return numberString;
     }
-    private string ParseString(int line, int index)
+    private string ParseWord(int line, int index)
     {
         var wordString = _lines[line][index].ToString();
         while (index+1 < _lines[line].Length)
@@ -206,6 +214,25 @@ public class Lexer : InterpreterLogger
             }
             else
             {
+                break;
+            }
+        }
+        return wordString.ToLower();
+    }
+
+
+    private string ParseString(int line, int index)
+    {
+        var wordString = _lines[line][index].ToString();
+        while (index + 1 < _lines[line].Length)
+        {
+            if ((_lines[line][index + 1]) != '"')
+            {
+                wordString += _lines[line][++index];
+            }
+            else
+            {
+                wordString += _lines[line][++index];
                 break;
             }
         }
