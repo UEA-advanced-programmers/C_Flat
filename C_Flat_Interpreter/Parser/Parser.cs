@@ -193,18 +193,20 @@ public class Parser : InterpreterLogger
 
 			if (_variableTable.Exists(identifier))
 			{
-				ParseNode childNode = CreateNode(NodeType.VarAssignment, VarAssignment);
+				var childNode = CreateNode(NodeType.VarAssignment, VarAssignment);
 				node.AddChild(childNode);
-
-				ParseNode valueNode = childNode.getChildren()[2]; //gets the value the variable is assigned to
-				if (_variableTable.GetType(identifier).type != NodeType.Null && _variableTable.GetType(identifier) != valueNode)
+				
+				//	gets the value the variable is assigned to
+				var assignmentValue = childNode.getChildren()[2];
+				var existingType = _variableTable.GetType(identifier);
+				if (existingType != NodeType.Null && existingType != assignmentValue.type)
 				{
-					_logger.Error("Syntax Error! variable is not of type: {@type} ", valueNode);
+					throw new SyntaxErrorException($"Invalid variable assignment! Type '{assignmentValue.type}' cannot be assigned to '{identifier}' of type '{existingType}'", _currentLine);
 				}
 				currentIndex = _currentIndex;
 				return;
 			}
-			_logger.Error("Syntax Error! variable is not declared: {@word} ", _tokens[_currentIndex].Word);
+			throw new SyntaxErrorException($"Invalid variable assignment! Variable '{_tokens.ElementAtOrDefault(_currentIndex)}' has not been declared!", _currentLine);
 		}
 		catch (InvalidSyntaxException e)
 		{
@@ -232,10 +234,10 @@ public class Parser : InterpreterLogger
 		var identifier = _tokens[_currentIndex].Word.Trim();
 		int Rein = _currentIndex;
 		
+		//	Throw syntax error if variable already exists
 		if (_variableTable.Exists(identifier))
 		{
-			_logger.Error("Syntax Error! variable has already been declared: {@word} ", _tokens[_currentIndex].Word);
-			throw new SyntaxErrorException();
+			throw new SyntaxErrorException($"Variable '{_tokens.ElementAtOrDefault(_currentIndex)}' has already been declared!", _currentLine);
 		}
 		
 		// check if a value is being assigned
