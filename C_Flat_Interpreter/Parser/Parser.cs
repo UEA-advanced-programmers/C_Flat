@@ -34,6 +34,7 @@ public class Parser : InterpreterLogger
 	private int _totalTokens;
 	private List<Token> _tokens;
 	private List<ParseNode> _parseTree = new();
+	private VariableTable _variableTable = new();
 
 	private delegate void Delegate(ParseNode node);
 
@@ -125,8 +126,8 @@ public class Parser : InterpreterLogger
 		_tokens = tokens;
 		_totalTokens = tokens.Count;
 		_parseTree = new();
+		_variableTable = new();
 		Reset();
-		
 		//TODO - investigate better way to do this
 		try
 		{
@@ -188,9 +189,22 @@ public class Parser : InterpreterLogger
 		}
 		try
 		{
-			node.AddChild(CreateNode(NodeType.VarAssignment, VarAssignment));
-			currentIndex = _currentIndex;
-			return;
+			var identifier = _tokens[_currentIndex].Word.Trim();
+
+			if (_variableTable.Exists(identifier))
+			{
+				ParseNode childNode = CreateNode(NodeType.VarAssignment, VarAssignment);
+				node.AddChild(childNode);
+
+				ParseNode valueNode = childNode.getChildren()[2]; //gets the value the variable is assigned to
+				if (_variableTable.GetType(identifier).type != NodeType.Null && _variableTable.GetType(identifier) != valueNode)
+				{
+					_logger.Error("Syntax Error! variable is not of type: {@type} ", valueNode);
+				}
+				currentIndex = _currentIndex;
+				return;
+			}
+			_logger.Error("Syntax Error! variable is not declared: {@word} ", _tokens[_currentIndex].Word);
 		}
 		catch (InvalidSyntaxException e)
 		{
@@ -215,11 +229,22 @@ public class Parser : InterpreterLogger
 			throw new InvalidSyntaxException($"Expected keyword 'var'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
 		}
 		
+		var identifier = _tokens[_currentIndex].Word.Trim();
 		int Rein = _currentIndex;
+		
+		if (_variableTable.Exists(identifier))
+		{
+			_logger.Error("Syntax Error! variable has already been declared: {@word} ", _tokens[_currentIndex].Word);
+			throw new SyntaxErrorException();
+		}
+		
 		// check if a value is being assigned
 		try
 		{
-			node.AddChild(CreateNode(NodeType.VarAssignment, VarAssignment));
+			ParseNode childNode = CreateNode(NodeType.VarAssignment, VarAssignment);
+			node.AddChild(childNode);
+			
+			_variableTable.Add(identifier, childNode.getChildren()[2]); //gets the value the variable is assigned to
 			return;
 		}
 		catch (InvalidSyntaxException e)
@@ -227,8 +252,11 @@ public class Parser : InterpreterLogger
 			Reset(Rein);
 			_logger.Warning(e.Message);
 		}
-		
+
 		node.AddChild(CreateNode(NodeType.VarIdentifier, VarIdentifier));
+		
+		_variableTable.Add(identifier);
+
 		if (Match(TokenType.SemiColon))
 		{
 			node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
@@ -239,6 +267,7 @@ public class Parser : InterpreterLogger
 			throw new SyntaxErrorException($"Variable declaration is not terminated, expected ';'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
 		}
 	}
+	
 	//TODO - Rename to match ebnf (Identifier)
 	private void VarIdentifier(ParseNode node)
 	{
