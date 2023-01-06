@@ -294,24 +294,65 @@ public class Parser : InterpreterLogger
 		
 		node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
 		Advance();
-		
+
 		//TODO - Also try check for word, and logic statement
+		int Rein = _currentIndex;
 		try
 		{
-			node.AddChild(CreateNode(NodeType.Expression, Expression));
+			node.AddChild(CreateNode(NodeType.LogicStatement, LogicStatement));
+			if (Match(TokenType.SemiColon))
+			{
+				node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
+				Advance();
+				return;
+			}
+			else
+			{
+				throw new InvalidSyntaxException($"Unterminated assignment, expected ';'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
+			}
 		}
 		catch (InvalidSyntaxException e)
 		{
+			Reset(Rein);
 			_logger.Warning(e.Message);
 		}
-
-		if (Match(TokenType.SemiColon))
+		try
 		{
-			node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
-			Advance();
+			node.AddChild(CreateNode(NodeType.Expression, Expression));
+			if (Match(TokenType.SemiColon))
+			{
+				node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
+				Advance();
+				return;
+			}
+			else
+			{
+				throw new InvalidSyntaxException($"Unterminated assignment, expected ';'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
+			}
 		}
-		else
+		catch (InvalidSyntaxException e2)
 		{
+			Reset(Rein);
+			_logger.Warning(e2.Message);
+		}
+		try
+		{
+			node.AddChild(CreateNode(NodeType.VarIdentifier, VarIdentifier));
+			if (Match(TokenType.SemiColon))
+			{
+				node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
+				Advance();
+				return;
+			}
+			else
+			{
+				throw new InvalidSyntaxException($"Unterminated assignment, expected ';'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
+			}
+		}
+		catch (InvalidSyntaxException e3)
+		{
+			Reset(Rein);
+			_logger.Warning(e3.Message);
 			throw new SyntaxErrorException($"Unterminated assignment, expected ';'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
 		}
 	}
@@ -353,6 +394,10 @@ public class Parser : InterpreterLogger
 		{
 			node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
 			Advance();
+		}
+		else if (Match(TokenType.String))
+		{
+			node.AddChild(CreateNode(NodeType.VarIdentifier, VarIdentifier));
 		}
 		else if (Match(TokenType.Sub))
 		{
@@ -421,17 +466,10 @@ public class Parser : InterpreterLogger
 			}
 		}
 		//	Otherwise check for a boolean literal
-		else if (Match(TokenType.String))
+		else if (Match(TokenType.String) && CheckBoolLiteral())
 		{
-			if (CheckBoolLiteral())
-			{
-				node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
-				Advance();
-			}
-			else
-			{
-				throw new SyntaxErrorException($"Invalid Boolean literal, expected 'true' or 'false'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
-			}
+			node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
+			Advance();
 		}
 		//	Otherwise check for expression query
 		else
@@ -446,7 +484,17 @@ public class Parser : InterpreterLogger
 			{
 				_logger.Warning(e.Message);
 				Reset(index);
-				
+
+				try
+				{
+					node.AddChild(CreateNode(NodeType.VarIdentifier, VarIdentifier));
+					return;
+				}
+				catch (InvalidSyntaxException e2)
+				{
+					_logger.Warning(e2.Message);
+				}
+
 				//	Try and parse a parenthesised logic statement
 				if (Match(TokenType.LeftParen))
 				{
@@ -470,6 +518,7 @@ public class Parser : InterpreterLogger
 					throw new InvalidSyntaxException("Unexpected token, unable to parse a boolean expression!");
 				}
 			}
+
 		}
 	}
 
@@ -494,7 +543,7 @@ public class Parser : InterpreterLogger
 		//TODO: check whether this could cause out of bounds exception!
 		//	Throw exception if token doesn't match any operators
 		if (!Match(TokenType.NotEqual) && !Match(TokenType.Equals) && !Match(TokenType.More) &&
-		    !Match(TokenType.Less)) throw new SyntaxErrorException($"Invalid operator token, expected '!=' | '==' | '>' | '<'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
+		    !Match(TokenType.Less)) throw new InvalidSyntaxException($"Invalid operator token, expected '!=' | '==' | '>' | '<'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
 		
 		node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
 		Advance();
