@@ -34,7 +34,6 @@ public class Parser : InterpreterLogger
 	private int _totalTokens;
 	private List<Token> _tokens;
 	private List<ParseNode> _parseTree = new();
-	private VariableTable _variableTable = new();
 
 	private delegate void Delegate(ParseNode node);
 
@@ -126,7 +125,7 @@ public class Parser : InterpreterLogger
 		_tokens = tokens;
 		_totalTokens = tokens.Count;
 		_parseTree = new();
-		_variableTable = new();
+		VariableTable.Clear();
 		Reset();
 		//TODO - investigate better way to do this
 		try
@@ -191,7 +190,7 @@ public class Parser : InterpreterLogger
 		{
 			var identifier = _tokens[_currentIndex].Word.Trim();
 
-			if (_variableTable.Exists(identifier))
+			if (VariableTable.Exists(identifier))
 			{
 				node.AddChild( CreateNode(NodeType.VarAssignment, VarAssignment));
 				currentIndex = _currentIndex;
@@ -229,7 +228,7 @@ public class Parser : InterpreterLogger
 		int Rein = _currentIndex;
 		
 		//	Throw syntax error if variable already exists
-		if (_variableTable.Exists(identifier))
+		if (VariableTable.Exists(identifier))
 		{
 			throw new SyntaxErrorException($"Variable '{_tokens.ElementAtOrDefault(_currentIndex)}' has already been declared!", _currentLine);
 		}
@@ -249,7 +248,7 @@ public class Parser : InterpreterLogger
 
 		node.AddChild(CreateNode(NodeType.VarIdentifier, VarIdentifier));
 		
-		_variableTable.Add(identifier);
+		VariableTable.Add(identifier);
 
 		if (Match(TokenType.SemiColon))
 		{
@@ -295,15 +294,15 @@ public class Parser : InterpreterLogger
 			var identifier = identifierNode.getChildren().First().token?.ToString();
 			var valueNode = CreateNode(NodeType.AssignmentValue, AssignmentValue);
 			var assignmentValue = valueNode.getChildren().First();
-			if (_variableTable.Exists(identifier ?? throw new Exception("Invalid identifier token")))
+			if (VariableTable.Exists(identifier ?? throw new Exception("Invalid identifier token")))
 			{
-				var existingType = _variableTable.GetType(identifier);
+				var existingType = VariableTable.GetType(identifier);
 				if (existingType != NodeType.Null && existingType != assignmentValue.type)
 				{
 					throw new SyntaxErrorException($"Invalid variable assignment! Type '{assignmentValue.type}' cannot be assigned to '{identifier}' of type '{existingType}'", _currentLine);
 				}
 			}
-			_variableTable.Add(identifier,assignmentValue);
+			VariableTable.Add(identifier,assignmentValue);
 			//	Only add if the assignment is valid
 			node.AddChild(valueNode);
 		}
@@ -452,7 +451,7 @@ public class Parser : InterpreterLogger
 			//	Check whether the value node is of the same type
 			var identifier = identifierNode.getChildren().First().token?.ToString();
 			// Check whether type is correct
-			if(_variableTable.GetType(identifier?? throw new SyntaxErrorException("Invalid identifier token")) is not NodeType.Expression)
+			if(VariableTable.GetType(identifier?? throw new SyntaxErrorException("Invalid identifier token")) is not NodeType.Expression)
 				throw new IncorrectTypeException($"Variable {identifier} is not of type 'Expression'");
 			node.AddChild(identifierNode);
 		}
@@ -553,7 +552,7 @@ public class Parser : InterpreterLogger
 				var identifierNode = CreateNode(NodeType.VarIdentifier, VarIdentifier);
 				var identifier = identifierNode.getChildren().First().token?.ToString();
 				// Check whether type is correct
-				if(_variableTable.GetType(identifier ?? throw new SyntaxErrorException("Invalid identifier token")) is not NodeType.Boolean)
+				if(VariableTable.GetType(identifier ?? throw new SyntaxErrorException("Invalid identifier token")) is not NodeType.Boolean)
 					throw new IncorrectTypeException($"Variable {identifier} is not of type 'Boolean'", _currentLine);
 				node.AddChild(identifierNode);
 				return;

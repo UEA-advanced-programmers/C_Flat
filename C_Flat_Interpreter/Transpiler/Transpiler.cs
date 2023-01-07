@@ -1,5 +1,6 @@
 ﻿using C_Flat_Interpreter.Common;
 using C_Flat_Interpreter.Common.Enums;
+using C_Flat_Interpreter.Common.Exceptions;
 
 
 namespace C_Flat_Interpreter.Transpiler;
@@ -155,9 +156,35 @@ public class Transpiler : InterpreterLogger
             TranspileCondition(node.getChildren().Last());
     }
 
+    private void TranspileString(ParseNode node)
+    {
+        PrintTerminal(node.getChildren().First());
+    }
+
     private void TranspileIdentifier(ParseNode node)
     {
         PrintTerminal(node.getChildren().First());
+    }
+
+    private void TranspileAssignmentValue(ParseNode node)
+    {
+        var valueNode = node.getChildren().First();
+        //TODO: Add handling for other assignment types
+        switch (valueNode.type)
+        {
+            case NodeType.Expression:
+                TranspileExpression(valueNode);
+                break;
+            case NodeType.String:
+                TranspileString(valueNode);
+                break;
+            case NodeType.Boolean:
+                TranspileBoolean(valueNode);
+                break;
+            case NodeType.VarIdentifier:
+                TranspileIdentifier(valueNode);
+                break;
+        }
     }
 
     private void TranspileAssignment(ParseNode node)
@@ -167,12 +194,8 @@ public class Transpiler : InterpreterLogger
         
         //Print assignment terminal
         PrintTerminal(children[1]);
-        
-        //TODO: Add handling for other assignment types
-        if (children[2].type is NodeType.Expression)
-        {
-            TranspileExpression(children[2]);
-        }
+
+        TranspileAssignmentValue(children[2]);
         
         //Print semicolon terminal
         PrintTerminal(children.Last());
@@ -181,19 +204,48 @@ public class Transpiler : InterpreterLogger
     {
         var children = node.getChildren();
         
-        //print var keyword
-        PrintTerminal(children.First());
+        //  Determine variable type before transpile
         if (children[1].type is NodeType.VarIdentifier)
         {
+            try
+            {
+                TranspileType(children[1]);
+            }
+            catch (InvalidSyntaxException e)
+            {
+                _logger.Warning(e.Message);
+                return;
+            }
             TranspileIdentifier(children[1]);
-            
             //Print semicolon terminal
             PrintTerminal(children.Last());
         }
         else
         {
+            PrintTerminal(children.First());
             TranspileAssignment(children.Last());
         }
+    }
+
+    private void TranspileType(ParseNode identifierNode)
+    {
+        var identifierToken = identifierNode.getChildren().First().token;
+        //  Find first assignment of this variable
+        var type = VariableTable.GetType(identifierToken?.ToString() ?? throw new Exception());
+        var typeWord = type switch
+        {
+            NodeType.Expression => "float",
+            NodeType.Boolean => "bool",
+            NodeType.String => "string",
+            NodeType.Null => throw new InvalidSyntaxException($"Variable '{identifierToken}' is declared but never used, omitting"),
+            _ => throw new IncorrectTypeException("Variable has invalid assignment type")
+        };
+        if (identifierToken.Line > _currentLine)
+        {
+            _currentLine = identifierToken.Line;
+            Program += Environment.NewLine;
+        }
+        Program += typeWord;
     }
     private void TranspileBlock(ParseNode node)
     {
