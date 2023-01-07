@@ -18,7 +18,6 @@
 	*	<block>::= '{' {<Statement>} '}'
  * */
 
-using System.Data;
 using C_Flat_Interpreter.Common;
 using C_Flat_Interpreter.Common.Enums;
 using C_Flat_Interpreter.Common.Exceptions;
@@ -34,6 +33,7 @@ public class Parser : InterpreterLogger
 	private int _totalTokens;
 	private List<Token> _tokens;
 	private List<ParseNode> _parseTree = new();
+	private ScopeManager _scopeManager = new();
 
 	private delegate void Delegate(ParseNode node);
 
@@ -126,6 +126,7 @@ public class Parser : InterpreterLogger
 		_totalTokens = tokens.Count;
 		_parseTree = new();
 		VariableTable.Clear();
+		_scopeManager.Reset();
 		Reset();
 		//TODO - investigate better way to do this
 		try
@@ -228,9 +229,19 @@ public class Parser : InterpreterLogger
 		int Rein = _currentIndex;
 		
 		//	Throw syntax error if variable already exists
-		if (VariableTable.Exists(identifier))
+		if (_scopeManager.InScope(identifier))
 		{
-			throw new SyntaxErrorException($"Variable '{_tokens.ElementAtOrDefault(_currentIndex)}' has already been declared!", _currentLine);
+			if (VariableTable.Exists(identifier))
+				throw new SyntaxErrorException($"Variable '{_tokens.ElementAtOrDefault(_currentIndex)}' has already been declared!", _currentLine);
+		}
+		else
+		{
+			//	Re-declare if previously declared.
+			if (VariableTable.Exists(identifier))
+			{
+				VariableTable.Add(identifier);
+			}
+			_scopeManager.AddToScope(identifier);
 		}
 		
 		// check if a value is being assigned
@@ -280,7 +291,6 @@ public class Parser : InterpreterLogger
 		// check for identifier
 		var identifierNode = CreateNode(NodeType.VarIdentifier, VarIdentifier);
 		node.AddChild(identifierNode);
-
 		if (!Match(TokenType.Assignment)) 
 			throw new InvalidSyntaxException($"Invalid variable assignment, expected '='. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
 		
@@ -290,16 +300,28 @@ public class Parser : InterpreterLogger
 		//	Try and parse assignment value
 		try
 		{
-			//	Check whether the value node is of the same type
+			//	Check whether the value node is of the same type and is in scope
 			var identifier = identifierNode.getChildren().First().token?.ToString();
 			var valueNode = CreateNode(NodeType.AssignmentValue, AssignmentValue);
 			var assignmentValue = valueNode.getChildren().First();
+			if (assignmentValue.type is NodeType.VarIdentifier)
+			{
+				throw new SyntaxErrorException(
+					$"Invalid variable assignment! Value '{assignmentValue.getChildren().First().token}' has no type!'", _currentLine);
+			}
 			if (VariableTable.Exists(identifier ?? throw new Exception("Invalid identifier token")))
 			{
-				var existingType = VariableTable.GetType(identifier);
-				if (existingType != NodeType.Null && existingType != assignmentValue.type)
+				if (_scopeManager.InScope(identifier))
 				{
-					throw new SyntaxErrorException($"Invalid variable assignment! Type '{assignmentValue.type}' cannot be assigned to '{identifier}' of type '{existingType}'", _currentLine);
+					var existingType = VariableTable.GetType(identifier);
+					if (existingType != NodeType.Null && existingType != assignmentValue.type)
+					{
+						throw new SyntaxErrorException($"Invalid variable assignment! Type '{assignmentValue.type}' cannot be assigned to '{identifier}' of type '{existingType}'", _currentLine);
+					}
+				}
+				else
+				{
+					throw new OutOfScopeException($"Variable '{identifier}' does not exist in this context", _currentLine);
 				}
 			}
 			VariableTable.Add(identifier,assignmentValue);
@@ -772,7 +794,9 @@ public class Parser : InterpreterLogger
 			throw new InvalidSyntaxException("Unexpected token, unable to parse block!");
 		}
 
-		//TODO: investigate if the first condition is needed!
+		//Keep track of previous scope count
+		var scopeCount = _scopeManager.ScopeCount();
+		
 		while (_currentIndex < _totalTokens && !Match(TokenType.RightCurlyBrace))
 		{
 			try
@@ -789,11 +813,13 @@ public class Parser : InterpreterLogger
 		{
 			node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
 			Advance();
+			_scopeManager.DeScope(scopeCount);
 		}
 		else
 		{
 			throw new SyntaxErrorException("Block not terminated! Expected '}'."+ $" Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
 		}
+
 	}
 	#endregion
 }
