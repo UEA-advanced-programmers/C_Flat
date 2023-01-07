@@ -1,4 +1,3 @@
-using System.Data;
 using C_Flat_Interpreter.Common;
 using C_Flat_Interpreter.Common.Enums;
 using C_Flat_Interpreter.Common.Exceptions;
@@ -18,7 +17,7 @@ public class Parser : InterpreterLogger
 
     private delegate void NodeFuncDelegate(ParseNode node);
 
-    //constructor
+    // Constructor
     public Parser()
     {
         GetLogger("Parser");
@@ -30,33 +29,16 @@ public class Parser : InterpreterLogger
         return _parseTree;
     }
 
-    //Helper Functions
+    // Helper Functions
     private bool CheckBoolLiteral()
     {
         var word = _tokens[_currentIndex].Word.Trim();
         return word is "true" or "false";
     }
-    private bool CheckIf()
+    private bool CheckKeyword(string keyword)
     {
         var word = _tokens[_currentIndex].Word.Trim();
-        return word is "if";
-    }
-    private bool CheckElse()
-    {
-        var word = _tokens[_currentIndex].Word.Trim();
-        return word is "else";
-
-    }
-    private bool CheckWhile()
-    {
-        var word = _tokens[_currentIndex].Word.Trim();
-        return word is "while";
-    }
-
-    private bool CheckVarLiteral()
-    {
-        var word = _tokens[_currentIndex].Word.Trim();
-        return word is "var";
+        return word == keyword;
     }
 
     private bool Match(TokenType tokenType)
@@ -77,15 +59,17 @@ public class Parser : InterpreterLogger
     private void Reset(int index = 0)
     {
         _currentIndex = index;
-        _tokenType = _tokens[_currentIndex].Type;
-        _currentLine = _tokens[_currentIndex].Line + 1;
+        var currentToken = _tokens[_currentIndex];
+        _tokenType = currentToken.Type;
+        _currentLine = currentToken.Line + 1;
     }
 
     private void Advance()
     {
         if (++_currentIndex >= _totalTokens) return; //todo - might be able to find a way to exit everything else quicker when we're at the end - EOF token!
-        _tokenType = _tokens[_currentIndex].Type;
-        _currentLine = _tokens[_currentIndex].Line + 1;
+        var currentToken = _tokens[_currentIndex];
+        _tokenType = currentToken.Type;
+        _currentLine = currentToken.Line + 1;
     }
 
     private ParseNode CreateNode(NodeType type, NodeFuncDelegate nodeFunc)
@@ -102,7 +86,7 @@ public class Parser : InterpreterLogger
     {
         _tokens = tokens;
         _totalTokens = tokens.Count;
-        _parseTree = new();
+        _parseTree = new List<ParseNode>();
         VariableTable.Clear();
         _scopeManager.Reset();
         Reset();
@@ -151,6 +135,7 @@ public class Parser : InterpreterLogger
                 Reset(currentIndex);
             }
         }
+        
         try
         {
             var identifier = _tokens[_currentIndex].Word.Trim();
@@ -161,10 +146,7 @@ public class Parser : InterpreterLogger
                 currentIndex = _currentIndex;
                 return;
             }
-            else
-            {
-                throw new SyntaxErrorException($"Invalid variable assignment! Variable '{_tokens.ElementAtOrDefault(_currentIndex)}' has not been declared!", _currentLine);
-            }
+            throw new SyntaxErrorException($"Invalid variable assignment! Variable '{_tokens.ElementAtOrDefault(_currentIndex)}' has not been declared!", _currentLine);
         }
         catch (InvalidSyntaxException e)
         {
@@ -177,7 +159,7 @@ public class Parser : InterpreterLogger
     private void Declaration(ParseNode node)
     {
         // check for String token with the name "var"
-        if (Match(TokenType.Word) && CheckVarLiteral())
+        if (Match(TokenType.Word) && CheckKeyword("var"))
         {
             node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
             Advance();
@@ -349,6 +331,7 @@ public class Parser : InterpreterLogger
             Reset(index);
             _logger.Debug(e.Message);
         }
+        
         //	Finally try to parse identifier
         try
         {
@@ -608,7 +591,7 @@ public class Parser : InterpreterLogger
 
     private void ConditionalStatement(ParseNode node)
     {
-        if (Match(TokenType.Word) && CheckIf())
+        if (Match(TokenType.Word) && CheckKeyword("if"))
         {
             node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
             Advance();
@@ -659,7 +642,7 @@ public class Parser : InterpreterLogger
             throw new SyntaxErrorException($"Invalid block within if statement!", _currentLine);
         }
 
-        if (Match(TokenType.Word) && CheckElse())
+        if (!Match(TokenType.Word) || !CheckKeyword("else")) return;
         {
             node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
             Advance();
@@ -679,7 +662,7 @@ public class Parser : InterpreterLogger
 
     private void WhileStatement(ParseNode node)
     {
-        if (Match(TokenType.Word) && CheckWhile())
+        if (Match(TokenType.Word) && CheckKeyword("while"))
         {
             node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
             Advance();
