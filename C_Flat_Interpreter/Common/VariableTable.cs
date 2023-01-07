@@ -35,7 +35,6 @@ public static class VariableTable
             var node = _table[identifier];
 
             if (node != NodeType.Identifier) return node;
-                //identifier = node.token?.Word ?? throw new Exception("Identifier node token is null");
         }
     }
 

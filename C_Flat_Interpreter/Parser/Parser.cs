@@ -279,7 +279,7 @@ public class Parser : InterpreterLogger
             //	Only add if the assignment is valid
             node.AddChild(valueNode);
         }
-        catch (InvalidSyntaxException _)
+        catch (InvalidSyntaxException)
         {
             throw new SyntaxErrorException($"Invalid assignment value, unable to parse variable assignment", _currentLine);
         }
