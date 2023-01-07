@@ -5,9 +5,9 @@ namespace C_Flat_Interpreter.Common;
 
 public static class VariableTable
 {
-    private static Dictionary<string, ParseNode> _table = new();
+    private static Dictionary<string, NodeType> _table = new();
 
-    public static void Add(string word, ParseNode node)
+    public static void Add(string word, NodeType node)
     {
         if (_table.ContainsKey(word))
             _table[word] = node;
@@ -18,9 +18,9 @@ public static class VariableTable
     public static void Add(string word)
     {
         if (_table.ContainsKey(word))
-            _table[word] = new(NodeType.Null);
+            _table[word] = NodeType.Null;
         else
-            _table.Add(word, new(NodeType.Null));
+            _table.Add(word, NodeType.Null);
     }
 
     public static bool Exists(string identifier)
@@ -34,8 +34,8 @@ public static class VariableTable
         {
             var node = _table[identifier];
 
-            if (node.type != NodeType.VarIdentifier) return node.type;
-            identifier = node.token?.Word ?? throw new Exception("Identifier node token is null");
+            if (node != NodeType.VarIdentifier) return node;
+                //identifier = node.token?.Word ?? throw new Exception("Identifier node token is null");
         }
     }
 

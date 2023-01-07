@@ -246,10 +246,19 @@ public class Parser : InterpreterLogger
             var identifier = identifierNode.getChildren().First().token?.ToString();
             var valueNode = CreateNode(NodeType.AssignmentValue, AssignmentValue);
             var assignmentValue = valueNode.getChildren().First();
+            var type = assignmentValue.type;
             if (assignmentValue.type is NodeType.VarIdentifier)
             {
-                throw new SyntaxErrorException(
-                    $"Invalid variable assignment! Value '{assignmentValue.getChildren().First().token}' has no type!'", _currentLine);
+                type = VariableTable.GetType(
+                        assignmentValue.getChildren().First().token?.ToString() ?? throw new SyntaxErrorException(
+                            $"Invalid variable assignment! Value '{assignmentValue.getChildren().First().token}' has no type!'",
+                            _currentLine)); //todo - use correct error here!
+                if (type == NodeType.Null)
+                {
+                    throw new SyntaxErrorException(
+                        $"Invalid variable assignment! Value '{assignmentValue.getChildren().First().token}' has no type!'",
+                        _currentLine);
+                }
             }
             if (VariableTable.Exists(identifier ?? throw new Exception("Invalid identifier token")))
             {
@@ -266,7 +275,7 @@ public class Parser : InterpreterLogger
                     throw new OutOfScopeException($"Variable '{identifier}' does not exist in this context", _currentLine);
                 }
             }
-            VariableTable.Add(identifier, assignmentValue);
+            VariableTable.Add(identifier, type);
             //	Only add if the assignment is valid
             node.AddChild(valueNode);
         }
