@@ -118,7 +118,7 @@ public class Parser : InterpreterLogger
         {
             { NodeType.ConditionalStatement, ConditionalStatement },
             { NodeType.WhileStatement, WhileStatement },
-            { NodeType.DeclareVariable, Declaration }
+            { NodeType.Declaration, Declaration }
         };
 
         foreach (var statement in statements)
@@ -142,7 +142,7 @@ public class Parser : InterpreterLogger
 
             if (VariableTable.Exists(identifier))
             {
-                node.AddChild(CreateNode(NodeType.VarAssignment, Assignment));
+                node.AddChild(CreateNode(NodeType.Assignment, Assignment));
                 currentIndex = _currentIndex;
                 return;
             }
@@ -191,7 +191,7 @@ public class Parser : InterpreterLogger
         // check if a value is being assigned
         try
         {
-            ParseNode childNode = CreateNode(NodeType.VarAssignment, Assignment);
+            ParseNode childNode = CreateNode(NodeType.Assignment, Assignment);
             node.AddChild(childNode);
             return;
         }
@@ -201,7 +201,7 @@ public class Parser : InterpreterLogger
             _logger.Warning(e.Message);
         }
 
-        node.AddChild(CreateNode(NodeType.VarIdentifier, Identifier));
+        node.AddChild(CreateNode(NodeType.Identifier, Identifier));
 
         VariableTable.Add(identifier);
 
@@ -231,7 +231,7 @@ public class Parser : InterpreterLogger
     private void Assignment(ParseNode node)
     {
         // check for identifier
-        var identifierNode = CreateNode(NodeType.VarIdentifier, Identifier);
+        var identifierNode = CreateNode(NodeType.Identifier, Identifier);
         node.AddChild(identifierNode);
         if (!Match(TokenType.Assignment))
             throw new InvalidSyntaxException($"Invalid variable assignment, expected '='. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
@@ -247,7 +247,7 @@ public class Parser : InterpreterLogger
             var valueNode = CreateNode(NodeType.AssignmentValue, AssignmentValue);
             var assignmentValue = valueNode.getChildren().First();
             var type = assignmentValue.type;
-            if (assignmentValue.type is NodeType.VarIdentifier)
+            if (assignmentValue.type is NodeType.Identifier)
             {
                 type = VariableTable.GetType(
                         assignmentValue.getChildren().First().token?.ToString() ?? throw new SyntaxErrorException(
@@ -344,7 +344,7 @@ public class Parser : InterpreterLogger
         //	Finally try to parse identifier
         try
         {
-            node.AddChild(CreateNode(NodeType.VarIdentifier, Identifier));
+            node.AddChild(CreateNode(NodeType.Identifier, Identifier));
         }
         catch (InvalidSyntaxException e)
         {
@@ -415,7 +415,7 @@ public class Parser : InterpreterLogger
         }
         else if (Match(TokenType.Word))
         {
-            var identifierNode = CreateNode(NodeType.VarIdentifier, Identifier);
+            var identifierNode = CreateNode(NodeType.Identifier, Identifier);
             //	Check whether the value node is of the same type
             var identifier = identifierNode.getChildren().First().token?.ToString();
             // Check whether type is correct
@@ -515,7 +515,7 @@ public class Parser : InterpreterLogger
             //	Try and parse variable identifier
             try
             {
-                var identifierNode = CreateNode(NodeType.VarIdentifier, Identifier);
+                var identifierNode = CreateNode(NodeType.Identifier, Identifier);
                 var identifier = identifierNode.getChildren().First().token?.ToString();
                 // Check whether type is correct
                 if (VariableTable.GetType(identifier ?? throw new SyntaxErrorException("Invalid identifier token")) is not NodeType.LogicStatement)

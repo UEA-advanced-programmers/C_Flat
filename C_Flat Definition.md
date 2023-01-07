@@ -225,11 +225,13 @@ A loop can be created using the keyword `while`, followed by a logic statement w
 
 `<Identifier>::= <Word>`
 
-`<Word>::= 1*(a-zA-Z) - <Keywords>`
-
 `<Assignment>::= <Identifier> '=' <Assignment-Value> ‘;’`
 
-`<Assignment-Value>::= (<Expression> | ' " ' <Word> ' " ' | <Logic-Statement> | <Identifier>)`
+`<Assignment-Value>::= (<Expression> | <String> | <Logic-Statement> | <Identifier>)`
+
+`<String> = ' " ' <Word> ' " '`
+
+`<Word>::= 1*(a-zA-Z) - <Keywords>`
 
 ### Functions:
 
@@ -241,12 +243,12 @@ A loop can be created using the keyword `while`, followed by a logic statement w
 
 ### Loops:
 
-`<While-Loop>::= 'while' '(' <Logic-Statement> ')' <Block>`
-
-### Keywords:
-
-`<Keyword>::= 'if' | 'else' | 'while' | 'var' | 'func' | 'true' | 'false'`
+`<While-Statement>::= 'while' '(' <Logic-Statement> ')' <Block>`
 
 ### Blocks:
 
 `<Block>::= '{' *{<statement>} '}'`
+
+### Keywords:
+
+`<Keyword>::= 'if' | 'else' | 'while' | 'var' | 'func' | 'true' | 'false'`

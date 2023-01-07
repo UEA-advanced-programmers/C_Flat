@@ -27,12 +27,12 @@ public class TranspilerUnit : TestLogger
     {
         //Arrange
         var statement = new ParseNode(NodeType.Statement);
-        var declaration = new ParseNode(NodeType.DeclareVariable);
+        var declaration = new ParseNode(NodeType.Declaration);
 
         declaration.AddChild(new(NodeType.Terminal, new Token(TokenType.Word) { Word = "var" }));
 
-        var assignment = new ParseNode(NodeType.VarAssignment);
-        var identifier = new ParseNode(NodeType.VarIdentifier);
+        var assignment = new ParseNode(NodeType.Assignment);
+        var identifier = new ParseNode(NodeType.Identifier);
         identifier.AddChild(new(NodeType.Terminal, new Token(TokenType.Word) { Word = " test" }));
         assignment.AddChild(identifier);
 
