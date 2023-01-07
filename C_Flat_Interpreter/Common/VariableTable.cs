@@ -26,13 +26,13 @@ public class VariableTable
         return _table.ContainsKey(identifier);
     }
 
-    public ParseNode GetType(string identifier)
+    public NodeType GetType(string identifier)
     {
         while (true)
         {
             var node = _table[identifier];
 
-            if (node.type != NodeType.VarIdentifier) return node;
+            if (node.type != NodeType.VarIdentifier) return node.type;
             identifier = node.token?.Word ?? throw new Exception("Identifier node token is null");
         }
     }

@@ -53,7 +53,8 @@ namespace C_Flat
             CreateExecuteAnimation();
 
             ExecuteButton.IsEnabled = false;
-
+            
+            //  Button component setup
             _showTree = new Button()
             {
                 Content = "Show parse tree",
@@ -86,10 +87,13 @@ namespace C_Flat
                 Background = new SolidColorBrush(Color.FromRgb(106, 27, 154)),
             };
             _showCode.Click += ShowCode_Click;
-
+            
+            //  Initial buttons
             LeftButton.Content = _showTree;
             RightButton.Content = _showOutput;
 
+            
+            // Create component for viewing code output
             _codeView = new TextBlock()
             {
                 Background = Brushes.Transparent,
@@ -98,118 +102,80 @@ namespace C_Flat
                 TextWrapping = TextWrapping.NoWrap,
                 IsEnabled = false,
             };
+            //  Initialize output window to show code output
             OutputBorder.Child = _codeView;
             ExpandAll.Visibility = Visibility.Hidden;
+            
+            //  Setup handling for line numbers
+            SourceInput.TextChanged += UpdateLineNumbers;
+            LineNumbers.FontSize = SourceInput.FontSize;
         }
 
+        private void UpdateLineNumbers(object sender, TextChangedEventArgs e)
+        {
+            
+            //  Recreate line numbers if source line count changes
+            if (LineNumbers.Inlines.Count != SourceInput.LineCount)
+            {
+                LineNumbers.Inlines.Clear();
+                for (int i = 1; i <= SourceInput.LineCount; i++)
+                {
+                    LineNumbers.Inlines.Add(new Run(i.ToString() + "\n"));
+                }
+            }
+            
+        }
         private void ButtonTranspile_Click(object sender, RoutedEventArgs e)
         {
+            //  Set code view text to blank and reset border thickness
             _codeView.Text = "";
             SourceInput.BorderThickness = new Thickness(0);
             OutputBorder.BorderThickness = new Thickness(0);
+            
+            //  Disable execute button whilst transpiling
             ExecuteButton.IsEnabled = false;
+            
+            //  Null all relevant variables
             _executionOutput = null;
             _parseTree = null;
-            _unsavedChanges = true;
+
+            //  Clear lexer logs before lexing input
             _lexer.ClearLogs();
             if (_lexer.Tokenise(SourceInput.Text) != 0)
             {
-                //Lexer Failed!
-                _codeView.Inlines.Clear();
-                var run = new Run
-                {
-                    Text = "Lexing Failed! Printing logs: \n",
-                    Background = Brushes.DarkRed,
-                    Foreground = Brushes.White
-                };
-                _codeView.Inlines.Add(run);
-                foreach (var errorMessage in _parser.GetInMemoryLogs()
-                             .Where(log => log.Level > LogEventLevel.Information))
-                {
-                    run.Background = errorMessage.Level switch
-                    {
-                        LogEventLevel.Warning => new SolidColorBrush(Colors.Goldenrod),
-                        _ => Brushes.DarkRed
-                    };
-                    run.Text = errorMessage.RenderMessage();
-                    _codeView.Inlines.Add(run);
-                }
-                SourceInput.BorderBrush = new SolidColorBrush(Colors.DarkRed);
-                SourceInput.BorderThickness = new Thickness(2);
-                _showTree.IsEnabled = false;
-                Snackbar.Appearance = ControlAppearance.Danger;
-                Snackbar.Show("Lexing Failed!");
-	            ShowCode_Click(default!, default!);
+                // Lexer failed!
+                FailTranspile("Lexing", _lexer.GetInMemoryLogs()
+                    .Where(log => log.Level > LogEventLevel.Information));
                 return;
             }
-
+            
             var tokens = _lexer.GetTokens();
+            
             _parser.ClearLogs();
             
             if (_parser.Parse(tokens) != 0)
             {
-                //Parser failed!
-                _codeView.Inlines.Clear();
-                var run = new Run
-                {
-                    Text = "Parsing Failed! Printing logs: \n",
-                    Background = Brushes.DarkRed,
-                    Foreground = Brushes.White
-                };
-                _codeView.Inlines.Add(run);
-                foreach (var errorMessage in _parser.GetInMemoryLogs()
-                             .Where(log => log.Level > LogEventLevel.Information))
-                {
-                    run.Background = errorMessage.Level switch
-                    {
-                        LogEventLevel.Warning => new SolidColorBrush(Colors.Goldenrod),
-                        _ => Brushes.DarkRed
-                    };
-                    run.Text = errorMessage.RenderMessage() + "\n";
-                    _codeView.Inlines.Add(run);
-                }
-                
-                SourceInput.BorderBrush = new SolidColorBrush(Colors.DarkRed);
-                SourceInput.BorderThickness = new Thickness(2);
-                _showTree.IsEnabled = false;
-                Snackbar.Appearance = ControlAppearance.Danger;
-                Snackbar.Show("Parsing Failed!");
-	            ShowCode_Click(default!, default!);
+                //  Parser failed!
+                FailTranspile("Parsing", _parser.GetInMemoryLogs()
+                    .Where(log => log.Level > LogEventLevel.Information));
                 return;
             }
-
+            
+            //Construct parse tree element
             var parseNodes = _parser.GetParseTree();
-            //Construct parse tree element passing parse tree
             ConstructParseTree(parseNodes);
-            //TODO - move error printing into helper method
+            
             if (_transpiler.Transpile(parseNodes) != 0)
             {
-                //Transpiler failed!
-                _codeView.Inlines.Clear();
-                _codeView.Inlines.Add(new Run
-                {
-                    Text = "Transpilation Failed! Printing logs: \n",
-                    Background = Brushes.DarkRed,
-                    Foreground = Brushes.White
-                });
-                foreach (var errorMessage in _transpiler.GetInMemoryLogs()
-                             .Where(log => log.Level > LogEventLevel.Information))
-                {
-                    _codeView.Inlines.Add(new Run
-                    {
-                        Background = errorMessage.Level switch
-                        {
-                            LogEventLevel.Warning => new SolidColorBrush(Colors.Goldenrod),
-                            _ => Brushes.DarkRed
-                        },
-                        Text = errorMessage.RenderMessage() + "\n"
-                    });
-                }
-                SourceInput.BorderBrush = new SolidColorBrush(Colors.DarkRed);
-                SourceInput.BorderThickness = new Thickness(2);
-	            ShowCode_Click(default!, default!);
+                //  Transpilation failed!
+                FailTranspile("Transpilation", _transpiler.GetInMemoryLogs()
+                    .Where(log => log.Level > LogEventLevel.Information));
                 return;
             }
+            
+            //  Mark new changes to the transpiled program.
+            _unsavedChanges = true;
+            
             var transpiledProgram = _transpiler.Program;
             Snackbar.Appearance = ControlAppearance.Success;
             Snackbar.Show("Transpile Successful!");
@@ -220,8 +186,51 @@ namespace C_Flat
             ShowCode_Click(default!, default!);
         }
 
+        private void FailTranspile(string stage, IEnumerable<LogEvent> logs)
+        {
+            //  Transpile failed!
+            // Clear output text and print logs
+            _codeView.Inlines.Clear();
+            _codeView.Inlines.Add(new Run()
+            {
+                Text = $"{stage} Failed! Printing logs: \n",
+                FontWeight = FontWeights.DemiBold,
+                TextDecorations = TextDecorations.Underline,
+                FontSize = 24,
+                Background = Brushes.Transparent,
+                Foreground = Brushes.White,
+            });
+            foreach (var errorMessage in logs)
+            {
+                _codeView.Inlines.Add(new Run()
+                {
+                    Text = $"{errorMessage.RenderMessage()} \n",
+                    Background =  errorMessage.Level switch
+                    {
+                        LogEventLevel.Warning => new SolidColorBrush(Colors.Goldenrod),
+                        _ => Brushes.DarkRed
+                    },
+                });
+            }
+                
+            //  Set input border to red to indicate failure
+            SourceInput.BorderBrush = new SolidColorBrush(Colors.DarkRed);
+            SourceInput.BorderThickness = new Thickness(2);
+                
+            //  Disable parse tree view
+            _showTree.IsEnabled = false;
+            //  Show a message indicating failed lexing
+            Snackbar.Appearance = ControlAppearance.Danger;
+            Snackbar.Show($"{stage} Failed!");
+                
+            //  Show code view
+            ShowCode_Click(default!, default!);
+            SaveOutput.Visibility = Visibility.Hidden;
+        }
+
         private async void ButtonExecuteCode_Click(object sender, RoutedEventArgs e)
         {
+            //  Disable buttons
             TranspileButton.IsEnabled = false;
             ExecuteButton.IsEnabled = false;
             _executionOutput = new TextBlock
@@ -280,7 +289,7 @@ namespace C_Flat
                     _executionOutput.Inlines.Add(new Run()
                     {
                         Text = trimmedError + "\n",
-                        Background = Brushes.DarkRed,
+                        Background = trimmedError.Contains("error") ? Brushes.DarkRed : Brushes.Goldenrod,
                     });
                 }
                 ExecuteButton.IsEnabled = false;
@@ -290,7 +299,7 @@ namespace C_Flat
                 Snackbar.Show("Execution Failed!");
                 return;
             }
-            //Otherwise just copy output directly to text-box and apply a green "success border"
+            //  Otherwise just copy output directly to text-box and apply a green "success border"
             _executionOutput.Text = output;
             OutputBorder.BorderBrush = Brushes.LawnGreen;
             OutputBorder.BorderThickness = new Thickness(2);
