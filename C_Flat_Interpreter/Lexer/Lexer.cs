@@ -58,13 +58,13 @@ public class Lexer : InterpreterLogger
             {'<', TokenType.Less},
             {'>', TokenType.More}
         };
-        
+
         input = input.Replace("\r", "");
         _lines = input.Split("\n");
 
         for (int j = 0; j < _lines.Length; j++) //line
         {
-            for(int i = 0; i < _lines[j].Length; i++) //character
+            for (int i = 0; i < _lines[j].Length; i++) //character
             {
                 char c = _lines[j][i];
                 var newToken = new Token
@@ -74,11 +74,11 @@ public class Lexer : InterpreterLogger
 
                 switch (c)
                 {
-                    case ' ' :
+                    case ' ':
                         whitespace += c;
                         newToken = null;
                         break;
-                    case '!' :
+                    case '!':
                         if (_lines[j][i + 1] == '=')
                         {
                             i++;
@@ -91,7 +91,7 @@ public class Lexer : InterpreterLogger
                             newToken.Word = whitespace + c;
                         }
                         break;
-                    case '=' :
+                    case '=':
                         if (_lines[j][i + 1] == '=')
                         {
                             i++;
@@ -110,7 +110,7 @@ public class Lexer : InterpreterLogger
                         var substring = ParseString(j, ++i);
                         newToken.Word += substring;
                         i += substring.Length - 1;
-                        if (_lines[j].ElementAtOrDefault(i+1) != '"')
+                        if (_lines[j].ElementAtOrDefault(i + 1) != '"')
                         {
                             _logger.Error("Invalid lexeme encountered! Disregarding: {invalidToken}", newToken);
                             newToken = null;
@@ -118,7 +118,7 @@ public class Lexer : InterpreterLogger
                         }
                         else
                             newToken.Word += _lines[j][++i];
-                        
+
                         break;
                     default:
                         if (char.IsDigit(c))
@@ -165,13 +165,13 @@ public class Lexer : InterpreterLogger
     {
         var numberString = _lines[line][index].ToString();
         bool isDecimal = false;
-        while (index+1 < _lines[line].Length)
+        while (index + 1 < _lines[line].Length)
         {
             if (Char.IsDigit(_lines[line][index + 1]))
             {
-                numberString += _lines[line][++index];    
+                numberString += _lines[line][++index];
             }
-            else if (!isDecimal && _lines[line][index + 1] == '.' && index+2 < _lines[line].Length && char.IsDigit(_lines[line][index+2]))
+            else if (!isDecimal && _lines[line][index + 1] == '.' && index + 2 < _lines[line].Length && char.IsDigit(_lines[line][index + 2]))
             {
                 //if '.' ensure there's not already '.' and at least one digit afterwards
                 isDecimal = true;
@@ -187,11 +187,11 @@ public class Lexer : InterpreterLogger
     private string ParseWord(int line, int index)
     {
         var wordString = _lines[line][index].ToString();
-        while (index+1 < _lines[line].Length)
+        while (index + 1 < _lines[line].Length)
         {
             if (Char.IsLetter(_lines[line][index + 1]))
             {
-                wordString += _lines[line][++index];    
+                wordString += _lines[line][++index];
             }
             else
             {

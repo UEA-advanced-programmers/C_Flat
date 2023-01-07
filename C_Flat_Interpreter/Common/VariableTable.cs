@@ -14,7 +14,7 @@ public static class VariableTable
         else
             _table.Add(word, node);
     }
-    
+
     public static void Add(string word)
     {
         if (_table.ContainsKey(word))

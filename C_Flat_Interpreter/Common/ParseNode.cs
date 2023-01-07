@@ -7,8 +7,8 @@ public class ParseNode
     private List<ParseNode> childNodes = new();
     public Token? token;
     public NodeType type;
-    
-//todo - figure out what constructors are needed
+
+    //todo - figure out what constructors are needed
     public ParseNode(NodeType type, Token token)
     {
         this.type = type;
@@ -43,7 +43,7 @@ public class ParseNode
             childNode.GetTerminals(terminalList);
         }
     }
-    
+
     public override string ToString()
     {
         return token != null ? $"{type.ToString()}: {token.Word.Trim()}" : type.ToString();
