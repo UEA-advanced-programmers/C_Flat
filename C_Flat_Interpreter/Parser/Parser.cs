@@ -295,7 +295,7 @@ public class Parser : InterpreterLogger
         //	Try to parse boolean
         try
         {
-            node.AddChild(CreateNode(NodeType.Boolean, Boolean));
+            node.AddChild(CreateNode(NodeType.LogicStatement, LogicStatement));
             return;
         }
         catch (ParserException e)
@@ -509,7 +509,7 @@ public class Parser : InterpreterLogger
                 var identifierNode = CreateNode(NodeType.VarIdentifier, Identifier);
                 var identifier = identifierNode.getChildren().First().token?.ToString();
                 // Check whether type is correct
-                if (VariableTable.GetType(identifier ?? throw new SyntaxErrorException("Invalid identifier token")) is not NodeType.Boolean)
+                if (VariableTable.GetType(identifier ?? throw new SyntaxErrorException("Invalid identifier token")) is not NodeType.LogicStatement)
                     throw new IncorrectTypeException($"Variable {identifier} is not of type 'Boolean'", _currentLine);
                 node.AddChild(identifierNode);
                 return;

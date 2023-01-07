@@ -179,8 +179,8 @@ public class Transpiler : InterpreterLogger
             case NodeType.String:
                 TranspileString(valueNode);
                 break;
-            case NodeType.Boolean:
-                TranspileBoolean(valueNode);
+            case NodeType.LogicStatement:
+                TranspileLogicStatement(valueNode);
                 break;
             case NodeType.VarIdentifier:
                 TranspileIdentifier(valueNode);
@@ -236,7 +236,7 @@ public class Transpiler : InterpreterLogger
         var typeWord = type switch
         {
             NodeType.Expression => "float",
-            NodeType.Boolean => "bool",
+            NodeType.LogicStatement => "bool",
             NodeType.String => "string",
             NodeType.Null => throw new InvalidSyntaxException($"Variable '{identifierToken}' is declared but never used, omitting"),
             _ => throw new IncorrectTypeException("Variable has invalid assignment type")

@@ -229,7 +229,7 @@ A loop can be created using the keyword `while`, followed by a logic statement w
 
 `<Assignment>::= <Identifier> '=' <Assignment-Value> ‘;’`
 
-`<Assignment-Value>::= (<Expression> | ' " ' <Word> ' " ' | <Boolean> | <Identifier>)`
+`<Assignment-Value>::= (<Expression> | ' " ' <Word> ' " ' | <Logic-Statement> | <Identifier>)`
 
 ### Functions:
 
