@@ -40,6 +40,7 @@ public class Transpiler : InterpreterLogger
         //Retrieve program.cs file
         Program = string.Empty;
         _currentLine = 0;
+        ClearLogs();
         var writer = File.CreateText(GetProgramPath());
         foreach (var node in parseTree)
         {
