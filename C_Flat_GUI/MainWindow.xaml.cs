@@ -173,14 +173,24 @@ namespace C_Flat
                 return;
             }
             
+            if (_transpiler.GetInMemoryLogs().Any(log => log.Level > LogEventLevel.Information))
+            {
+                Snackbar.Appearance = ControlAppearance.Caution;
+                Snackbar.Show("Caution!","Transpile succeeded but with warnings...", SymbolRegular.CheckboxWarning20);
+                SourceInput.BorderBrush = new SolidColorBrush(Colors.Goldenrod);
+                SourceInput.BorderThickness = new Thickness(2);
+            }
+            else
+            {
+                Snackbar.Appearance = ControlAppearance.Success;
+                Snackbar.Show("Success!", "Transpile was successful!", SymbolRegular.CheckboxChecked20);
+                SourceInput.BorderBrush = new SolidColorBrush(Colors.LawnGreen);
+                SourceInput.BorderThickness = new Thickness(2);
+            }
             //  Mark new changes to the transpiled program.
             _unsavedChanges = true;
             
             var transpiledProgram = _transpiler.Program;
-            Snackbar.Appearance = ControlAppearance.Success;
-            Snackbar.Show("Transpile Successful!");
-            SourceInput.BorderBrush = new SolidColorBrush(Colors.LawnGreen);
-            SourceInput.BorderThickness = new Thickness(2);
             ExecuteButton.IsEnabled = true;
             _codeView.Text = $"{transpiledProgram}";
             ShowCode_Click(default!, default!);
@@ -221,7 +231,7 @@ namespace C_Flat
             _showTree.IsEnabled = false;
             //  Show a message indicating failed lexing
             Snackbar.Appearance = ControlAppearance.Danger;
-            Snackbar.Show($"{stage} Failed!");
+            Snackbar.Show("Fail!", $"Transpile failed at {stage.ToLower()} stage!", SymbolRegular.ErrorCircle20);
                 
             //  Show code view
             ShowCode_Click(default!, default!);

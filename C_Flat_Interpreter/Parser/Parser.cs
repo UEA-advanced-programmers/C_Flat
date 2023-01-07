@@ -34,7 +34,6 @@ public class Parser : InterpreterLogger
 	private int _totalTokens;
 	private List<Token> _tokens;
 	private List<ParseNode> _parseTree = new();
-	private VariableTable _variableTable = new();
 
 	private delegate void Delegate(ParseNode node);
 
@@ -126,7 +125,7 @@ public class Parser : InterpreterLogger
 		_tokens = tokens;
 		_totalTokens = tokens.Count;
 		_parseTree = new();
-		_variableTable = new();
+		VariableTable.Clear();
 		Reset();
 		//TODO - investigate better way to do this
 		try
@@ -191,22 +190,16 @@ public class Parser : InterpreterLogger
 		{
 			var identifier = _tokens[_currentIndex].Word.Trim();
 
-			if (_variableTable.Exists(identifier))
+			if (VariableTable.Exists(identifier))
 			{
-				var childNode = CreateNode(NodeType.VarAssignment, VarAssignment);
-				node.AddChild(childNode);
-				
-				//	gets the value the variable is assigned to
-				var assignmentValue = childNode.getChildren()[2];
-				var existingType = _variableTable.GetType(identifier);
-				if (existingType != NodeType.Null && existingType != assignmentValue.type)
-				{
-					throw new SyntaxErrorException($"Invalid variable assignment! Type '{assignmentValue.type}' cannot be assigned to '{identifier}' of type '{existingType}'", _currentLine);
-				}
+				node.AddChild( CreateNode(NodeType.VarAssignment, VarAssignment));
 				currentIndex = _currentIndex;
 				return;
 			}
-			throw new SyntaxErrorException($"Invalid variable assignment! Variable '{_tokens.ElementAtOrDefault(_currentIndex)}' has not been declared!", _currentLine);
+			else
+			{
+				throw new SyntaxErrorException($"Invalid variable assignment! Variable '{_tokens.ElementAtOrDefault(_currentIndex)}' has not been declared!", _currentLine);
+			}
 		}
 		catch (InvalidSyntaxException e)
 		{
@@ -221,7 +214,7 @@ public class Parser : InterpreterLogger
 	private void DeclareVariable(ParseNode node)
 	{
 		// check for String token with the name "var"
-		if (Match(TokenType.String) && CheckVarLiteral())
+		if (Match(TokenType.Word) && CheckVarLiteral())
 		{
 			node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
 			Advance();
@@ -235,7 +228,7 @@ public class Parser : InterpreterLogger
 		int Rein = _currentIndex;
 		
 		//	Throw syntax error if variable already exists
-		if (_variableTable.Exists(identifier))
+		if (VariableTable.Exists(identifier))
 		{
 			throw new SyntaxErrorException($"Variable '{_tokens.ElementAtOrDefault(_currentIndex)}' has already been declared!", _currentLine);
 		}
@@ -245,8 +238,6 @@ public class Parser : InterpreterLogger
 		{
 			ParseNode childNode = CreateNode(NodeType.VarAssignment, VarAssignment);
 			node.AddChild(childNode);
-			
-			_variableTable.Add(identifier, childNode.getChildren()[2]); //gets the value the variable is assigned to
 			return;
 		}
 		catch (InvalidSyntaxException e)
@@ -257,7 +248,7 @@ public class Parser : InterpreterLogger
 
 		node.AddChild(CreateNode(NodeType.VarIdentifier, VarIdentifier));
 		
-		_variableTable.Add(identifier);
+		VariableTable.Add(identifier);
 
 		if (Match(TokenType.SemiColon))
 		{
@@ -273,38 +264,54 @@ public class Parser : InterpreterLogger
 	//TODO - Rename to match ebnf (Identifier)
 	private void VarIdentifier(ParseNode node)
 	{
-		if (Match(TokenType.String))
+		if (Match(TokenType.Word))
 		{
 			node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
 			Advance();
 		}
 		else
 		{
-			throw new SyntaxErrorException($"Invalid variable identifier! Expected token type 'string'. Actual: '{_tokenType}'", _currentLine);
+			throw new InvalidSyntaxException($"Invalid variable identifier! Expected token type word. Actual: '{_tokenType}'", _currentLine);
 		}
 	}
 	//TODO - Rename to match ebnf (Assignment)
 	private void VarAssignment(ParseNode node)
 	{
 		// check for identifier
-		node.AddChild(CreateNode(NodeType.VarIdentifier, VarIdentifier));
+		var identifierNode = CreateNode(NodeType.VarIdentifier, VarIdentifier);
+		node.AddChild(identifierNode);
 
 		if (!Match(TokenType.Assignment)) 
 			throw new InvalidSyntaxException($"Invalid variable assignment, expected '='. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
 		
 		node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
 		Advance();
-		
-		//TODO - Also try check for word, and logic statement
+
+		//	Try and parse assignment value
 		try
 		{
-			node.AddChild(CreateNode(NodeType.Expression, Expression));
+			//	Check whether the value node is of the same type
+			var identifier = identifierNode.getChildren().First().token?.ToString();
+			var valueNode = CreateNode(NodeType.AssignmentValue, AssignmentValue);
+			var assignmentValue = valueNode.getChildren().First();
+			if (VariableTable.Exists(identifier ?? throw new Exception("Invalid identifier token")))
+			{
+				var existingType = VariableTable.GetType(identifier);
+				if (existingType != NodeType.Null && existingType != assignmentValue.type)
+				{
+					throw new SyntaxErrorException($"Invalid variable assignment! Type '{assignmentValue.type}' cannot be assigned to '{identifier}' of type '{existingType}'", _currentLine);
+				}
+			}
+			VariableTable.Add(identifier,assignmentValue);
+			//	Only add if the assignment is valid
+			node.AddChild(valueNode);
 		}
-		catch (InvalidSyntaxException e)
+		catch (InvalidSyntaxException _)
 		{
-			_logger.Warning(e.Message);
+			throw new SyntaxErrorException($"Invalid assignment value, unable to parse variable assignment", _currentLine);
 		}
-
+		
+		//	Finally check for termination
 		if (Match(TokenType.SemiColon))
 		{
 			node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
@@ -312,13 +319,87 @@ public class Parser : InterpreterLogger
 		}
 		else
 		{
-			throw new SyntaxErrorException($"Unterminated assignment, expected ';'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
+			throw new InvalidSyntaxException($"Unterminated assignment, expected ';'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
 		}
 	}
-	#endregion
-	
-	#region Expressions
-	private void Expression(ParseNode node)
+
+	private void AssignmentValue(ParseNode node)
+	{
+		//	Store current index
+		int index = _currentIndex;
+		
+		//	Try to parse boolean
+		try
+		{
+			node.AddChild(CreateNode(NodeType.Boolean, Boolean));
+			return;
+		}
+		catch (ParserException e)
+		{
+			if (e is SyntaxErrorException)
+				throw;
+			Reset(index);
+			_logger.Debug(e.Message);
+		}
+		
+		//	Try to parse expression
+		try
+		{
+			node.AddChild(CreateNode(NodeType.Expression, Expression));
+			return;
+		}
+		catch (ParserException e)
+		{
+			if (e is SyntaxErrorException)
+				throw;
+			Reset(index);
+			_logger.Debug(e.Message);
+		}
+		
+		//	Try to parse string
+        try
+        {
+	        node.AddChild(CreateNode(NodeType.String, String));
+	        return;
+        }
+		catch (InvalidSyntaxException e)
+		{
+			Reset(index);
+			_logger.Debug(e.Message);
+		}
+        //	Finally try to parse identifier
+		try
+		{
+			node.AddChild(CreateNode(NodeType.VarIdentifier, VarIdentifier));
+		}
+        catch (InvalidSyntaxException e)
+        {
+	        Reset(index);
+	        _logger.Debug(e.Message);
+	        throw;
+        }
+	}
+    #endregion
+
+    #region Strings
+
+    private void String(ParseNode node)
+    {
+	    if (Match(TokenType.String))
+	    {
+		    node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
+		    Advance();
+	    }
+	    else
+	    {
+		    throw new InvalidSyntaxException($"Invalid string, expected type 'String'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
+	    }
+    }
+
+    #endregion
+
+    #region Expressions
+    private void Expression(ParseNode node)
 	{
 		//	Try add first term node
 		node.AddChild(CreateNode(NodeType.Term, Term));
@@ -329,7 +410,17 @@ public class Parser : InterpreterLogger
 		Advance();
 		
 		//	Add second term node
-		node.AddChild(CreateNode(NodeType.Term, Term));
+		try
+		{
+			node.AddChild(CreateNode(NodeType.Term, Term));
+		}
+		catch (ParserException e)
+		{
+			if (e is SyntaxErrorException)
+				throw;
+			_logger.Warning(e.Message);
+			throw new SyntaxErrorException("Invalid right expression operand", _currentLine);
+		}
 	}
 
 	private void Term(ParseNode node)
@@ -353,6 +444,16 @@ public class Parser : InterpreterLogger
 		{
 			node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
 			Advance();
+		}
+		else if (Match(TokenType.Word))
+		{
+			var identifierNode = CreateNode(NodeType.VarIdentifier, VarIdentifier);
+			//	Check whether the value node is of the same type
+			var identifier = identifierNode.getChildren().First().token?.ToString();
+			// Check whether type is correct
+			if(VariableTable.GetType(identifier?? throw new SyntaxErrorException("Invalid identifier token")) is not NodeType.Expression)
+				throw new IncorrectTypeException($"Variable {identifier} is not of type 'Expression'");
+			node.AddChild(identifierNode);
 		}
 		else if (Match(TokenType.Sub))
 		{
@@ -421,54 +522,66 @@ public class Parser : InterpreterLogger
 			}
 		}
 		//	Otherwise check for a boolean literal
-		else if (Match(TokenType.String))
+		else if (Match(TokenType.Word) && CheckBoolLiteral())
 		{
-			if (CheckBoolLiteral())
-			{
-				node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
-				Advance();
-			}
-			else
-			{
-				throw new SyntaxErrorException($"Invalid Boolean literal, expected 'true' or 'false'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
-			}
+			node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
+			Advance();
 		}
-		//	Otherwise check for expression query
 		else
 		{
 			//	Temporarily save index
 			var index = _currentIndex;
+			//	Try and parse expression query 
 			try
 			{
 				node.AddChild(CreateNode(NodeType.ExpressionQuery, ExpressionQuery));
+				return;
+			}
+			catch (ParserException e)
+			{
+				if (e is SyntaxErrorException)
+				{
+					throw;
+				}
+				_logger.Debug(e.Message);
+				Reset(index);
+			}
+			//	Try and parse variable identifier
+			try
+			{
+				var identifierNode = CreateNode(NodeType.VarIdentifier, VarIdentifier);
+				var identifier = identifierNode.getChildren().First().token?.ToString();
+				// Check whether type is correct
+				if(VariableTable.GetType(identifier ?? throw new SyntaxErrorException("Invalid identifier token")) is not NodeType.Boolean)
+					throw new IncorrectTypeException($"Variable {identifier} is not of type 'Boolean'", _currentLine);
+				node.AddChild(identifierNode);
+				return;
 			}
 			catch (InvalidSyntaxException e)
 			{
-				_logger.Warning(e.Message);
-				Reset(index);
+				_logger.Debug(e.Message);
+			}
+			//	Try and parse a parenthesised logic statement
+			if (Match(TokenType.LeftParen))
+			{
+				node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
+				Advance();
 				
-				//	Try and parse a parenthesised logic statement
-				if (Match(TokenType.LeftParen))
+				node.AddChild(CreateNode(NodeType.LogicStatement, LogicStatement));
+
+				if (Match(TokenType.RightParen))
 				{
 					node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
 					Advance();
-					
-					node.AddChild(CreateNode(NodeType.LogicStatement, LogicStatement));
-
-					if (Match(TokenType.RightParen))
-					{
-						node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
-						Advance();
-					}
-					else
-					{
-						throw new SyntaxErrorException($"Mismatched parentheses, expected ')'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
-					}
 				}
 				else
 				{
-					throw new InvalidSyntaxException("Unexpected token, unable to parse a boolean expression!");
+					throw new SyntaxErrorException($"Mismatched parentheses, expected ')'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
 				}
+			}
+			else
+			{
+				throw new InvalidSyntaxException("Unexpected token, unable to parse a boolean expression!");
 			}
 		}
 	}
@@ -483,7 +596,15 @@ public class Parser : InterpreterLogger
 		Advance();
 		
 		//	Parse the right boolean operand
-		node.AddChild(CreateNode(NodeType.Boolean, Boolean));
+		try
+		{
+			node.AddChild(CreateNode(NodeType.Boolean, Boolean));
+		}
+		catch (IncorrectTypeException e)
+		{
+			_logger.Warning(e.Message);
+			throw new SyntaxErrorException("Incorrect type on condition operand", _currentLine);
+		}
 	}
 
 	private void ExpressionQuery(ParseNode node)
@@ -494,7 +615,7 @@ public class Parser : InterpreterLogger
 		//TODO: check whether this could cause out of bounds exception!
 		//	Throw exception if token doesn't match any operators
 		if (!Match(TokenType.NotEqual) && !Match(TokenType.Equals) && !Match(TokenType.More) &&
-		    !Match(TokenType.Less)) throw new SyntaxErrorException($"Invalid operator token, expected '!=' | '==' | '>' | '<'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
+		    !Match(TokenType.Less)) throw new InvalidSyntaxException($"Invalid operator token, expected '!=' | '==' | '>' | '<'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
 		
 		node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
 		Advance();
@@ -507,7 +628,7 @@ public class Parser : InterpreterLogger
 		catch (InvalidSyntaxException e)
 		{
 			_logger.Warning(e.Message);
-			throw new SyntaxErrorException($"Invalid right expression query operand!");
+			throw new SyntaxErrorException($"Invalid right expression query operand!", _currentLine);
 		}
 	}
     #endregion
@@ -516,13 +637,13 @@ public class Parser : InterpreterLogger
     //TODO - Rename to match EBNF
 	private void IfStatements(ParseNode node)
     {
-	    if (Match(TokenType.String) && CheckIf())
+	    if (Match(TokenType.Word) && CheckIf())
 		{
 			node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
 			Advance();
 		}
 		else {
-		    throw new InvalidSyntaxException("Unexpected token, unable to parse conditional statement!");
+		    throw new InvalidSyntaxException("Unexpected token, unable to parse conditional statement!", _currentLine);
 		}
 
 		if (Match(TokenType.LeftParen))
@@ -543,7 +664,7 @@ public class Parser : InterpreterLogger
 		catch(InvalidSyntaxException e)
 		{
 			_logger.Warning(e.Message);
-			throw new SyntaxErrorException($"Invalid logic statement within conditional statement!");
+			throw new SyntaxErrorException($"Invalid logic statement within conditional statement!", _currentLine);
 		}
 		
 		if (Match(TokenType.RightParen))
@@ -563,10 +684,10 @@ public class Parser : InterpreterLogger
 		catch(InvalidSyntaxException e)
 		{
 			_logger.Warning(e.Message);
-			throw new SyntaxErrorException($"Invalid block within if statement!");
+			throw new SyntaxErrorException($"Invalid block within if statement!", _currentLine);
 		}
 		
-		if (Match(TokenType.String) && CheckElse())
+		if (Match(TokenType.Word) && CheckElse())
 		{
 			node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
 			Advance();
@@ -579,21 +700,21 @@ public class Parser : InterpreterLogger
 			catch(InvalidSyntaxException e)
 			{
 				_logger.Warning(e.Message);
-				throw new SyntaxErrorException($"Invalid block within else statement!");
+				throw new SyntaxErrorException($"Invalid block within else statement!", _currentLine);
 			}
 		}
     }
 
 	private void WhileStatement(ParseNode node)
 	{
-		if (Match(TokenType.String) && CheckWhile())
+		if (Match(TokenType.Word) && CheckWhile())
 		{
 			node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
 			Advance();
 		}
 		else
 		{
-			throw new InvalidSyntaxException("Unexpected token, unable to parse while statement!");
+			throw new InvalidSyntaxException("Unexpected token, unable to parse while statement!", _currentLine);
 		}
 
 		if (Match(TokenType.LeftParen))
@@ -614,7 +735,7 @@ public class Parser : InterpreterLogger
 		catch(InvalidSyntaxException e)
 		{
 			_logger.Warning(e.Message);
-			throw new SyntaxErrorException($"Invalid logic statement within while statement!");
+			throw new SyntaxErrorException($"Invalid logic statement within while statement!", _currentLine);
 		}
 		
 		if (Match(TokenType.RightParen))
@@ -635,7 +756,7 @@ public class Parser : InterpreterLogger
 		catch(InvalidSyntaxException e)
 		{
 			_logger.Warning(e.Message);
-			throw new SyntaxErrorException($"Invalid block within while statement!");
+			throw new SyntaxErrorException($"Invalid block within while statement!", _currentLine);
 		}
 	}
 	
@@ -661,7 +782,7 @@ public class Parser : InterpreterLogger
 			catch (InvalidSyntaxException e)
 			{
 				_logger.Warning(e.Message);
-				throw new SyntaxErrorException($"Invalid statement within block!");
+				throw new SyntaxErrorException($"Invalid statement within block!", _currentLine);
 			}
 		}
 		if (Match(TokenType.RightCurlyBrace))

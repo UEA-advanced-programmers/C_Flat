@@ -3,30 +3,32 @@ using C_Flat_Interpreter.Common.Enums;
 
 namespace C_Flat_Interpreter.Common;
 
-public class VariableTable
+public static class VariableTable
 {
-    private Dictionary<string, ParseNode> _table;
-    public VariableTable()
-    {
-        _table = new Dictionary<string, ParseNode>();
-    }
+    private static Dictionary<string, ParseNode> _table = new();
 
-    public void Add(string word, ParseNode node)
+    public static void Add(string word, ParseNode node)
     {
-        _table.Add(word, node);
+        if (_table.ContainsKey(word))
+            _table[word] = node;
+        else
+            _table.Add(word, node);
     }
     
-    public void Add(string word)
+    public static void Add(string word)
     {
-        _table.Add(word, new ParseNode(NodeType.Null));
+        if (_table.ContainsKey(word))
+            _table[word] = new(NodeType.Null);
+        else
+            _table.Add(word, new(NodeType.Null));
     }
 
-    public bool Exists(string identifier)
+    public static bool Exists(string identifier)
     {
         return _table.ContainsKey(identifier);
     }
 
-    public NodeType GetType(string identifier)
+    public static NodeType GetType(string identifier)
     {
         while (true)
         {
@@ -35,5 +37,10 @@ public class VariableTable
             if (node.type != NodeType.VarIdentifier) return node.type;
             identifier = node.token?.Word ?? throw new Exception("Identifier node token is null");
         }
+    }
+
+    public static void Clear()
+    {
+        _table.Clear();
     }
 }
