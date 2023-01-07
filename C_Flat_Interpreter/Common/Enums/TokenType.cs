@@ -13,7 +13,7 @@ public enum TokenType //will be added to later, names not final
     SemiColon,
     Num,
     Divide,
-    String,
+    Word,
     Sub,
     Not,
     And,
@@ -22,5 +22,6 @@ public enum TokenType //will be added to later, names not final
     Less,
     More,
     NotEqual,
-    Assignment
+    Assignment,
+    String
 }

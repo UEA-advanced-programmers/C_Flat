@@ -227,7 +227,9 @@ A loop can be created using the keyword `while`, followed by a logic statement w
 
 `<Word>::= 1*(a-zA-Z) - <Keywords>`
 
-`<Assignment>::= <Identifier> '=' (<Expression> | ' " '<Word>' " ' | <Logic-Statement> | <Identifier>) ‘;’`
+`<Assignment>::= <Identifier> '=' <Assignment-Value> ‘;’`
+
+`<Assignment-Value>::= (<Expression> | ' " ' <Word> ' " ' | <Boolean> | <Identifier>)`
 
 ### Functions:
 
