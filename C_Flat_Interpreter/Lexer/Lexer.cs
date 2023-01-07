@@ -46,17 +46,17 @@ public class Lexer : InterpreterLogger
         {
             { ';', TokenType.SemiColon },
             { '+', TokenType.Add },
-            {'*', TokenType.Multi},
-            {'(', TokenType.LeftParen},
-            {')', TokenType.RightParen},
-            {'{', TokenType.LeftCurlyBrace},
-            {'}', TokenType.RightCurlyBrace},
-            {'-', TokenType.Sub},
-            {'/', TokenType.Divide},
-            {'&', TokenType.And},
-            {'|', TokenType.Or},
-            {'<', TokenType.Less},
-            {'>', TokenType.More}
+            { '*', TokenType.Multi },
+            { '(', TokenType.LeftParen },
+            { ')', TokenType.RightParen },
+            { '{', TokenType.LeftCurlyBrace },
+            { '}', TokenType.RightCurlyBrace },
+            { '-', TokenType.Sub },
+            { '/', TokenType.Divide },
+            { '&', TokenType.And },
+            { '|', TokenType.Or },
+            { '<', TokenType.Less },
+            { '>', TokenType.More }
         };
 
         input = input.Replace("\r", "");
@@ -67,6 +67,7 @@ public class Lexer : InterpreterLogger
             for (int i = 0; i < _lines[j].Length; i++) //character
             {
                 char c = _lines[j][i];
+                char nextChar = _lines[j].ElementAtOrDefault(i + 1); //todo - maybe move out and then only needs assigning once
                 var newToken = new Token
                 {
                     Line = j
@@ -79,11 +80,11 @@ public class Lexer : InterpreterLogger
                         newToken = null;
                         break;
                     case '!':
-                        if (_lines[j][i + 1] == '=')
+                        if (nextChar == '=')
                         {
                             i++;
                             newToken.Type = TokenType.NotEqual;
-                            newToken.Word = whitespace + c + _lines[j][i];
+                            newToken.Word = whitespace + c + nextChar;
                         }
                         else
                         {
@@ -92,11 +93,11 @@ public class Lexer : InterpreterLogger
                         }
                         break;
                     case '=':
-                        if (_lines[j][i + 1] == '=')
+                        if (nextChar == '=')
                         {
                             i++;
                             newToken.Type = TokenType.Equals;
-                            newToken.Word = whitespace + c + _lines[j][i];
+                            newToken.Word = whitespace + c + nextChar;
                         }
                         else
                         {
@@ -106,9 +107,9 @@ public class Lexer : InterpreterLogger
                         break;
                     case '"':
                         newToken.Type = TokenType.String;
-                        newToken.Word = whitespace + c;
+                        var tokenWord = whitespace + c;
                         var substring = ParseString(j, ++i);
-                        newToken.Word += substring;
+                        tokenWord += substring;
                         i += substring.Length - 1;
                         if (_lines[j].ElementAtOrDefault(i + 1) != '"')
                         {
@@ -117,8 +118,7 @@ public class Lexer : InterpreterLogger
                             _failed = true;
                         }
                         else
-                            newToken.Word += _lines[j][++i];
-
+                            newToken.Word = tokenWord + _lines[j][++i];
                         break;
                     default:
                         if (char.IsDigit(c))
@@ -184,6 +184,7 @@ public class Lexer : InterpreterLogger
         }
         return numberString;
     }
+    
     private string ParseWord(int line, int index)
     {
         var wordString = _lines[line][index].ToString();
