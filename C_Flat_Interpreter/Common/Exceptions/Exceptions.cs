@@ -23,5 +23,11 @@ public class IncorrectTypeException : ParserException
     public IncorrectTypeException(string? message) : base("Incorrect Type!", message) { }
 
     public IncorrectTypeException(string? message, int line) : base("Incorrect Type!", line, message) { }
+}
 
+public class OutOfScopeException : ParserException
+{
+    public OutOfScopeException(string? message) : base("Scoping error!", message) { }
+
+    public OutOfScopeException(string? message, int line) : base("Scoping Error!", line, message) { }
 }
