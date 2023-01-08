@@ -372,10 +372,7 @@ public class Parser : InterpreterLogger
         {
             node.AddChild(CreateNode(NodeType.FunctionParameter, FunctionParameter));
             parameters.Add(_tokens[_currentIndex - 1].Word);
-            //FunctionTable.AddParameter(identifier, _tokens[_currentIndex - 1].Word);
 
-            
-            //ignore this for now!
             while (_currentIndex < _totalTokens && !Match(TokenType.RightParen))
             {
                 try
@@ -418,6 +415,7 @@ public class Parser : InterpreterLogger
             _logger.Warning(e.Message);
             throw new SyntaxErrorException($"Invalid block within function!", _currentLine);
         }
+        //todo - descope variables!
     }
     
     private void FunctionIdentifier(ParseNode node)
@@ -484,24 +482,29 @@ public class Parser : InterpreterLogger
             
             List<string>? parameters = FunctionTable.GetParams(identifier);
             
-            //foreach (var param in parameters)
-            //{
-            //    _scopeManager.AddToScope(param);
-            //}
-            
-
             // Check for '('
             if (Match(TokenType.LeftParen))
             {
                 node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
                 Advance();
                 
-                if (parameters != null)
+                if (parameters.Count > 0)
                 {
                     var assignmentValue = CreateNode(NodeType.AssignmentValue, AssignmentValue);
-                    if (assignmentValue.GetChild().type == VariableTable.GetType(parameters.First().Trim()))
+                    var variableNode = assignmentValue.GetChild();
+                    
+                    var variable = _tokens[_currentIndex - 1].ToString();
+
+                    if (!_scopeManager.InScope(variable))
+                        throw new SyntaxErrorException("Variable not in scope"); //todo - fix this
+                    
+                    if (variableNode.type == VariableTable.GetType(parameters.First().Trim()))
                     {
                         node.AddChild(assignmentValue);
+                    }
+                    else
+                    {
+                        throw new SyntaxErrorException("Parameter is not the correct value"); //todo - make this better
                     }
 
                     parameters.Remove(parameters.First());
