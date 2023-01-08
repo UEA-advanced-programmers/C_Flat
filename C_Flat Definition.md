@@ -191,7 +191,9 @@ A loop can be created using the keyword `while`, followed by a logic statement w
 ## Simplified EBNF:
 
 ### Statements:
-`<Statement>::= <Declaration> | <Assignment> | <Function-Definition> | <Function-Call> | <Conditional-Statement> | <While-Loop>`
+`<Statement>::= <Declaration> | <Assignment> | <Function-Call> | <Conditional-Statement> | <While-Loop>`
+
+`<Definition>::= <Function-Definition>`
 
 ### Numerical expressions:
 

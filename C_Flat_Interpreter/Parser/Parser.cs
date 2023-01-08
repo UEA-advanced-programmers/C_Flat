@@ -32,6 +32,7 @@ public class Parser : InterpreterLogger
         _statementsDictionary.Add(NodeType.FunctionDefinition, FunctionDefinition);
         _statementsDictionary.Add(NodeType.FunctionCall, FunctionCall);
         
+        
         // Add all variable assignment values
         _variableAssignmentValueDictionary.Add(NodeType.LogicStatement, LogicStatement);
         _variableAssignmentValueDictionary.Add(NodeType.Expression, Expression);
@@ -105,6 +106,7 @@ public class Parser : InterpreterLogger
         _totalTokens = tokens.Count;
         _parseTree = new List<ParseNode>();
         VariableTable.Clear();
+        FunctionTable.Clear();
         _scopeManager.Reset();
         Reset();
         //TODO - investigate better way to do this
@@ -344,25 +346,13 @@ public class Parser : InterpreterLogger
         // Check for Function Identifier
         var identifier = _tokens[_currentIndex].ToString();
 
-        //	Throw syntax error if variable already exists
-        if (_scopeManager.InScope(identifier))
-        {
-            if (VariableTable.Exists(identifier)) //todo - should rename to function table or create another for functions!
-                throw new SyntaxErrorException($"Function '{_tokens.ElementAtOrDefault(_currentIndex)}' has already been declared!", _currentLine);
-        }
-        else
-        {
-            //	Re-declare if previously declared.
-            if (VariableTable.Exists(identifier))
-            {
-                VariableTable.Add(identifier);
-            }
-            _scopeManager.AddToScope(identifier);
-        }
+        //	Throw syntax error if function already exists
+        if (FunctionTable.Exists(identifier))
+            throw new SyntaxErrorException($"Function '{_tokens.ElementAtOrDefault(_currentIndex)}' has already been declared!", _currentLine);
 
         ParseNode childNode = CreateNode(NodeType.FunctionIdentifier, FunctionIdentifier);
         node.AddChild(childNode);
-        VariableTable.Add(identifier, childNode); //todo - FunctionTable??
+        FunctionTable.Add(identifier, childNode);
         
         // Check for '('
         if (Match(TokenType.LeftParen))
@@ -465,25 +455,24 @@ public class Parser : InterpreterLogger
 
     private void FunctionCall(ParseNode node)
     {
-        //Check for <Function-Identifier>
-        
-        //	Try and parse variable identifier
-        //try
-        //{
+        //Check for <Function-Identifier> - todo - think about exceptions here!
+        try
+        {
             var identifierNode = CreateNode(NodeType.FunctionIdentifier, FunctionIdentifier);
-            var identifier = identifierNode.GetChild().token?.ToString();
+            var identifier = identifierNode.GetChild().token?.ToString() ??
+                             throw new SyntaxErrorException("Function has no identifier", _currentLine);
             // Check whether type is correct
-            if (VariableTable.GetType(identifier ?? throw new SyntaxErrorException("Invalid identifier token")) is not NodeType.FunctionIdentifier)
-                throw new IncorrectTypeException($"Variable {identifier} is not of type 'Function Identifier'", _currentLine);
+            if (!FunctionTable.Exists(identifier))
+                throw new SyntaxErrorException($"Function {identifier} has not been defined", _currentLine);
             node.AddChild(identifierNode);
-        //}
-        //catch (InvalidSyntaxException e)
-        //{
-        //    _logger.Debug(e.Message); //todo - check this
-        //}
-        //	Try and parse a parenthesised logic statement
+        }
+        catch (SyntaxErrorException e)
+        {
+            _logger.Warning(e.Message);
+            //throw new SyntaxErrorException($"Invalid function identifier!", _currentLine);
+        }
 
-        // Check for (
+        // Check for '('
         if (Match(TokenType.LeftParen))
         {
             node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
@@ -503,7 +492,7 @@ public class Parser : InterpreterLogger
                 }
             }
             
-            // Check for )
+            // Check for ')'
             if (Match(TokenType.RightParen))
             {
                 node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
@@ -519,7 +508,7 @@ public class Parser : InterpreterLogger
             throw new InvalidSyntaxException("Unexpected token, unable to parse a boolean expression!");
         }
         
-        //Check for ;
+        //Check for ';'
         if (Match(TokenType.SemiColon))
         {
             node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
