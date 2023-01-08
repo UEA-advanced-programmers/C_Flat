@@ -18,6 +18,24 @@ public class Lexer : InterpreterLogger
     private bool _failed;
     private string[] _lines;
 
+    // All TokenTypes that can simply be added as a token without the need for extra checks
+    private Dictionary<char, TokenType> _tokenTypes = new()
+    {
+        { ';', TokenType.SemiColon },
+        { '+', TokenType.Add },
+        { '*', TokenType.Multi },
+        { '(', TokenType.LeftParen },
+        { ')', TokenType.RightParen },
+        { '{', TokenType.LeftCurlyBrace },
+        { '}', TokenType.RightCurlyBrace },
+        { '-', TokenType.Sub },
+        { '/', TokenType.Divide },
+        { '&', TokenType.And },
+        { '|', TokenType.Or },
+        { '<', TokenType.Less },
+        { '>', TokenType.More }
+    };
+
     //constructor
     public Lexer()
     {
@@ -41,23 +59,6 @@ public class Lexer : InterpreterLogger
         _tokens.Clear();
 
         var whitespace = "";
-
-        Dictionary<char, TokenType> tokenTypes = new Dictionary<char, TokenType>
-        {
-            { ';', TokenType.SemiColon },
-            { '+', TokenType.Add },
-            { '*', TokenType.Multi },
-            { '(', TokenType.LeftParen },
-            { ')', TokenType.RightParen },
-            { '{', TokenType.LeftCurlyBrace },
-            { '}', TokenType.RightCurlyBrace },
-            { '-', TokenType.Sub },
-            { '/', TokenType.Divide },
-            { '&', TokenType.And },
-            { '|', TokenType.Or },
-            { '<', TokenType.Less },
-            { '>', TokenType.More }
-        };
 
         input = input.Replace("\r", "");
         _lines = input.Split("\n");
@@ -137,9 +138,9 @@ public class Lexer : InterpreterLogger
                         }
                         else
                         {
-                            if (tokenTypes.ContainsKey(c))
+                            if (_tokenTypes.ContainsKey(c))
                             {
-                                newToken.Type = tokenTypes.GetValueOrDefault(c);
+                                newToken.Type = _tokenTypes.GetValueOrDefault(c);
                                 newToken.Word = whitespace + c;
                             }
                             else

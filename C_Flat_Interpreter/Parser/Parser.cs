@@ -15,12 +15,20 @@ public class Parser : InterpreterLogger
     private List<ParseNode> _parseTree = new();
     private ScopeManager _scopeManager = new();
 
+    private Dictionary<NodeType, NodeFuncDelegate> _statements = new();
+
     private delegate void NodeFuncDelegate(ParseNode node);
 
     // Constructor
     public Parser()
     {
         GetLogger("Parser");
+        
+        // Add all statements that can simply be added as a node without the need for extra checks 
+        _statements.Add(NodeType.ConditionalStatement, ConditionalStatement);
+        _statements.Add(NodeType.WhileStatement, WhileStatement);
+        _statements.Add(NodeType.Declaration, Declaration);
+        
         _tokens = new List<Token>();
     }
 
@@ -95,7 +103,7 @@ public class Parser : InterpreterLogger
         {
             while (_currentIndex < _totalTokens)
             {
-                ParseNode statementNode = new ParseNode(NodeType.Statement);
+                var statementNode = new ParseNode(NodeType.Statement);
                 Statement(statementNode);
                 _parseTree.Add(statementNode);
             }
@@ -114,14 +122,7 @@ public class Parser : InterpreterLogger
     {
         int currentIndex = _currentIndex;
 
-        Dictionary<NodeType, NodeFuncDelegate> statements = new Dictionary<NodeType, NodeFuncDelegate>
-        {
-            { NodeType.ConditionalStatement, ConditionalStatement },
-            { NodeType.WhileStatement, WhileStatement },
-            { NodeType.Declaration, Declaration }
-        };
-
-        foreach (var statement in statements)
+        foreach (var statement in _statements)
         {
             try
             {
@@ -246,7 +247,7 @@ public class Parser : InterpreterLogger
             var identifier = identifierNode.getChildren().First().token?.ToString();
             var valueNode = CreateNode(NodeType.AssignmentValue, AssignmentValue);
             var assignmentValue = valueNode.getChildren().First();
-            var type = assignmentValue.type;
+            var type = assignmentValue.type; //todo - fix type
             if (assignmentValue.type is NodeType.Identifier)
             {
                 type = VariableTable.GetType(
