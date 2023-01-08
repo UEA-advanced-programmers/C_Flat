@@ -7,8 +7,7 @@ public class ParseNode
     private List<ParseNode> childNodes = new();
     public Token? token;
     public NodeType type;
-
-    //todo - figure out what constructors are needed
+    
     public ParseNode(NodeType type, Token token)
     {
         this.type = type;

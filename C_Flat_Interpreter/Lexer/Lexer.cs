@@ -67,7 +67,7 @@ public class Lexer : InterpreterLogger
             for (int i = 0; i < _lines[j].Length; i++) //character
             {
                 char c = _lines[j][i];
-                char nextChar = _lines[j].ElementAtOrDefault(i + 1); //todo - maybe move out and then only needs assigning once
+                char nextChar = _lines[j].ElementAtOrDefault(i + 1);
                 var newToken = new Token
                 {
                     Line = j
