@@ -170,7 +170,7 @@ public class Parser : InterpreterLogger
             throw new InvalidSyntaxException($"Expected keyword 'var'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
         }
 
-        var identifier = _tokens[_currentIndex].Word.Trim();
+        var identifier = _tokens[_currentIndex].ToString();
         int currentIndex = _currentIndex;
 
         //	Throw syntax error if variable already exists
@@ -302,7 +302,7 @@ public class Parser : InterpreterLogger
         //	Store current index
         int index = _currentIndex;
 
-        //	Try to parse boolean
+        //	Try to parse logic statement
         try
         {
             node.AddChild(CreateNode(NodeType.LogicStatement, LogicStatement));
@@ -466,7 +466,7 @@ public class Parser : InterpreterLogger
         }
         catch (InvalidSyntaxException e)
         {
-            _logger.Warning(e.Message);
+            _logger.Debug(e.Message);
         }
     }
 
@@ -520,7 +520,7 @@ public class Parser : InterpreterLogger
                 var identifier = identifierNode.getChildren().First().token?.ToString();
                 // Check whether type is correct
                 if (VariableTable.GetType(identifier ?? throw new SyntaxErrorException("Invalid identifier token")) is not NodeType.LogicStatement)
-                    throw new IncorrectTypeException($"Variable {identifier} is not of type 'Boolean'", _currentLine);
+                    throw new IncorrectTypeException($"Variable {identifier} is not of type 'Logic Statement'", _currentLine);
                 node.AddChild(identifierNode);
                 return;
             }
