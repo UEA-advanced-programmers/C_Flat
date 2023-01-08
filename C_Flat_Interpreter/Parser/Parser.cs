@@ -252,7 +252,7 @@ public class Parser : InterpreterLogger
         {
             //	Check whether the value node is of the same type and is in scope
             var identifier = identifierNode.GetChild().token?.ToString() ?? throw new SyntaxErrorException("Variable has no identifier", _currentLine);
-            var valueNode = CreateNode(NodeType.VariableAssignmentValue, VariableAssignmentValue);
+            var valueNode = CreateNode(NodeType.AssignmentValue, AssignmentValue);
             var assignmentValue = valueNode.GetChild();
             if (VariableTable.Exists(identifier))
             {
@@ -290,7 +290,7 @@ public class Parser : InterpreterLogger
         }
     }
 
-    private void VariableAssignmentValue(ParseNode node)
+    private void AssignmentValue(ParseNode node)
     {
         //	Store current index
         int index = _currentIndex;

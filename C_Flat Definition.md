@@ -229,7 +229,7 @@ A loop can be created using the keyword `while`, followed by a logic statement w
 
 `<Variable-Assignment>::= <Variable-Identifier> '=' <Variable-Assignment-Value> ‘;’`
 
-`<Variable-Assignment-Value>::= (<Expression> | <String> | <Logic-Statement> | <Variable-Identifier>)`
+`<Assignment-Value>::= (<Expression> | <String> | <Logic-Statement> | <Variable-Identifier>)`
 
 `<Variable-Identifier>::= <Word>`
 

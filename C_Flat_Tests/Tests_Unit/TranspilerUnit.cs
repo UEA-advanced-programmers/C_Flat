@@ -38,7 +38,7 @@ public class TranspilerUnit : TestLogger
 
         assignment.AddChild(new(NodeType.Terminal, new Token(TokenType.Assignment) { Word = "=" }));
 
-        var value = new ParseNode(NodeType.VariableAssignmentValue);
+        var value = new ParseNode(NodeType.AssignmentValue);
         var valueString = new ParseNode(NodeType.String);
         valueString.AddChild(new(NodeType.Terminal, new Token(TokenType.String) { Word = "\"test\"" }));
         value.AddChild(valueString);

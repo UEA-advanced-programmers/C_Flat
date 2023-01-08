@@ -17,7 +17,7 @@ public enum NodeType //will be added to
     VariableDeclaration,
     VariableIdentifier,
     VariableAssignment,
-    VariableAssignmentValue,
+    AssignmentValue,
     String,
     Block
 }
