@@ -385,7 +385,7 @@ public class Parser : InterpreterLogger
                     Advance();
                     
                     node.AddChild(CreateNode(NodeType.FunctionParameter, FunctionParameter));
-                    parameters?.Add(_tokens[_currentIndex].Word);
+                    parameters.Add(_tokens[_currentIndex - 1].Word);
                 }
                 catch (InvalidSyntaxException e)
                 {
@@ -495,14 +495,25 @@ public class Parser : InterpreterLogger
             {
                 node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
                 Advance();
-    
                 
-    
                 if (parameters != null)
                 {
+                    var assignmentValue = CreateNode(NodeType.AssignmentValue, AssignmentValue);
+                    if (assignmentValue.GetChild().type == VariableTable.GetType(parameters.First().Trim()))
+                    {
+                        node.AddChild(assignmentValue);
+                    }
+
+                    parameters.Remove(parameters.First());
+                    
                     foreach (var param in parameters)
                     {
-                        var assignmentValue = CreateNode(NodeType.AssignmentValue, AssignmentValue);
+                        if (!Match(TokenType.Comma)) continue;
+                        node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
+                        Advance();
+                            
+                        assignmentValue = CreateNode(NodeType.AssignmentValue, AssignmentValue);
+                        
                         if (assignmentValue.GetChild().type == VariableTable.GetType(param.Trim()))
                         {
                             node.AddChild(assignmentValue);
