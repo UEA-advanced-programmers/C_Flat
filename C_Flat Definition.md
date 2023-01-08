@@ -219,6 +219,10 @@ A loop can be created using the keyword `while`, followed by a logic statement w
 
 `<Conditional-Statement>::='if’ ‘('<Logic-Statement>’)’ <Block> {'else' <Block> }`
 
+### Loops:
+
+`<While-Statement>::= 'while' '(' <Logic-Statement> ')' <Block>`
+
 ### Variables:
 
 `<Variable-Declaration>::= 'var’ (<Identifier> ';'| <Assignment>)`
@@ -240,10 +244,6 @@ A loop can be created using the keyword `while`, followed by a logic statement w
 `<Parameter>::= 'var' <Identifier>`
 
 `<Function-Call>::= <Identifier> '(' *{<Identifier> | <Logic-Statement> | <Expression>} ')' ';'`
-
-### Loops:
-
-`<While-Statement>::= 'while' '(' <Logic-Statement> ')' <Block>`
 
 ### Blocks:
 
