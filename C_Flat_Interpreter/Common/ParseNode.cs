@@ -27,15 +27,14 @@ public class ParseNode
 
     public ParseNode GetChild(int index = 0)
     {
-        return childNodes[index] ?? throw new Exception("Index out of bounds"); //todo - exception
+        return childNodes[index];
     }
     
     public ParseNode GetLastChild()
     {
         return childNodes.Last();
     }
-
-    //Testing Function
+    
     public List<ParseNode> GetChildren()
     {
         return childNodes;
