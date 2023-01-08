@@ -72,10 +72,10 @@ public class Transpiler : InterpreterLogger
             case NodeType.WhileStatement:
                 TranspileConditionalStatement(statement);
                 break;
-            case NodeType.Declaration:
+            case NodeType.VariableDeclaration:
                 TranspileDeclaration(statement);
                 break;
-            case NodeType.Assignment:
+            case NodeType.VariableAssignment:
                 TranspileAssignment(statement);
                 break;
             default:
@@ -182,7 +182,7 @@ public class Transpiler : InterpreterLogger
             case NodeType.LogicStatement:
                 TranspileLogicStatement(valueNode);
                 break;
-            case NodeType.Identifier:
+            case NodeType.VariableIdentifier:
                 TranspileIdentifier(valueNode);
                 break;
         }
@@ -206,7 +206,7 @@ public class Transpiler : InterpreterLogger
         var children = node.getChildren();
 
         //  Determine variable type before transpile
-        if (children[1].type is NodeType.Identifier)
+        if (children[1].type is NodeType.VariableIdentifier)
         {
             try
             {

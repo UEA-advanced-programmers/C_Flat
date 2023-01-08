@@ -21,7 +21,7 @@ public static class VariableTable
             return;
         }
 
-        if (node.type == NodeType.Identifier)
+        if (node.type == NodeType.VariableIdentifier)
         {
             _table.Add(word, GetType(node.token?.Word  ?? throw new Exception("Identifier node token is null")));
         }

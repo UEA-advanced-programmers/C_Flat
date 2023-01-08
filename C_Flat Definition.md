@@ -221,13 +221,13 @@ A loop can be created using the keyword `while`, followed by a logic statement w
 
 ### Variables:
 
-`<Declaration>::= 'var’ (<Identifier> ';'| <Assignment>)`
+`<Variable-Declaration>::= 'var’ (<Identifier> ';'| <Assignment>)`
 
-`<Identifier>::= <Word>`
+`<Variable-Assignment>::= <Identifier> '=' <Assignment-Value> ‘;’`
 
-`<Assignment>::= <Identifier> '=' <Assignment-Value> ‘;’`
+`<Variable-Assignment-Value>::= (<Expression> | <String> | <Logic-Statement> | <Identifier>)`
 
-`<Assignment-Value>::= (<Expression> | <String> | <Logic-Statement> | <Identifier>)`
+`<Variable-Identifier>::= <Word>`
 
 `<String> = ' " ' <Word> ' " '`
 
