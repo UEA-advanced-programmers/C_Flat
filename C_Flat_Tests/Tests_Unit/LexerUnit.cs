@@ -13,14 +13,14 @@ public class LexerUnit
     {
         _lexer = new Lexer();
     }
-    
+
     //Note - Magic numbers are used in these tests, however their disruption, if changed, is minimal - resulting in an
     //error in only the respective test. I had considered avoiding this by having one test and taking an iterative
     //approach. However, I decided that splitting this into multiple tests made it easier to identify what was failing
     //and why. Therefore, I believe that having multiple, clear tests with magic numbers is better than having one big
     //test without them.
-    
-    
+
+
     [Test]
     public void Lexer_Tokenise_MultiLines_SevenTokensFourLines()
     {
@@ -35,7 +35,7 @@ public class LexerUnit
         Assert.That(_lexer.GetFromTokenList(5).Line == 2);
         Assert.That(_lexer.GetFromTokenList(6).Line == 3);
     }
-    
+
     [Test]
     public void Lexer_Tokenise_Add_TokenIsAdd()
     {
@@ -80,7 +80,7 @@ public class LexerUnit
         Assert.That(_lexer.GetFromTokenList(1).Type, Is.EqualTo(TokenType.Multi));
         Assert.That(_lexer.GetFromTokenList(1).Word, Is.EqualTo("*"));
     }
-    
+
     [Test]
     public void Lexer_Tokenise_LeftParam_TokenIsLeftParam()
     {
@@ -89,7 +89,7 @@ public class LexerUnit
         Assert.That(_lexer.GetFromTokenList(2).Type, Is.EqualTo(TokenType.LeftParen));
         Assert.That(_lexer.GetFromTokenList(2).Word, Is.EqualTo("("));
     }
-    
+
     [Test]
     public void Lexer_Tokenise_RightParam_TokenIsRightParam()
     {
@@ -98,7 +98,7 @@ public class LexerUnit
         Assert.That(_lexer.GetFromTokenList(3).Type, Is.EqualTo(TokenType.RightParen));
         Assert.That(_lexer.GetFromTokenList(3).Word, Is.EqualTo(")"));
     }
-    
+
     [Test]
     public void Lexer_Tokenise_Sub_TokenIsSub()
     {
@@ -107,7 +107,7 @@ public class LexerUnit
         Assert.That(_lexer.GetFromTokenList(4).Type, Is.EqualTo(TokenType.Sub));
         Assert.That(_lexer.GetFromTokenList(4).Word, Is.EqualTo("-"));
     }
-    
+
     [Test]
     public void Lexer_Tokenise_Divide_TokenIsDivide()
     {
@@ -116,7 +116,7 @@ public class LexerUnit
         Assert.That(_lexer.GetFromTokenList(5).Word, Is.EqualTo("/"));
         Assert.That(_lexer.GetFromTokenList(5).Type, Is.EqualTo(TokenType.Divide));
     }
-    
+
     [Test]
     public void Lexer_Tokenise_MultiDigitNumber_TokenIsNumber()
     {
@@ -125,7 +125,7 @@ public class LexerUnit
         Assert.That(_lexer.GetFromTokenList(0).Word, Is.EqualTo("69"));
         Assert.That(_lexer.GetFromTokenList(0).Type, Is.EqualTo(TokenType.Num));
     }
-    
+
     [Test]
     public void Lexer_Tokenise_RealNumber_IsDouble()
     {
@@ -134,7 +134,7 @@ public class LexerUnit
         Assert.That(_lexer.GetFromTokenList(0).Word, Is.EqualTo("69.420"));
         Assert.That(_lexer.GetFromTokenList(0).Type, Is.EqualTo(TokenType.Num));
     }
-    
+
     [Test]
     public void Lexer_Tokenise_InvalidToken_IsHandled()
     {

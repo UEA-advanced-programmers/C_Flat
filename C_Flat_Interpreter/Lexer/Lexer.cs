@@ -18,6 +18,24 @@ public class Lexer : InterpreterLogger
     private bool _failed;
     private string[] _lines;
 
+    // All TokenTypes that can simply be added as a token without the need for extra checks
+    private readonly Dictionary<char, TokenType> _tokenTypes = new()
+    {
+        { ';', TokenType.SemiColon },
+        { '+', TokenType.Add },
+        { '*', TokenType.Multi },
+        { '(', TokenType.LeftParen },
+        { ')', TokenType.RightParen },
+        { '{', TokenType.LeftCurlyBrace },
+        { '}', TokenType.RightCurlyBrace },
+        { '-', TokenType.Sub },
+        { '/', TokenType.Divide },
+        { '&', TokenType.And },
+        { '|', TokenType.Or },
+        { '<', TokenType.Less },
+        { '>', TokenType.More }
+    };
+
     //constructor
     public Lexer()
     {
@@ -47,9 +65,10 @@ public class Lexer : InterpreterLogger
 
         for (int j = 0; j < _lines.Length; j++) //line
         {
-            for(int i = 0; i < _lines[j].Length; i++) //character
+            for (int i = 0; i < _lines[j].Length; i++) //character
             {
                 char c = _lines[j][i];
+                char nextChar = _lines[j].ElementAtOrDefault(i + 1);
                 var newToken = new Token
                 {
                     Line = j
@@ -61,48 +80,12 @@ public class Lexer : InterpreterLogger
                         whitespace += c;
                         newToken = null;
                         break;
-                    case ';':
-                        newToken.Type = TokenType.SemiColon;
-                        newToken.Word = whitespace + c;
-                        break;
-                    case '+':
-                        newToken.Type = TokenType.Add;
-                        newToken.Word = whitespace + c;
-                        break;
-                    case '*':
-                        newToken.Type = TokenType.Multi;
-                        newToken.Word = whitespace + c;
-                        break;
-                    case '(':
-                        newToken.Type = TokenType.LeftParen;
-                        newToken.Word = whitespace + c;
-                        break;
-                    case ')':
-                        newToken.Type = TokenType.RightParen;
-                        newToken.Word = whitespace + c;
-                        break;
-                    case '{':
-                        newToken.Type = TokenType.LeftCurlyBrace;
-                        newToken.Word = whitespace + c;
-                        break;
-                    case '}':
-                        newToken.Type = TokenType.RightCurlyBrace;
-                        newToken.Word = whitespace + c;
-                        break;
-                    case '-':
-                        newToken.Type = TokenType.Sub;
-                        newToken.Word = whitespace + c;
-                        break;
-                    case '/':
-                        newToken.Type = TokenType.Divide;
-                        newToken.Word = whitespace + c;
-                        break;
                     case '!':
-                        if (_lines[j][i + 1] == '=')
+                        if (nextChar == '=')
                         {
                             i++;
                             newToken.Type = TokenType.NotEqual;
-                            newToken.Word = whitespace + c + _lines[j][i];
+                            newToken.Word = whitespace + c + nextChar;
                         }
                         else
                         {
@@ -111,11 +94,11 @@ public class Lexer : InterpreterLogger
                         }
                         break;
                     case '=':
-                        if (_lines[j][i + 1] == '=')
+                        if (nextChar == '=')
                         {
                             i++;
                             newToken.Type = TokenType.Equals;
-                            newToken.Word = whitespace + c + _lines[j][i];
+                            newToken.Word = whitespace + c + nextChar;
                         }
                         else
                         {
@@ -123,37 +106,20 @@ public class Lexer : InterpreterLogger
                             newToken.Word = whitespace + c;
                         }
                         break;
-                    case '&':
-                        newToken.Type = TokenType.And;
-                        newToken.Word = whitespace + c;
-                        break;
-                    case '|':
-                        newToken.Type = TokenType.Or;
-                        newToken.Word = whitespace + c;
-                        break;
-                    case '<':
-                        newToken.Type = TokenType.Less;
-                        newToken.Word = whitespace + c;
-                        break;
-                    case '>':
-                        newToken.Type = TokenType.More;
-                        newToken.Word = whitespace + c;
-                        break;
                     case '"':
                         newToken.Type = TokenType.String;
-                        newToken.Word = whitespace + c;
+                        var tokenWord = whitespace + c;
                         var substring = ParseString(j, ++i);
-                        newToken.Word += substring;
+                        tokenWord += substring;
                         i += substring.Length - 1;
-                        if (_lines[j].ElementAtOrDefault(i+1) != '"')
+                        if (_lines[j].ElementAtOrDefault(i + 1) != '"')
                         {
                             _logger.Error("Invalid lexeme encountered! Disregarding: {invalidToken}", newToken);
                             newToken = null;
                             _failed = true;
                         }
                         else
-                            newToken.Word += _lines[j][++i];
-                        
+                            newToken.Word = tokenWord + _lines[j][++i];
                         break;
                     default:
                         if (char.IsDigit(c))
@@ -172,9 +138,17 @@ public class Lexer : InterpreterLogger
                         }
                         else
                         {
-                            newToken = null;
-                            _logger.Error("Invalid lexeme encountered! Disregarding: {invalidToken}", c.ToString());
-                            _failed = true;
+                            if (_tokenTypes.ContainsKey(c))
+                            {
+                                newToken.Type = _tokenTypes.GetValueOrDefault(c);
+                                newToken.Word = whitespace + c;
+                            }
+                            else
+                            {
+                                newToken = null;
+                                _logger.Error("Invalid lexeme encountered! Disregarding: {invalidToken}", c.ToString());
+                                _failed = true;
+                            }
                         }
                         break;
                 }
@@ -192,13 +166,13 @@ public class Lexer : InterpreterLogger
     {
         var numberString = _lines[line][index].ToString();
         bool isDecimal = false;
-        while (index+1 < _lines[line].Length)
+        while (index + 1 < _lines[line].Length)
         {
             if (Char.IsDigit(_lines[line][index + 1]))
             {
-                numberString += _lines[line][++index];    
+                numberString += _lines[line][++index];
             }
-            else if (!isDecimal && _lines[line][index + 1] == '.' && index+2 < _lines[line].Length && char.IsDigit(_lines[line][index+2]))
+            else if (!isDecimal && _lines[line][index + 1] == '.' && index + 2 < _lines[line].Length && char.IsDigit(_lines[line][index + 2]))
             {
                 //if '.' ensure there's not already '.' and at least one digit afterwards
                 isDecimal = true;
@@ -211,14 +185,15 @@ public class Lexer : InterpreterLogger
         }
         return numberString;
     }
+    
     private string ParseWord(int line, int index)
     {
         var wordString = _lines[line][index].ToString();
-        while (index+1 < _lines[line].Length)
+        while (index + 1 < _lines[line].Length)
         {
             if (Char.IsLetter(_lines[line][index + 1]))
             {
-                wordString += _lines[line][++index];    
+                wordString += _lines[line][++index];
             }
             else
             {

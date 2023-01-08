@@ -1,26 +1,31 @@
-﻿using System.Diagnostics;
-using C_Flat_Interpreter.Common.Enums;
+﻿using C_Flat_Interpreter.Common.Enums;
+using C_Flat_Interpreter.Common.Exceptions;
 
 namespace C_Flat_Interpreter.Common;
 
 public static class VariableTable
 {
-    private static Dictionary<string, ParseNode> _table = new();
+    private static Dictionary<string, NodeType> _table = new();
 
-    public static void Add(string word, ParseNode node)
+    public static void Add(string word, ParseNode? node = null)
     {
+        if (node == null)
+        {
+            _table.Add(word, NodeType.Null);
+            return;
+        }
+        
         if (_table.ContainsKey(word))
-            _table[word] = node;
-        else
-            _table.Add(word, node);
-    }
-    
-    public static void Add(string word)
-    {
-        if (_table.ContainsKey(word))
-            _table[word] = new(NodeType.Null);
-        else
-            _table.Add(word, new(NodeType.Null));
+        {
+            _table[word] = node.type;
+            return;
+        }
+
+        if (node.type == NodeType.VariableIdentifier)
+        {
+            _table.Add(word, GetType(node.token?.Word  ?? throw new SyntaxErrorException("Identifier node token is null")));
+        }
+        _table.Add(word, node.type);
     }
 
     public static bool Exists(string identifier)
@@ -30,13 +35,7 @@ public static class VariableTable
 
     public static NodeType GetType(string identifier)
     {
-        while (true)
-        {
-            var node = _table[identifier];
-
-            if (node.type != NodeType.VarIdentifier) return node.type;
-            identifier = node.token?.Word ?? throw new Exception("Identifier node token is null");
-        }
+        return _table[identifier];
     }
 
     public static void Clear()

@@ -15,7 +15,7 @@ public class ScopeManager : InterpreterLogger
 
     public void DeScope(int previousCount)
     {
-        for(int i  = 0; i < _scopedVariables.Count - previousCount; i++)
+        for (int i = 0; i < _scopedVariables.Count - previousCount; i++)
         {
             var identifier = _scopedVariables.Pop();
             _logger.Information("Removed variable '{identifier}' from scope", identifier);

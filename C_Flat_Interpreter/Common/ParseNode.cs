@@ -1,4 +1,5 @@
 ﻿using C_Flat_Interpreter.Common.Enums;
+using C_Flat_Interpreter.Common.Exceptions;
 
 namespace C_Flat_Interpreter.Common;
 
@@ -8,7 +9,6 @@ public class ParseNode
     public Token? token;
     public NodeType type;
     
-//todo - figure out what constructors are needed
     public ParseNode(NodeType type, Token token)
     {
         this.type = type;
@@ -25,8 +25,17 @@ public class ParseNode
         childNodes.Add(child);
     }
 
-    //Testing Function
-    public List<ParseNode> getChildren()
+    public ParseNode GetChild(int index = 0)
+    {
+        return childNodes[index];
+    }
+    
+    public ParseNode GetLastChild()
+    {
+        return childNodes.Last();
+    }
+    
+    public List<ParseNode> GetChildren()
     {
         return childNodes;
     }
@@ -43,7 +52,7 @@ public class ParseNode
             childNode.GetTerminals(terminalList);
         }
     }
-    
+
     public override string ToString()
     {
         return token != null ? $"{type.ToString()}: {token.Word.Trim()}" : type.ToString();

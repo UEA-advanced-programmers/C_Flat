@@ -36,7 +36,7 @@ namespace C_Flat
         private readonly Parser _parser;
         private readonly Transpiler _transpiler;
         private bool _unsavedChanges;
-        
+
         private LinearGradientBrush? _executionBrush;
         private Storyboard? _executionAnim;
 
@@ -56,7 +56,7 @@ namespace C_Flat
             CreateExecuteAnimation();
 
             ExecuteButton.IsEnabled = false;
-            
+
             //  Button component setup
             _showTree = new Button()
             {
@@ -90,12 +90,12 @@ namespace C_Flat
                 Background = new SolidColorBrush(Color.FromRgb(106, 27, 154)),
             };
             _showCode.Click += ShowCode_Click;
-            
+
             //  Initial buttons
             LeftButton.Content = _showTree;
             RightButton.Content = _showOutput;
 
-            
+
             // Create component for viewing code output
             _codeView = new TextBlock()
             {
@@ -108,7 +108,7 @@ namespace C_Flat
             //  Initialize output window to show code output
             OutputBorder.Child = _codeView;
             ExpandAll.Visibility = Visibility.Hidden;
-            
+
             //  Setup handling for line numbers
             SourceInput.TextChanged += UpdateLineNumbers;
             LineNumbers.FontSize = SourceInput.FontSize;
@@ -116,7 +116,7 @@ namespace C_Flat
 
         private void UpdateLineNumbers(object sender, TextChangedEventArgs e)
         {
-            
+
             //  Recreate line numbers if source line count changes
             if (LineNumbers.Inlines.Count != SourceInput.LineCount)
             {
@@ -126,7 +126,7 @@ namespace C_Flat
                     LineNumbers.Inlines.Add(new Run(i.ToString() + "\n"));
                 }
             }
-            
+
         }
         private void ButtonTranspile_Click(object sender, RoutedEventArgs e)
         {
@@ -134,10 +134,10 @@ namespace C_Flat
             _codeView.Text = "";
             SourceInput.BorderThickness = new Thickness(0);
             OutputBorder.BorderThickness = new Thickness(0);
-            
+
             //  Disable execute button whilst transpiling
             ExecuteButton.IsEnabled = false;
-            
+
             //  Null all relevant variables
             _executionOutput = null;
             _parseTree = null;
@@ -151,11 +151,11 @@ namespace C_Flat
                     .Where(log => log.Level > LogEventLevel.Information));
                 return;
             }
-            
+
             var tokens = _lexer.GetTokens();
-            
+
             _parser.ClearLogs();
-            
+
             if (_parser.Parse(tokens) != 0)
             {
                 //  Parser failed!
@@ -163,11 +163,11 @@ namespace C_Flat
                     .Where(log => log.Level > LogEventLevel.Information));
                 return;
             }
-            
+
             //Construct parse tree element
             var parseNodes = _parser.GetParseTree();
             ConstructParseTree(parseNodes);
-            
+
             if (_transpiler.Transpile(parseNodes) != 0)
             {
                 //  Transpilation failed!
@@ -175,11 +175,11 @@ namespace C_Flat
                     .Where(log => log.Level > LogEventLevel.Information));
                 return;
             }
-            
+
             if (_transpiler.GetInMemoryLogs().Any(log => log.Level > LogEventLevel.Information))
             {
                 Snackbar.Appearance = ControlAppearance.Caution;
-                Snackbar.Show("Caution!","Transpile succeeded but with warnings...", SymbolRegular.CheckboxWarning20);
+                Snackbar.Show("Caution!", "Transpile succeeded but with warnings...", SymbolRegular.CheckboxWarning20);
                 SourceInput.BorderBrush = new SolidColorBrush(Colors.Goldenrod);
                 SourceInput.BorderThickness = new Thickness(2);
             }
@@ -192,7 +192,7 @@ namespace C_Flat
             }
             //  Mark new changes to the transpiled program.
             _unsavedChanges = true;
-            
+
             var transpiledProgram = _transpiler.Program;
             ExecuteButton.IsEnabled = true;
             _codeView.Text = $"{transpiledProgram}";
@@ -218,24 +218,24 @@ namespace C_Flat
                 _codeView.Inlines.Add(new Run()
                 {
                     Text = $"{errorMessage.RenderMessage()} \n",
-                    Background =  errorMessage.Level switch
+                    Background = errorMessage.Level switch
                     {
                         LogEventLevel.Warning => new SolidColorBrush(Colors.Goldenrod),
                         _ => Brushes.DarkRed
                     },
                 });
             }
-                
+
             //  Set input border to red to indicate failure
             SourceInput.BorderBrush = new SolidColorBrush(Colors.DarkRed);
             SourceInput.BorderThickness = new Thickness(2);
-                
+
             //  Disable parse tree view
             _showTree.IsEnabled = false;
             //  Show a message indicating failed lexing
             Snackbar.Appearance = ControlAppearance.Danger;
             Snackbar.Show("Fail!", $"Transpile failed at {stage.ToLower()} stage!", SymbolRegular.ErrorCircle20);
-                
+
             //  Show code view
             ShowCode_Click(default!, default!);
             SaveOutput.Visibility = Visibility.Hidden;
@@ -256,7 +256,7 @@ namespace C_Flat
                 Text = "Execution in progress..."
             };
             ShowOutput_Click(default!, default!);
-            
+
             //Begin execution text box animation
             Mouse.OverrideCursor = Cursors.Wait;
             OutputBorder.BorderBrush = _executionBrush;
@@ -371,7 +371,7 @@ namespace C_Flat
                     }
                 };
                 if (node.type is NodeType.Terminal) continue;
-                foreach (var childNode in node.getChildren())
+                foreach (var childNode in node.GetChildren())
                 {
                     AddNodeTreeItems(treeItem, childNode);
                 }
@@ -391,7 +391,7 @@ namespace C_Flat
                 parent.RaiseEvent(eventArg);
             }
         }
-        
+
         private void AddNodeTreeItems(TreeViewItem parentTreeItem, ParseNode node)
         {
             var treeItem = new TreeViewItem
@@ -400,7 +400,7 @@ namespace C_Flat
             };
             if (node.type is not NodeType.Terminal)
             {
-                foreach (var childNode in node.getChildren())
+                foreach (var childNode in node.GetChildren())
                 {
                     AddNodeTreeItems(treeItem, childNode);
                 }
@@ -456,16 +456,16 @@ namespace C_Flat
         {
             //Create animation for execute
             _executionBrush = new LinearGradientBrush();
-            
+
             // Create gradient stops for the brush.
             var stop1 = new GradientStop(Colors.Plum, 0.0);
             var stop2 = new GradientStop(Colors.MediumPurple, 0.5);
             var stop3 = new GradientStop(Colors.Purple, 1.0);
-            
+
             RegisterName("Execute1", stop1);
             RegisterName("Execute2", stop2);
             RegisterName("Execute3", stop3);
-            
+
             _executionBrush.GradientStops.Add(stop1);
             _executionBrush.GradientStops.Add(stop2);
             _executionBrush.GradientStops.Add(stop3);
@@ -493,7 +493,7 @@ namespace C_Flat
             Storyboard.SetTargetName(stop2Anim, "Execute2");
             Storyboard.SetTargetProperty(stop2Anim,
                 new PropertyPath(GradientStop.ColorProperty));
-            
+
             var stop3Anim = new ColorAnimation
             {
                 From = Colors.Purple,
@@ -511,17 +511,17 @@ namespace C_Flat
             _executionAnim.Children.Add(stop2Anim);
             _executionAnim.Children.Add(stop3Anim);
         }
-        
+
         private void OnWindowClose(object sender, CancelEventArgs e)
         {
             // If the user has transpiled something ask if they want to save
             if (_unsavedChanges)
             {
-                var result = 
+                var result =
                     MessageBox.Show(
-                        "Would you like to save your compiled program? \r(Yes will prompt you to choose a save location)", 
-                        "Unsaved changes!", 
-                        MessageBoxButton.YesNo, 
+                        "Would you like to save your compiled program? \r(Yes will prompt you to choose a save location)",
+                        "Unsaved changes!",
+                        MessageBoxButton.YesNo,
                         MessageBoxImage.Warning);
                 if (result == MessageBoxResult.No)
                 {
@@ -552,7 +552,7 @@ namespace C_Flat
 
         private void SaveOutput_OnClick(object sender, RoutedEventArgs e)
         {
-            if(_unsavedChanges) 
+            if (_unsavedChanges)
                 SaveProgram();
         }
     }

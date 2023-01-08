@@ -20,11 +20,11 @@ public class Transpiler : InterpreterLogger
         Program = string.Empty;
         GetLogger("Transpiler");
     }
-    
+
     //Helper functions
     private void PrintTerminal(ParseNode node)
     {
-        var tokenToPrint = node.token ?? 
+        var tokenToPrint = node.token ??
                            throw new NullReferenceException("Node is marked as terminal but has no token");
         if (tokenToPrint.Line > _currentLine)
         {
@@ -48,7 +48,7 @@ public class Transpiler : InterpreterLogger
             {
                 TranspileStatement(node);
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 //if we catch an error write to output and return a failed status code
                 _logger.Error(e.Message);
@@ -64,7 +64,7 @@ public class Transpiler : InterpreterLogger
 
     private void TranspileStatement(ParseNode node)
     {
-        var statement = node.getChildren().First();
+        var statement = node.GetChild();
         switch (statement.type)
         {
             //If and Whiles are functionally the same except while doesn't contain else
@@ -72,17 +72,17 @@ public class Transpiler : InterpreterLogger
             case NodeType.WhileStatement:
                 TranspileConditionalStatement(statement);
                 break;
-            case NodeType.DeclareVariable:
+            case NodeType.VariableDeclaration:
                 TranspileDeclaration(statement);
                 break;
-            case NodeType.VarAssignment:
+            case NodeType.VariableAssignment:
                 TranspileAssignment(statement);
                 break;
             default:
                 throw new Exception("Unhandled statement");
         }
     }
-    
+
     private void TranspileExpression(ParseNode node)
     {
         List<ParseNode> terminals = new List<ParseNode>();
@@ -94,37 +94,37 @@ public class Transpiler : InterpreterLogger
     }
     private void TranspileExpressionQuery(ParseNode node)
     {
-        var firstExpression = node.getChildren().First();
+        var firstExpression = node.GetChild();
         TranspileExpression(firstExpression);
-        
-        var comparisonOp = node.getChildren()[1];
+
+        var comparisonOp = node.GetChild(1);
         PrintTerminal(comparisonOp);
-        
-        var secondExpression = node.getChildren().Last();
+
+        var secondExpression = node.GetLastChild();
         TranspileExpression(secondExpression);
     }
 
     private void TranspileBoolean(ParseNode node)
     {
-        var children = node.getChildren();
+        var children = node.GetChildren();
         switch (children.First().type)
         {
             //Check for !<LogicStatement>, bool literal, ( <Logic-Statement> )
             case NodeType.Terminal:
-            {
-                PrintTerminal(children.First());
-                //Handle !LogicStatement, ( <Logic-Statement> )
-                if (children.Count > 1)
                 {
-                    TranspileLogicStatement(children[1]);
-                    if (children.Count > 2)
+                    PrintTerminal(children.First());
+                    //Handle !LogicStatement, ( <Logic-Statement> )
+                    if (children.Count > 1)
                     {
-                        //print R Paren 
-                        PrintTerminal(children.Last());
+                        TranspileLogicStatement(children[1]);
+                        if (children.Count > 2)
+                        {
+                            //print R Paren 
+                            PrintTerminal(children.Last());
+                        }
                     }
+                    break;
                 }
-                break;
-            }
             case NodeType.ExpressionQuery:
                 TranspileExpressionQuery(children.First());
                 break;
@@ -136,40 +136,40 @@ public class Transpiler : InterpreterLogger
 
     private void TranspileCondition(ParseNode node)
     {
-        var conditionComparison = node.getChildren().First();
+        var conditionComparison = node.GetChild();
         PrintTerminal(conditionComparison);
-        if(conditionComparison.token?.Type is TokenType.And or TokenType.Or)
+        if (conditionComparison.token?.Type is TokenType.And or TokenType.Or)
         {
             //For and/or we add the token word twice because we don't do bitwise logic
             Program += conditionComparison.token?.Word;
         }
-        var conditionBoolean = node.getChildren().Last();
+        var conditionBoolean = node.GetLastChild();
         TranspileBoolean(conditionBoolean);
     }
 
     private void TranspileLogicStatement(ParseNode node)
     {
-        var boolean = node.getChildren().First();
+        var boolean = node.GetChild();
         TranspileBoolean(boolean);
-        
+
         //TODO: Fix parser so that empty conditionals aren't added!!!
-        if(node.getChildren().Count == 2 && node.getChildren().Last().getChildren().Count > 0)
-            TranspileCondition(node.getChildren().Last());
+        if (node.GetChildren().Count == 2 && node.GetLastChild().GetChildren().Count > 0)
+            TranspileCondition(node.GetLastChild());
     }
 
     private void TranspileString(ParseNode node)
     {
-        PrintTerminal(node.getChildren().First());
+        PrintTerminal(node.GetChild());
     }
 
     private void TranspileIdentifier(ParseNode node)
     {
-        PrintTerminal(node.getChildren().First());
+        PrintTerminal(node.GetChild());
     }
 
     private void TranspileAssignmentValue(ParseNode node)
     {
-        var valueNode = node.getChildren().First();
+        var valueNode = node.GetChild();
         //TODO: Add handling for other assignment types
         switch (valueNode.type)
         {
@@ -179,10 +179,10 @@ public class Transpiler : InterpreterLogger
             case NodeType.String:
                 TranspileString(valueNode);
                 break;
-            case NodeType.Boolean:
-                TranspileBoolean(valueNode);
+            case NodeType.LogicStatement:
+                TranspileLogicStatement(valueNode);
                 break;
-            case NodeType.VarIdentifier:
+            case NodeType.VariableIdentifier:
                 TranspileIdentifier(valueNode);
                 break;
         }
@@ -190,23 +190,23 @@ public class Transpiler : InterpreterLogger
 
     private void TranspileAssignment(ParseNode node)
     {
-        var children = node.getChildren();
+        var children = node.GetChildren();
         TranspileIdentifier(children.First());
-        
+
         //Print assignment terminal
         PrintTerminal(children[1]);
 
         TranspileAssignmentValue(children[2]);
-        
+
         //Print semicolon terminal
         PrintTerminal(children.Last());
     }
     private void TranspileDeclaration(ParseNode node)
     {
-        var children = node.getChildren();
-        
+        var children = node.GetChildren();
+
         //  Determine variable type before transpile
-        if (children[1].type is NodeType.VarIdentifier)
+        if (children[1].type is NodeType.VariableIdentifier)
         {
             try
             {
@@ -230,13 +230,13 @@ public class Transpiler : InterpreterLogger
 
     private void TranspileType(ParseNode identifierNode)
     {
-        var identifierToken = identifierNode.getChildren().First().token;
+        var identifierToken = identifierNode.GetChild().token;
         //  Find first assignment of this variable
         var type = VariableTable.GetType(identifierToken?.ToString() ?? throw new Exception());
         var typeWord = type switch
         {
             NodeType.Expression => "float",
-            NodeType.Boolean => "bool",
+            NodeType.LogicStatement => "bool",
             NodeType.String => "string",
             NodeType.Null => throw new InvalidSyntaxException($"Variable '{identifierToken}' is declared but never used, omitting"),
             _ => throw new IncorrectTypeException("Variable has invalid assignment type")
@@ -250,7 +250,7 @@ public class Transpiler : InterpreterLogger
     }
     private void TranspileBlock(ParseNode node)
     {
-        var children = node.getChildren();
+        var children = node.GetChildren();
         //Print L Curly
         PrintTerminal(children.First());
         foreach (var statement in children.Where(child => child.type == NodeType.Statement))
@@ -263,19 +263,19 @@ public class Transpiler : InterpreterLogger
 
     private void TranspileConditionalStatement(ParseNode node)
     {
-        var children = node.getChildren();
+        var children = node.GetChildren();
         //Print if/while keyword
         PrintTerminal(children.First());
-        
+
         //Print L Paren
         PrintTerminal(children[1]);
-        
+
         //Transpile condition (logic statement)
         TranspileLogicStatement(children[2]);
-        
+
         //Print R Paren
         PrintTerminal(children[3]);
-        
+
         //Transpile block
         TranspileBlock(children[4]);
 
