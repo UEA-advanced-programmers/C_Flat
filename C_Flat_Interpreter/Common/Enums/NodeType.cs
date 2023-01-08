@@ -19,5 +19,9 @@ public enum NodeType //will be added to
     VariableAssignment,
     AssignmentValue,
     String,
+    FunctionDefinition,
+    FunctionIdentifier,
+    FunctionParameter,
+    FunctionCall,
     Block
 }
