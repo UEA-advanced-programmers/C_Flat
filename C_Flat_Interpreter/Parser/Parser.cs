@@ -15,7 +15,8 @@ public class Parser : InterpreterLogger
     private List<ParseNode> _parseTree = new();
     private ScopeManager _scopeManager = new();
 
-    private Dictionary<NodeType, NodeFuncDelegate> _statements = new();
+    private Dictionary<NodeType, NodeFuncDelegate> _statementsDictionary = new();
+    Dictionary<NodeType, NodeFuncDelegate> _variableAssignmentValueDictionary = new();
 
     private delegate void NodeFuncDelegate(ParseNode node);
 
@@ -25,9 +26,15 @@ public class Parser : InterpreterLogger
         GetLogger("Parser");
         
         // Add all statements that can simply be added as a node without the need for extra checks 
-        _statements.Add(NodeType.ConditionalStatement, ConditionalStatement);
-        _statements.Add(NodeType.WhileStatement, WhileStatement);
-        _statements.Add(NodeType.VariableDeclaration, VariableDeclaration);
+        _statementsDictionary.Add(NodeType.ConditionalStatement, ConditionalStatement);
+        _statementsDictionary.Add(NodeType.WhileStatement, WhileStatement);
+        _statementsDictionary.Add(NodeType.VariableDeclaration, VariableDeclaration);
+        
+        // Add all variable assignment values
+        _variableAssignmentValueDictionary.Add(NodeType.LogicStatement, LogicStatement);
+        _variableAssignmentValueDictionary.Add(NodeType.Expression, Expression);
+        _variableAssignmentValueDictionary.Add(NodeType.String, String);
+        _variableAssignmentValueDictionary.Add(NodeType.VariableIdentifier, VariableIdentifier);
         
         _tokens = new List<Token>();
     }
@@ -122,7 +129,7 @@ public class Parser : InterpreterLogger
     {
         int currentIndex = _currentIndex;
 
-        foreach (var statement in _statements)
+        foreach (var statement in _statementsDictionary)
         {
             try
             {
@@ -287,7 +294,26 @@ public class Parser : InterpreterLogger
     {
         //	Store current index
         int index = _currentIndex;
-
+        
+        foreach (var assignmentValue in _variableAssignmentValueDictionary)
+        {
+            try
+            {
+                node.AddChild(CreateNode(assignmentValue.Key, assignmentValue.Value));
+                return;
+            }
+            catch (ParserException e)
+            {
+                if (e is SyntaxErrorException)
+                    throw;
+                Reset(index);
+                _logger.Debug(e.Message);
+            }
+        }
+        
+        
+        
+/*
         //	Try to parse logic statement
         try
         {
@@ -338,7 +364,7 @@ public class Parser : InterpreterLogger
             Reset(index);
             _logger.Debug(e.Message);
             throw;
-        }
+        }*/
     }
 
     private void String(ParseNode node)
