@@ -310,61 +310,6 @@ public class Parser : InterpreterLogger
                 _logger.Debug(e.Message);
             }
         }
-        
-        
-        
-/*
-        //	Try to parse logic statement
-        try
-        {
-            node.AddChild(CreateNode(NodeType.LogicStatement, LogicStatement));
-            return;
-        }
-        catch (ParserException e)
-        {
-            if (e is SyntaxErrorException)
-                throw;
-            Reset(index);
-            _logger.Debug(e.Message);
-        }
-
-        //	Try to parse expression
-        try
-        {
-            node.AddChild(CreateNode(NodeType.Expression, Expression));
-            return;
-        }
-        catch (ParserException e)
-        {
-            if (e is SyntaxErrorException)
-                throw;
-            Reset(index);
-            _logger.Debug(e.Message);
-        }
-
-        //	Try to parse string
-        try
-        {
-            node.AddChild(CreateNode(NodeType.String, String));
-            return;
-        }
-        catch (InvalidSyntaxException e)
-        {
-            Reset(index);
-            _logger.Debug(e.Message);
-        }
-        
-        //	Finally try to parse identifier
-        try
-        {
-            node.AddChild(CreateNode(NodeType.VariableIdentifier, VariableIdentifier));
-        }
-        catch (InvalidSyntaxException e)
-        {
-            Reset(index);
-            _logger.Debug(e.Message);
-            throw;
-        }*/
     }
 
     private void String(ParseNode node)
