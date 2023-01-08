@@ -251,7 +251,7 @@ public class Parser : InterpreterLogger
         try
         {
             //	Check whether the value node is of the same type and is in scope
-            var identifier = identifierNode.GetChild().token?.ToString() ?? throw new InvalidSyntaxException("Invalid variable identifier, expected a string."); //todo - This needs sorting
+            var identifier = identifierNode.GetChild().token?.ToString() ?? throw new SyntaxErrorException("Variable has no identifier", _currentLine);
             var valueNode = CreateNode(NodeType.VariableAssignmentValue, VariableAssignmentValue);
             var assignmentValue = valueNode.GetChild();
             if (VariableTable.Exists(identifier))
