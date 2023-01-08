@@ -244,24 +244,10 @@ public class Parser : InterpreterLogger
         try
         {
             //	Check whether the value node is of the same type and is in scope
-            var identifier = identifierNode.GetChild(0).token?.ToString();
+            var identifier = identifierNode.GetChild().token?.ToString() ?? throw new InvalidSyntaxException("Invalid variable identifier, expected a string."); //todo - This needs sorting
             var valueNode = CreateNode(NodeType.VariableAssignmentValue, VariableAssignmentValue);
-            var assignmentValue = valueNode.GetChild(0);
-            var type = assignmentValue.type; //todo - fix type
-            if (assignmentValue.type is NodeType.VariableIdentifier)
-            {
-                type = VariableTable.GetType(
-                        assignmentValue.GetChild(0).token?.ToString() ?? throw new SyntaxErrorException(
-                            $"Invalid variable assignment! Value '{assignmentValue.GetChild(0).token}' has no type!'",
-                            _currentLine));
-                if (type == NodeType.Null)
-                {
-                    throw new SyntaxErrorException(
-                        $"Invalid variable assignment! Value '{assignmentValue.GetChild(0).token}' has no type!'",
-                        _currentLine);
-                }
-            }
-            if (VariableTable.Exists(identifier ?? throw new Exception("Invalid identifier token")))
+            var assignmentValue = valueNode.GetChild();
+            if (VariableTable.Exists(identifier))
             {
                 if (_scopeManager.InScope(identifier))
                 {
@@ -293,7 +279,7 @@ public class Parser : InterpreterLogger
         }
         else
         {
-            throw new InvalidSyntaxException($"Unterminated assignment, expected ';'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
+            throw new SyntaxErrorException($"Unterminated assignment, expected ';'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
         }
     }
 
@@ -403,7 +389,17 @@ public class Parser : InterpreterLogger
         Advance();
 
         //	Add second factor node
-        node.AddChild(CreateNode(NodeType.Factor, Factor));
+        try
+        {
+            node.AddChild(CreateNode(NodeType.Factor, Factor));
+        }
+        catch (ParserException e)
+        {
+            if (e is SyntaxErrorException)
+                throw;
+            _logger.Warning(e.Message);
+            throw new SyntaxErrorException("Invalid right expression operand", _currentLine);
+        }
     }
 
     private void Factor(ParseNode node)
@@ -418,7 +414,7 @@ public class Parser : InterpreterLogger
         {
             var identifierNode = CreateNode(NodeType.VariableIdentifier, VariableIdentifier);
             //	Check whether the value node is of the same type
-            var identifier = identifierNode.GetChild(0).token?.ToString();
+            var identifier = identifierNode.GetChild().token?.ToString();
             // Check whether type is correct
             if (VariableTable.GetType(identifier ?? throw new SyntaxErrorException("Invalid identifier token")) is not NodeType.Expression)
                 throw new IncorrectTypeException($"Variable {identifier} is not of type 'Expression'");
@@ -517,7 +513,7 @@ public class Parser : InterpreterLogger
             try
             {
                 var identifierNode = CreateNode(NodeType.VariableIdentifier, VariableIdentifier);
-                var identifier = identifierNode.GetChild(0).token?.ToString();
+                var identifier = identifierNode.GetChild().token?.ToString();
                 // Check whether type is correct
                 if (VariableTable.GetType(identifier ?? throw new SyntaxErrorException("Invalid identifier token")) is not NodeType.LogicStatement)
                     throw new IncorrectTypeException($"Variable {identifier} is not of type 'Logic Statement'", _currentLine);
@@ -567,7 +563,7 @@ public class Parser : InterpreterLogger
         {
             node.AddChild(CreateNode(NodeType.Boolean, Boolean));
         }
-        catch (IncorrectTypeException e)
+        catch (ParserException e)
         {
             _logger.Warning(e.Message);
             throw new SyntaxErrorException("Incorrect type on condition operand", _currentLine);
@@ -592,7 +588,7 @@ public class Parser : InterpreterLogger
         {
             node.AddChild(CreateNode(NodeType.Expression, Expression));
         }
-        catch (InvalidSyntaxException e)
+        catch (ParserException e)
         {
             _logger.Warning(e.Message);
             throw new SyntaxErrorException($"Invalid right expression query operand!", _currentLine);
@@ -618,7 +614,7 @@ public class Parser : InterpreterLogger
         }
         else
         {
-            throw new SyntaxErrorException($"Mismatched parentheses, expected '('. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
+            throw new SyntaxErrorException($"Unexpected token, expected '('. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
         }
 
         //	Throw an invalid syntax error if we fail to parse a logic statement
@@ -626,7 +622,7 @@ public class Parser : InterpreterLogger
         {
             node.AddChild(CreateNode(NodeType.LogicStatement, LogicStatement));
         }
-        catch (InvalidSyntaxException e)
+        catch (ParserException e)
         {
             _logger.Warning(e.Message);
             throw new SyntaxErrorException($"Invalid logic statement within conditional statement!", _currentLine);
@@ -646,7 +642,7 @@ public class Parser : InterpreterLogger
         {
             node.AddChild(CreateNode(NodeType.Block, Block));
         }
-        catch (InvalidSyntaxException e)
+        catch (ParserException e)
         {
             _logger.Warning(e.Message);
             throw new SyntaxErrorException($"Invalid block within if statement!", _currentLine);
@@ -689,7 +685,7 @@ public class Parser : InterpreterLogger
         }
         else
         {
-            throw new SyntaxErrorException($"Mismatched parentheses, expected '('. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
+            throw new SyntaxErrorException($"Unexpected token, expected '('. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
         }
 
         //	Throw an invalid syntax error if we fail to parse a logic statement
@@ -697,7 +693,7 @@ public class Parser : InterpreterLogger
         {
             node.AddChild(CreateNode(NodeType.LogicStatement, LogicStatement));
         }
-        catch (InvalidSyntaxException e)
+        catch (ParserException e)
         {
             _logger.Warning(e.Message);
             throw new SyntaxErrorException($"Invalid logic statement within while statement!", _currentLine);
