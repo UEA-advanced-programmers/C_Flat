@@ -229,7 +229,7 @@ A loop can be created using the keyword `while`, followed by a logic statement w
 
 `<Variable-Declaration>::= 'var’ (<Variable-Identifier> ';'| <Variable-Assignment>)`
 
-`<Variable-Assignment>::= <Variable-Identifier> '=' <Variable-Assignment-Value> ‘;’`
+`<Variable-Assignment>::= <Variable-Identifier> '=' <Assignment-Value> ‘;’`
 
 `<Assignment-Value>::= (<Expression> | <String> | <Logic-Statement> | <Variable-Identifier>)`
 
@@ -247,7 +247,7 @@ A loop can be created using the keyword `while`, followed by a logic statement w
 
 `<Parameter>::= 'var' <Variable-Identifier>`
 
-`<Function-Call>::= <Function-Identifier> '(' *{<Variable-Assignment-Value>} ')' ';'`
+`<Function-Call>::= <Function-Identifier> '(' *{<Assignment-Value>} ')' ';'`
 
 ### Blocks:
 
