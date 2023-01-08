@@ -225,11 +225,11 @@ A loop can be created using the keyword `while`, followed by a logic statement w
 
 ### Variables:
 
-`<Variable-Declaration>::= 'var’ (<Identifier> ';'| <Assignment>)`
+`<Variable-Declaration>::= 'var’ (<Variable-Identifier> ';'| <Variable-Assignment>)`
 
-`<Variable-Assignment>::= <Identifier> '=' <Assignment-Value> ‘;’`
+`<Variable-Assignment>::= <Variable-Identifier> '=' <Variable-Assignment-Value> ‘;’`
 
-`<Variable-Assignment-Value>::= (<Expression> | <String> | <Logic-Statement> | <Identifier>)`
+`<Variable-Assignment-Value>::= (<Expression> | <String> | <Logic-Statement> | <Variable-Identifier>)`
 
 `<Variable-Identifier>::= <Word>`
 
@@ -239,11 +239,11 @@ A loop can be created using the keyword `while`, followed by a logic statement w
 
 ### Functions:
 
-`<Function-Definition>::= 'func' <Identifier> '('#<Parameter>')' <Block>`
+`<Function-Definition>::= 'func' <Variable-Identifier> '('#<Parameter>')' <Block>`
 
-`<Parameter>::= 'var' <Identifier>`
+`<Parameter>::= 'var' <Variable-Identifier>`
 
-`<Function-Call>::= <Identifier> '(' *{<Identifier> | <Logic-Statement> | <Expression>} ')' ';'`
+`<Function-Call>::= <Variable-Identifier> '(' *{<Variable-Identifier> | <Logic-Statement> | <Expression>} ')' ';'`
 
 ### Blocks:
 
