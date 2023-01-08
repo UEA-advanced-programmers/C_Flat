@@ -199,7 +199,7 @@ A loop can be created using the keyword `while`, followed by a logic statement w
 
 `<Term>::= <Factor> *{('*'|'/') <Factor}`
 
-`<Factor>::= '('<Expression>')' | <Number> | '-'<Factor> | <Identifier>`
+`<Factor>::= '('<Expression>')' | <Number> | '-'<Factor> | <Variable-Identifier>`
 
 `<Number>::= <Digit> { '.' <Digit>}`
 
@@ -211,7 +211,7 @@ A loop can be created using the keyword `while`, followed by a logic statement w
 
 `<Condition>::= ( '==' | '!=' | '&' | '|' ) <Boolean>`
 
-`<Boolean>::= '!’<Logic-Statement> | 'true' | 'false' | <Expression-Query> | '('<Logic-Statement>')' | <Identifier>`
+`<Boolean>::= '!’<Logic-Statement> | 'true' | 'false' | <Expression-Query> | '('<Logic-Statement>')' | <Variable-Identifier>`
 
 `<Expression-Query> ::= (<Expression>) ( '==' | '!=' | '>'| '<' ) (<Expression>)`
 
@@ -219,34 +219,38 @@ A loop can be created using the keyword `while`, followed by a logic statement w
 
 `<Conditional-Statement>::='if’ ‘('<Logic-Statement>’)’ <Block> {'else' <Block> }`
 
+### Loops:
+
+`<While-Statement>::= 'while' '(' <Logic-Statement> ')' <Block>`
+
 ### Variables:
 
-`<Declaration>::= 'var’ (<Identifier> ';'| <Assignment>)`
+`<Variable-Declaration>::= 'var’ (<Variable-Identifier> ';'| <Variable-Assignment>)`
 
-`<Identifier>::= <Word>`
+`<Variable-Assignment>::= <Variable-Identifier> '=' <Variable-Assignment-Value> ‘;’`
+
+`<Assignment-Value>::= (<Expression> | <String> | <Logic-Statement> | <Variable-Identifier>)`
+
+`<Variable-Identifier>::= <Word>`
+
+`<String> = ' " ' <Word> ' " '`
 
 `<Word>::= 1*(a-zA-Z) - <Keywords>`
 
-`<Assignment>::= <Identifier> '=' <Assignment-Value> ‘;’`
-
-`<Assignment-Value>::= (<Expression> | ' " ' <Word> ' " ' | <Boolean> | <Identifier>)`
-
 ### Functions:
 
-`<Function-Definition>::= 'func' <Identifier> '('#<Parameter>')' <Block>`
+`<Function-Definition>::= 'func' <Function-Identifier> '('#<Parameter>')' <Block>`
 
-`<Parameter>::= 'var' <Identifier>`
+`<Function-Identifier>::= <Word>`
 
-`<Function-Call>::= <Identifier> '(' *{<Identifier> | <Logic-Statement> | <Expression>} ')' ';'`
+`<Parameter>::= 'var' <Variable-Identifier>`
 
-### Loops:
-
-`<While-Loop>::= 'while' '(' <Logic-Statement> ')' <Block>`
-
-### Keywords:
-
-`<Keyword>::= 'if' | 'else' | 'while' | 'var' | 'func' | 'true' | 'false'`
+`<Function-Call>::= <Function-Identifier> '(' *{<Variable-Assignment-Value>} ')' ';'`
 
 ### Blocks:
 
 `<Block>::= '{' *{<statement>} '}'`
+
+### Keywords:
+
+`<Keyword>::= 'if' | 'else' | 'while' | 'var' | 'func' | 'true' | 'false'`
