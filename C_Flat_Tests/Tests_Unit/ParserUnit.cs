@@ -1,91 +1,50 @@
-﻿using System.Data;
-using C_Flat_Interpreter.Common;
+﻿using C_Flat_Interpreter.Common;
 using C_Flat_Interpreter.Common.Enums;
 using C_Flat_Interpreter.Parser;
+using C_Flat_Tests.Common;
 using NUnit.Framework;
+
 namespace C_Flat_Tests.Tests_Unit;
 
-public class ParserUnit
+public class ParserUnit : TestLogger
 {
-    /*
-    //Commented out tests as they are broken and require rewriting to account for parser refactor
-    [Test]
-    public void Parser_Parse_Expression_RunsCorrectly()
-    {
-        List<Token> tokens =
-            new List<Token>() { 
-                new Token(TokenType.Num, 3),
-                new Token(TokenType.Add),
-                new Token(TokenType.Num, 4),
-            };
-        Parser parser = new Parser();
+    private readonly Parser _parser;
 
-        Assert.That(parser.Parse(tokens) == 0);
+    public ParserUnit()
+    {
+        GetLogger("Parser Unit Tests");
+        _parser = new();
+    }
+
+    [SetUp]
+    public void SetupParserTests()
+    {
+        _parser.ClearLogs();
     }
 
     [Test]
-    public void Parser_Parse_LogicStatement_RunsCorrectly()
+    public void Parser_Parse_EmptyTokenList_ReturnsFail()
     {
-        string statement = "true";
-        Lexer lexer = new Lexer();
-        lexer.Tokenise(statement);
-        List<Token> tokens =
-            new List<Token>() {
-                new Token(TokenType.Num, 3),
-                new Token(TokenType.Less),
-                new Token(TokenType.Num, 4),
-            };
-        Parser parser = new Parser();
-        parser.Parse(tokens);
-        Assert.That(parser.Parse(tokens) == 0);
+        //Log test
+        _logger.Information("Testing Parse() with empty token list");
+        //Arrange
+        List<Token> tokens = new();
+        //Act
+        var returnStatus = _parser.Parse(tokens);
+        //Assert
+        Assert.That(returnStatus is 1);
     }
 
     [Test]
-    public void Parser_Parse_IfStatementEmpty_RunsCorrectly()
+    public void Parser_Parse_SyntaxError_ReturnsFail()
     {
-        string statement = "if(true){}";
-        Lexer lexer = new Lexer();
-        lexer.Tokenise(statement);
-        List<Token> tokens = lexer.GetTokens();
-        Parser parser = new Parser();
-
-        Assert.That(parser.Parse(tokens) == 0);
+        //Log test
+        _logger.Information("Testing Parse() with Syntax error");
+        //Arrange
+        List<Token> tokens = new() {new Token(TokenType.Num, "-10")};
+        //Act
+        var returnStatus = _parser.Parse(tokens);
+        //Assert
+        Assert.That(returnStatus is 1);
     }
-
-    [Test]
-    public void Parser_Parse_IfStatementWithExpression_RunsCorrectly()
-    {
-        string statement = "if(true){3+4}";
-        Lexer lexer = new Lexer();
-        lexer.Tokenise(statement);
-        List<Token> tokens = lexer.GetTokens();
-        Parser parser = new Parser();
-
-        Assert.That(parser.Parse(tokens) == 0);
-    }
-
-    [Test]
-    public void Parser_Parse_IfStatementWithLogic_RunsCorrectly()
-    {
-        string statement = "if(true){true}";
-        Lexer lexer = new Lexer();
-        lexer.Tokenise(statement);
-        List<Token> tokens = lexer.GetTokens();
-        Parser parser = new Parser();
-
-        Assert.That(parser.Parse(tokens) == 0);
-    }
-
-    [Test]
-    public void Parser_Parse_IfElseStatement_RunsCorrectly()
-    {
-        string statement = "if(true){}else{}";
-        Lexer lexer = new Lexer();
-        lexer.Tokenise(statement);
-        List<Token> tokens = lexer.GetTokens();
-        Parser parser = new Parser();
-
-        Assert.That(parser.Parse(tokens) == 0);
-    }
-    */
 }
