@@ -42,6 +42,13 @@ public class Transpiler : InterpreterLogger
         _currentLine = 0;
         ClearLogs();
         var writer = File.CreateText(GetProgramPath());
+        if (parseTree.Count == 0)
+        {
+            _logger.Warning("Parse tree is empty, terminating.");
+            writer.Write(Program);
+            writer.Close();
+            return 0;
+        }
         foreach (var node in parseTree)
         {
             try
