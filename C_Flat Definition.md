@@ -239,11 +239,13 @@ A loop can be created using the keyword `while`, followed by a logic statement w
 
 ### Functions:
 
-`<Function-Definition>::= 'func' <Variable-Identifier> '('#<Parameter>')' <Block>`
+`<Function-Definition>::= 'func' <Function-Identifier> '('#<Parameter>')' <Block>`
+
+`<Function-Identifier>::= <Word>`
 
 `<Parameter>::= 'var' <Variable-Identifier>`
 
-`<Function-Call>::= <Variable-Identifier> '(' *{<Variable-Identifier> | <Logic-Statement> | <Expression>} ')' ';'`
+`<Function-Call>::= <Function-Identifier> '(' *{<Variable-Assignment-Value>} ')' ';'`
 
 ### Blocks:
 
