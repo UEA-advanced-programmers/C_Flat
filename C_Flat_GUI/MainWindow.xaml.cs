@@ -340,7 +340,7 @@ namespace C_Flat
                     }
                 };
                 if (node.type is NodeType.Terminal) continue;
-                foreach (var childNode in node.getChildren())
+                foreach (var childNode in node.GetChildren())
                 {
                     AddNodeTreeItems(treeItem, childNode);
                 }
@@ -369,7 +369,7 @@ namespace C_Flat
             };
             if (node.type is not NodeType.Terminal)
             {
-                foreach (var childNode in node.getChildren())
+                foreach (var childNode in node.GetChildren())
                 {
                     AddNodeTreeItems(treeItem, childNode);
                 }

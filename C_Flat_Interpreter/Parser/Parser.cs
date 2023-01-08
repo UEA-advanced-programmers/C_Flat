@@ -244,20 +244,20 @@ public class Parser : InterpreterLogger
         try
         {
             //	Check whether the value node is of the same type and is in scope
-            var identifier = identifierNode.getChildren().First().token?.ToString();
+            var identifier = identifierNode.GetChild(0).token?.ToString();
             var valueNode = CreateNode(NodeType.VariableAssignmentValue, VariableAssignmentValue);
-            var assignmentValue = valueNode.getChildren().First();
+            var assignmentValue = valueNode.GetChild(0);
             var type = assignmentValue.type; //todo - fix type
             if (assignmentValue.type is NodeType.VariableIdentifier)
             {
                 type = VariableTable.GetType(
-                        assignmentValue.getChildren().First().token?.ToString() ?? throw new SyntaxErrorException(
-                            $"Invalid variable assignment! Value '{assignmentValue.getChildren().First().token}' has no type!'",
-                            _currentLine)); //todo - use correct error here!
+                        assignmentValue.GetChild(0).token?.ToString() ?? throw new SyntaxErrorException(
+                            $"Invalid variable assignment! Value '{assignmentValue.GetChild(0).token}' has no type!'",
+                            _currentLine));
                 if (type == NodeType.Null)
                 {
                     throw new SyntaxErrorException(
-                        $"Invalid variable assignment! Value '{assignmentValue.getChildren().First().token}' has no type!'",
+                        $"Invalid variable assignment! Value '{assignmentValue.GetChild(0).token}' has no type!'",
                         _currentLine);
                 }
             }
@@ -418,7 +418,7 @@ public class Parser : InterpreterLogger
         {
             var identifierNode = CreateNode(NodeType.VariableIdentifier, VariableIdentifier);
             //	Check whether the value node is of the same type
-            var identifier = identifierNode.getChildren().First().token?.ToString();
+            var identifier = identifierNode.GetChild(0).token?.ToString();
             // Check whether type is correct
             if (VariableTable.GetType(identifier ?? throw new SyntaxErrorException("Invalid identifier token")) is not NodeType.Expression)
                 throw new IncorrectTypeException($"Variable {identifier} is not of type 'Expression'");
@@ -517,7 +517,7 @@ public class Parser : InterpreterLogger
             try
             {
                 var identifierNode = CreateNode(NodeType.VariableIdentifier, VariableIdentifier);
-                var identifier = identifierNode.getChildren().First().token?.ToString();
+                var identifier = identifierNode.GetChild(0).token?.ToString();
                 // Check whether type is correct
                 if (VariableTable.GetType(identifier ?? throw new SyntaxErrorException("Invalid identifier token")) is not NodeType.LogicStatement)
                     throw new IncorrectTypeException($"Variable {identifier} is not of type 'Logic Statement'", _currentLine);

@@ -1,4 +1,5 @@
 ﻿using C_Flat_Interpreter.Common.Enums;
+using C_Flat_Interpreter.Common.Exceptions;
 
 namespace C_Flat_Interpreter.Common;
 
@@ -24,8 +25,18 @@ public class ParseNode
         childNodes.Add(child);
     }
 
+    public ParseNode GetChild(int index = 0)
+    {
+        return childNodes[index] ?? throw new Exception("Index out of bounds"); //todo - exception
+    }
+    
+    public ParseNode GetLastChild()
+    {
+        return childNodes.Last();
+    }
+
     //Testing Function
-    public List<ParseNode> getChildren()
+    public List<ParseNode> GetChildren()
     {
         return childNodes;
     }
