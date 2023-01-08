@@ -275,7 +275,7 @@ public class Parser : InterpreterLogger
                     throw new OutOfScopeException($"Variable '{identifier}' does not exist in this context", _currentLine);
                 }
             }
-            VariableTable.Add(identifier, type);
+            VariableTable.Add(identifier, assignmentValue);
             //	Only add if the assignment is valid
             node.AddChild(valueNode);
         }
