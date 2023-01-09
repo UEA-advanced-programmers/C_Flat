@@ -401,7 +401,7 @@ public class Parser : InterpreterLogger
         try
         {
             node.AddChild(CreateNode(NodeType.Parameter, Parameter));
-            parameters.Add(_tokens[_currentIndex - 1].Word);
+            parameters.Add(_tokens[_currentIndex - 1].ToString());
 
             while (_currentIndex < _totalTokens && !Match(TokenType.RightParen))
             {
@@ -412,7 +412,7 @@ public class Parser : InterpreterLogger
                     Advance();
                     
                     node.AddChild(CreateNode(NodeType.Parameter, Parameter));
-                    parameters.Add(_tokens[_currentIndex - 1].Word);
+                    parameters.Add(_tokens[_currentIndex - 1].ToString());
                 }
                 catch (InvalidSyntaxException e)
                 {
@@ -539,13 +539,13 @@ public class Parser : InterpreterLogger
                 
                 // todo - if variable, check scope
 
-                if (assignmentValue.GetChild().type == VariableTable.GetType(param.Trim()))
+                if (assignmentValue.GetChild().type == VariableTable.GetType(param))
                 {
                     node.AddChild(assignmentValue);
                 }
                 else
                 {
-                    throw new SyntaxErrorException($"Parameter is not the correct value, expected '{VariableTable.GetType(param.Trim()).ToString()}'");
+                    throw new SyntaxErrorException($"Parameter is not the correct value, expected '{VariableTable.GetType(param).ToString()}'");
                 }
 
                 if (!Match(TokenType.Comma))
