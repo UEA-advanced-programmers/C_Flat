@@ -4,6 +4,8 @@ public enum NodeType //will be added to
 {
     Null,
     Statement,
+    TopLevelStatement,
+    ControlStatement,
     Expression,
     Term,
     Factor,

@@ -113,33 +113,9 @@ public class Parser : InterpreterLogger
         {
             while (_currentIndex < _totalTokens)
             {
-                var currentIndex = _currentIndex;
-                try
-                {
-                    var statementNode = new ParseNode(NodeType.Statement);
-                    Statement(statementNode);
-                    _parseTree.Add(statementNode);
-                    continue;
-                }
-                catch (InvalidSyntaxException e)
-                {
-                    _logger.Debug(e.Message);
-                    Reset(currentIndex);
-                }
-                
-                try
-                {
-                    var definitionNode = new ParseNode(NodeType.FunctionDefinition);
-                    Definition(definitionNode);
-                    _parseTree.Add(definitionNode);
-                    continue;
-                }
-                catch (InvalidSyntaxException e)
-                {
-                    _logger.Warning(e.Message);
-                    Reset(currentIndex);
-                }
-                throw new SyntaxErrorException("Unable to parse statement or definition, failing");
+                var statementNode = new ParseNode(NodeType.Statement);
+                Statement(statementNode);
+                _parseTree.Add(statementNode);
             }
         }
         catch (Exception e)
@@ -151,14 +127,41 @@ public class Parser : InterpreterLogger
         return 0;
     }
 
-    private void Definition(ParseNode node)
+    private void Statement(ParseNode node)
+    {
+        var currentIndex = _currentIndex;
+        try
+        {
+            node.AddChild(CreateNode(NodeType.ControlStatement, ControlStatement));
+            return;
+        }
+        catch (InvalidSyntaxException e)
+        {
+            _logger.Debug(e.Message);
+            Reset(currentIndex);
+        }
+
+        try
+        {
+            node.AddChild(CreateNode(NodeType.TopLevelStatement, TopLevelStatement));
+            return;
+        }
+        catch (InvalidSyntaxException e)
+        {
+            _logger.Warning(e.Message);
+            Reset(currentIndex);
+        }
+
+        throw new SyntaxErrorException("Unable to parse statement or definition, failing");
+    }
+
+    private void TopLevelStatement(ParseNode node)
     {
         node.AddChild(CreateNode(NodeType.FunctionDefinition, FunctionDefinition));
-        //throw new SyntaxErrorException("Unable to parse!");
     }
 
     //EBNF Functions
-    private void Statement(ParseNode node)
+    private void ControlStatement(ParseNode node)
     {
         int currentIndex = _currentIndex;
 
@@ -969,7 +972,7 @@ public class Parser : InterpreterLogger
         {
             try
             {
-                node.AddChild(CreateNode(NodeType.Statement, Statement));
+                node.AddChild(CreateNode(NodeType.Statement, ControlStatement));
             }
             catch (InvalidSyntaxException e)
             {

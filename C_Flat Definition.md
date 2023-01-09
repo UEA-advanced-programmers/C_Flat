@@ -191,9 +191,11 @@ A loop can be created using the keyword `while`, followed by a logic statement w
 ## Simplified EBNF:
 
 ### Statements:
-`<Statement>::= <Declaration> | <Assignment> | <Function-Call> | <Conditional-Statement> | <While-Loop>`
+`<Statement>::= <Control-Statement> | <Top-Level-Statement>`
 
-`<Definition>::= <Function-Definition>`
+`<Control-Statement>::= <Variable-Declaration> | <Variable-Assignment> | <Function-Call> | <Conditional-Statement> | <While-Loop>`
+
+`<Top-Level-Statement>::= <Function-Definition>`
 
 ### Numerical expressions:
 
@@ -247,7 +249,9 @@ A loop can be created using the keyword `while`, followed by a logic statement w
 
 `<Parameter>::= 'var' <Variable-Identifier>`
 
-`<Function-Call>::= <Function-Identifier> '(' *{<Assignment-Value>} ')' ';'`
+`<Function-Call>::= <Function-Identifier> '(' *{<Arguments>} ')' ';'`
+
+`<Arguements>::= <(<Expression> | <String> | <Logic-Statement> | <Variable-Identifier>)>`
 
 ### Blocks:
 
