@@ -12,12 +12,9 @@ public static class VariableTable
         if (node == null)
         {
             if (_table.ContainsKey(word))
-            {
                 _table[word] = NodeType.Null;
-                return;
-            }
-
-            _table.Add(word, NodeType.Null);
+            else
+                _table.Add(word, NodeType.Null);
             return;
         }
         
