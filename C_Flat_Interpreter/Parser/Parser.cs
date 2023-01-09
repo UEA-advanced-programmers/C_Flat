@@ -418,7 +418,8 @@ public class Parser : InterpreterLogger
             _logger.Warning(e.Message);
             throw new SyntaxErrorException($"Invalid block within function!", _currentLine);
         }
-        //todo - descope variables! - parameter table!
+        //todo - parameter table! - parameters should only be in scope for the function
+        //todo - parameters need to use the value of the argument
     }
     
     private void FunctionIdentifier(ParseNode node)
@@ -444,11 +445,12 @@ public class Parser : InterpreterLogger
         }
         else
         {
-            //return;
             throw new InvalidSyntaxException($"Expected keyword 'var'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
         }
         
-        //Check for <Variable-Identifier>
+        //todo - Use Parameter Table!!
+        
+        //Check for variable identifier
         var identifier = _tokens[_currentIndex].ToString();
 
         //	Throw syntax error if variable already exists
@@ -473,7 +475,8 @@ public class Parser : InterpreterLogger
 
     private void FunctionCall(ParseNode node)
     {
-        //Check for <Function-Identifier> - todo - think about exceptions here!
+        //todo - sort exceptions here!
+        //Check for function identifier
         try
         {
             var identifierNode = CreateNode(NodeType.FunctionIdentifier, FunctionIdentifier);
@@ -484,70 +487,57 @@ public class Parser : InterpreterLogger
                 throw new SyntaxErrorException($"Function {identifier} has not been defined", _currentLine);
             node.AddChild(identifierNode);
             
-            List<string>? parameters = FunctionTable.GetParams(identifier);
+            var parameters = FunctionTable.GetParams(identifier);
             
             // Check for '('
             if (Match(TokenType.LeftParen))
             {
                 node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
                 Advance();
-                
-                if (parameters.Count > 0)
-                {
-                    var assignmentValue = CreateNode(NodeType.AssignmentValue, AssignmentValue);
-                    var variableNode = assignmentValue.GetChild();
-                    
-                    var variable = _tokens[_currentIndex - 1].ToString();
-
-                    if (!_scopeManager.InScope(variable))
-                        throw new SyntaxErrorException("Variable not in scope"); //todo - fix this
-                    
-                    if (variableNode.type == VariableTable.GetType(parameters.First().Trim()))
-                    {
-                        node.AddChild(assignmentValue);
-                    }
-                    else
-                    {
-                        throw new SyntaxErrorException("Parameter is not the correct value"); //todo - make this better
-                    }
-
-                    parameters.Remove(parameters.First());
-                    
-                    foreach (var param in parameters)
-                    {
-                        if (!Match(TokenType.Comma)) continue;
-                        node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
-                        Advance();
-                            
-                        assignmentValue = CreateNode(NodeType.AssignmentValue, AssignmentValue);
-                        
-                        if (assignmentValue.GetChild().type == VariableTable.GetType(param.Trim()))
-                        {
-                            node.AddChild(assignmentValue);
-                        }
-                        else
-                        {
-                            //error!!
-                        }
-                    }
-                }
-    
-                // Check for ')'
-                if (Match(TokenType.RightParen))
-                {
-                    node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
-                    Advance();
-                }
-                else
-                {
-                    throw new SyntaxErrorException($"Mismatched parentheses, expected ')'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
-                }
             }
             else
             {
                 throw new InvalidSyntaxException("Unexpected token, unable to parse a boolean expression!");
             }
             
+            //todo - use function table!
+            // Check for parameters
+            foreach (var param in parameters)
+            {
+                var assignmentValue = CreateNode(NodeType.AssignmentValue, AssignmentValue);
+                    
+
+                if (!_scopeManager.InScope(_tokens[_currentIndex - 1].ToString()))
+                    throw new SyntaxErrorException("Variable not in scope"); //todo - fix this
+                    
+                if (assignmentValue.GetChild().type == VariableTable.GetType(param.Trim()))
+                {
+                    node.AddChild(assignmentValue);
+                }
+                else
+                {
+                    throw new SyntaxErrorException("Parameter is not the correct value"); //todo - make this better
+                }
+
+                if (!Match(TokenType.Comma))
+                {
+                    break;
+                }
+                node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
+                Advance();
+            }
+
+            // Check for ')'
+            if (Match(TokenType.RightParen))
+            {
+                node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
+                Advance();
+            }
+            else
+            {
+                throw new SyntaxErrorException($"Mismatched parentheses, expected ')'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
+            }
+
             //Check for ';'
             if (Match(TokenType.SemiColon))
             {
