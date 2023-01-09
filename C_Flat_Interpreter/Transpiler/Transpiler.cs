@@ -344,7 +344,7 @@ public class Transpiler : InterpreterLogger
         for (int i = 0; i < paramNodes.Count; i++)
         {
             TranspileParameter(paramNodes[i]);
-            if (i + 1 < paramNodes.Count - 1)
+            if (i + 1 < paramNodes.Count)
                 Program += ",";
         }
 
@@ -399,7 +399,7 @@ public class Transpiler : InterpreterLogger
         for (int i = 0; i < argumentNodes.Count; i++)
         {
             TranspileVariableAssignmentValue(argumentNodes[i]);
-            if (i + 1 < argumentNodes.Count - 1)
+            if (i + 1 < argumentNodes.Count)
                 Program += ",";
         }
 
