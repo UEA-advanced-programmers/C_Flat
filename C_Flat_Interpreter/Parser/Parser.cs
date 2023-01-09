@@ -24,7 +24,6 @@ public class Parser : InterpreterLogger
     public Parser()
     {
         GetLogger("Parser");
-        
         // Add all statements that can simply be added as a node without the need for extra checks 
         _statementsDictionary.Add(NodeType.ConditionalStatement, ConditionalStatement);
         _statementsDictionary.Add(NodeType.WhileStatement, WhileStatement);
@@ -182,8 +181,8 @@ public class Parser : InterpreterLogger
         
         try
         {
+            
             var identifier = _tokens[_currentIndex].ToString();
-
             if (VariableTable.Exists(identifier))
             {
                 node.AddChild(CreateNode(NodeType.VariableAssignment, VariableAssignment));
@@ -277,6 +276,7 @@ public class Parser : InterpreterLogger
         // check for identifier
         var identifierNode = CreateNode(NodeType.VariableIdentifier, VariableIdentifier);
         node.AddChild(identifierNode);
+        
         if (!Match(TokenType.Assignment))
             throw new InvalidSyntaxException($"Invalid variable assignment, expected '='. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
 
@@ -286,10 +286,10 @@ public class Parser : InterpreterLogger
         //	Try and parse assignment value
         try
         {
-            //	Check whether the value node is of the same type and is in scope
             var identifier = identifierNode.GetChild().token?.ToString() ?? throw new SyntaxErrorException("Variable has no identifier", _currentLine);
             var valueNode = CreateNode(NodeType.AssignmentValue, AssignmentValue);
             var assignmentValue = valueNode.GetChild();
+            //	Check whether the value node is of the same type and is in scope
             if (VariableTable.Exists(identifier))
             {
                 if (_scopeManager.InScope(identifier))
@@ -377,13 +377,17 @@ public class Parser : InterpreterLogger
         
         // Check for Function Identifier
         var identifier = _tokens[_currentIndex].ToString();
+        VariableTable.EnterFunction(identifier);
 
         //	Throw syntax error if function already exists
         if (FunctionTable.Exists(identifier))
             throw new SyntaxErrorException($"Function '{_tokens.ElementAtOrDefault(_currentIndex)}' has already been declared!", _currentLine);
         
         node.AddChild(CreateNode(NodeType.FunctionIdentifier, FunctionIdentifier));
-
+        
+        //  Save current scopeCount
+        var scopeCount = _scopeManager.ScopeCount();
+        
         // Check for '('
         if (Match(TokenType.LeftParen))
         {
@@ -443,6 +447,9 @@ public class Parser : InterpreterLogger
         try
         {
             node.AddChild(CreateNode(NodeType.Block, Block));
+            //  After creating the block, de-scope all function parameters 
+            _scopeManager.DeScope(scopeCount);
+            VariableTable.LeaveFunction();
         }
         catch (ParserException e)
         {
@@ -479,11 +486,8 @@ public class Parser : InterpreterLogger
             throw new InvalidSyntaxException($"Expected keyword 'var'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
         }
         
-        //todo - Use Parameter Table!!
-        
-        //Check for variable identifier
-        var identifier = _tokens[_currentIndex].ToString();
-
+        //Append function name to variable identifier
+        var identifier =_tokens[_currentIndex].ToString();
         //	Throw syntax error if variable already exists
         if (_scopeManager.InScope(identifier))
         {
@@ -492,14 +496,8 @@ public class Parser : InterpreterLogger
         }
         else
         {
-          //	Re-declare if previously declared.
-          if (VariableTable.Exists(identifier))
-          {
-              VariableTable.Add(identifier);
-          }
-          _scopeManager.AddToScope(identifier);
+            _scopeManager.AddToScope(identifier);
         }
-        
         node.AddChild(CreateNode(NodeType.VariableIdentifier, VariableIdentifier));
         VariableTable.Add(identifier);
     }
@@ -518,8 +516,8 @@ public class Parser : InterpreterLogger
                 throw new SyntaxErrorException($"Function {identifier} has not been defined", _currentLine);
             node.AddChild(identifierNode);
             
-            var parameters = FunctionTable.GetParams(identifier);
             
+            var parameters = FunctionTable.GetParams(identifier);
             // Check for '('
             if (Match(TokenType.LeftParen))
             {
@@ -528,18 +526,16 @@ public class Parser : InterpreterLogger
             }
             else
             {
-                throw new InvalidSyntaxException("Unexpected token, unable to parse a boolean expression!");
+                throw new InvalidSyntaxException("Unexpected token, unable to parse a function call!");
             }
             
-            //todo - use function table!
-            // Check for parameters
             foreach (var param in parameters)
             {
                 var assignmentValue = CreateNode(NodeType.AssignmentValue, AssignmentValue);
-                
-                // todo - if variable, check scope
-
+                VariableTable.EnterFunction(identifier);
                 var paramType = VariableTable.GetType(param);
+                VariableTable.LeaveFunction();
+
                 if (assignmentValue.GetChild().type == paramType || paramType == NodeType.Null)
                 {
                     node.AddChild(assignmentValue);
@@ -648,7 +644,7 @@ public class Parser : InterpreterLogger
             //	Check whether the value node is of the same type
             var identifier = identifierNode.GetChild().token?.ToString() ?? throw new SyntaxErrorException("Variable has no identifier", _currentLine);
             // Check whether type is correct
-            if (VariableTable.GetType(identifier) is not NodeType.Expression)
+            if (!(VariableTable.GetType(identifier) is NodeType.Expression or NodeType.Null))
                 throw new IncorrectTypeException($"Variable {identifier} is not of type 'Expression'");
             node.AddChild(identifierNode);
         }
@@ -747,7 +743,7 @@ public class Parser : InterpreterLogger
                 var identifierNode = CreateNode(NodeType.VariableIdentifier, VariableIdentifier);
                 var identifier = identifierNode.GetChild().token?.ToString()?? throw new SyntaxErrorException("Variable has no identifier", _currentLine);
                 // Check whether type is correct
-                if (VariableTable.GetType(identifier) is not NodeType.LogicStatement)
+                if (!(VariableTable.GetType(identifier) is NodeType.LogicStatement or NodeType.Null))
                     throw new IncorrectTypeException($"Variable {identifier} is not of type 'Logic Statement'", _currentLine);
                 node.AddChild(identifierNode);
                 return;
