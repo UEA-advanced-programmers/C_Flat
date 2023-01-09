@@ -299,7 +299,7 @@ public class Parser : InterpreterLogger
         //	Store current index
         int index = _currentIndex;
         
-        foreach (var assignmentValue in _variableAssignmentValueDictionary)
+        foreach (var assignmentValue in _variableAssignmentValueDictionary) //todo - rename!
         {
             try
             {
@@ -505,11 +505,9 @@ public class Parser : InterpreterLogger
             foreach (var param in parameters)
             {
                 var assignmentValue = CreateNode(NodeType.AssignmentValue, AssignmentValue);
-                    
+                
+                // todo - if variable, check scope
 
-                if (!_scopeManager.InScope(_tokens[_currentIndex - 1].ToString()))
-                    throw new SyntaxErrorException("Variable not in scope"); //todo - fix this
-                    
                 if (assignmentValue.GetChild().type == VariableTable.GetType(param.Trim()))
                 {
                     node.AddChild(assignmentValue);
