@@ -533,8 +533,9 @@ public class Parser : InterpreterLogger
             
             //todo - use function table!
             // Check for parameters
-            foreach (var param in parameters)
+            for (var i = 0; i < parameters.Count; i++)
             {
+                var param = parameters[i];
                 var assignmentValue = CreateNode(NodeType.AssignmentValue, AssignmentValue);
                 
                 // todo - if variable, check scope
@@ -546,15 +547,23 @@ public class Parser : InterpreterLogger
                 }
                 else
                 {
-                    throw new SyntaxErrorException($"Parameter is not the correct value, expected '{VariableTable.GetType(param).ToString()}'");
+                    throw new SyntaxErrorException($"Argument is not the correct value, expected '{VariableTable.GetType(param).ToString()}'");
                 }
 
-                if (!Match(TokenType.Comma))
+                if (i == parameters.Count - 1)
                 {
                     break;
                 }
-                node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
-                Advance();
+
+                if (Match(TokenType.Comma))
+                {
+                    node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
+                    Advance();
+                }
+                else
+                {
+                    throw new SyntaxErrorException($"Needs more arguments, expected ','. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
+                }
             }
 
             // Check for ')'
@@ -973,7 +982,7 @@ public class Parser : InterpreterLogger
         {
             try
             {
-                node.AddChild(CreateNode(NodeType.Statement, ControlStatement));
+                node.AddChild(CreateNode(NodeType.ControlStatement, ControlStatement));
             }
             catch (InvalidSyntaxException e)
             {
