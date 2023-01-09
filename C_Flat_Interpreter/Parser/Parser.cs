@@ -539,7 +539,8 @@ public class Parser : InterpreterLogger
                 
                 // todo - if variable, check scope
 
-                if (assignmentValue.GetChild().type == VariableTable.GetType(param))
+                var paramType = VariableTable.GetType(param);
+                if (assignmentValue.GetChild().type == paramType || paramType == NodeType.Null)
                 {
                     node.AddChild(assignmentValue);
                 }
