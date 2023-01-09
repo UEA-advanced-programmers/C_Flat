@@ -349,11 +349,9 @@ public class Parser : InterpreterLogger
         //	Throw syntax error if function already exists
         if (FunctionTable.Exists(identifier))
             throw new SyntaxErrorException($"Function '{_tokens.ElementAtOrDefault(_currentIndex)}' has already been declared!", _currentLine);
-
-        ParseNode childNode = CreateNode(NodeType.FunctionIdentifier, FunctionIdentifier);
-        node.AddChild(childNode);
-        //FunctionTable.Add(identifier);
         
+        node.AddChild(CreateNode(NodeType.FunctionIdentifier, FunctionIdentifier));
+
         // Check for '('
         if (Match(TokenType.LeftParen))
         {
@@ -367,8 +365,8 @@ public class Parser : InterpreterLogger
         
         // Check for (optional) parameters
         List<string> parameters = new List<string>();
-
-        if (Match(TokenType.Word) && CheckKeyword("var")) //todo - find way to not need this - replace with try/catch?
+        
+        try
         {
             node.AddChild(CreateNode(NodeType.FunctionParameter, FunctionParameter));
             parameters.Add(_tokens[_currentIndex - 1].Word);
@@ -390,6 +388,11 @@ public class Parser : InterpreterLogger
                     throw new SyntaxErrorException($"Invalid function parameter within function!", _currentLine);
                 }
             }
+        }
+        catch (InvalidSyntaxException e)
+        {
+            _logger.Warning(e.Message); //todo - warning or whatever here
+            //throw new InvalidSyntaxException($"Invalid block within function!", _currentLine);
         }
 
         FunctionTable.Add(identifier, parameters);
@@ -415,7 +418,7 @@ public class Parser : InterpreterLogger
             _logger.Warning(e.Message);
             throw new SyntaxErrorException($"Invalid block within function!", _currentLine);
         }
-        //todo - descope variables!
+        //todo - descope variables! - parameter table!
     }
     
     private void FunctionIdentifier(ParseNode node)
@@ -441,6 +444,7 @@ public class Parser : InterpreterLogger
         }
         else
         {
+            //return;
             throw new InvalidSyntaxException($"Expected keyword 'var'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
         }
         
