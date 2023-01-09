@@ -16,7 +16,7 @@ public class Parser : InterpreterLogger
     private ScopeManager _scopeManager = new();
 
     private readonly Dictionary<NodeType, NodeFuncDelegate> _statementsDictionary = new();
-    private readonly Dictionary<NodeType, NodeFuncDelegate> _variableAssignmentValueDictionary = new();
+    private readonly Dictionary<NodeType, NodeFuncDelegate> _assignmentValueDictionary = new();
 
     private delegate void NodeFuncDelegate(ParseNode node);
 
@@ -29,15 +29,14 @@ public class Parser : InterpreterLogger
         _statementsDictionary.Add(NodeType.ConditionalStatement, ConditionalStatement);
         _statementsDictionary.Add(NodeType.WhileStatement, WhileStatement);
         _statementsDictionary.Add(NodeType.VariableDeclaration, VariableDeclaration);
-        _statementsDictionary.Add(NodeType.FunctionDefinition, FunctionDefinition);
         _statementsDictionary.Add(NodeType.FunctionCall, FunctionCall);
         
         
         // Add all variable assignment values
-        _variableAssignmentValueDictionary.Add(NodeType.LogicStatement, LogicStatement);
-        _variableAssignmentValueDictionary.Add(NodeType.Expression, Expression);
-        _variableAssignmentValueDictionary.Add(NodeType.String, String);
-        _variableAssignmentValueDictionary.Add(NodeType.VariableIdentifier, VariableIdentifier);
+        _assignmentValueDictionary.Add(NodeType.LogicStatement, LogicStatement);
+        _assignmentValueDictionary.Add(NodeType.Expression, Expression);
+        _assignmentValueDictionary.Add(NodeType.String, String);
+        _assignmentValueDictionary.Add(NodeType.VariableIdentifier, VariableIdentifier);
         
         _tokens = new List<Token>();
     }
@@ -114,9 +113,33 @@ public class Parser : InterpreterLogger
         {
             while (_currentIndex < _totalTokens)
             {
-                var statementNode = new ParseNode(NodeType.Statement);
-                Statement(statementNode);
-                _parseTree.Add(statementNode);
+                var currentIndex = _currentIndex;
+                try
+                {
+                    var statementNode = new ParseNode(NodeType.Statement);
+                    Statement(statementNode);
+                    _parseTree.Add(statementNode);
+                    continue;
+                }
+                catch (InvalidSyntaxException e)
+                {
+                    _logger.Debug(e.Message);
+                    Reset(currentIndex);
+                }
+                
+                try
+                {
+                    var definitionNode = new ParseNode(NodeType.FunctionDefinition);
+                    Definition(definitionNode);
+                    _parseTree.Add(definitionNode);
+                    continue;
+                }
+                catch (InvalidSyntaxException e)
+                {
+                    _logger.Warning(e.Message);
+                    Reset(currentIndex);
+                }
+                throw new SyntaxErrorException("Unable to parse statement or definition, failing");
             }
         }
         catch (Exception e)
@@ -126,6 +149,12 @@ public class Parser : InterpreterLogger
         }
         //If no exceptions are caught, return 0 to indicate success
         return 0;
+    }
+
+    private void Definition(ParseNode node)
+    {
+        node.AddChild(CreateNode(NodeType.FunctionDefinition, FunctionDefinition));
+        //throw new SyntaxErrorException("Unable to parse!");
     }
 
     //EBNF Functions
@@ -158,14 +187,14 @@ public class Parser : InterpreterLogger
                 currentIndex = _currentIndex;
                 return;
             }
-            throw new SyntaxErrorException($"Invalid variable assignment! Variable '{_tokens.ElementAtOrDefault(_currentIndex)}' has not been declared!", _currentLine);
+            throw new InvalidSyntaxException($"Invalid variable assignment! Variable '{_tokens.ElementAtOrDefault(_currentIndex)}' has not been declared!", _currentLine);
         }
         catch (InvalidSyntaxException e)
         {
             _logger.Debug(e.Message);
             Reset(currentIndex);
         }
-        throw new SyntaxErrorException("Unable to parse statement!");
+        throw new InvalidSyntaxException("Unable to parse statement!");
     }
     
     private void VariableDeclaration(ParseNode node)
@@ -299,7 +328,7 @@ public class Parser : InterpreterLogger
         //	Store current index
         int index = _currentIndex;
         
-        foreach (var assignmentValue in _variableAssignmentValueDictionary) //todo - rename!
+        foreach (var assignmentValue in _assignmentValueDictionary)
         {
             try
             {
@@ -368,7 +397,7 @@ public class Parser : InterpreterLogger
         
         try
         {
-            node.AddChild(CreateNode(NodeType.FunctionParameter, FunctionParameter));
+            node.AddChild(CreateNode(NodeType.Parameter, Parameter));
             parameters.Add(_tokens[_currentIndex - 1].Word);
 
             while (_currentIndex < _totalTokens && !Match(TokenType.RightParen))
@@ -379,7 +408,7 @@ public class Parser : InterpreterLogger
                     node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
                     Advance();
                     
-                    node.AddChild(CreateNode(NodeType.FunctionParameter, FunctionParameter));
+                    node.AddChild(CreateNode(NodeType.Parameter, Parameter));
                     parameters.Add(_tokens[_currentIndex - 1].Word);
                 }
                 catch (InvalidSyntaxException e)
@@ -389,10 +418,9 @@ public class Parser : InterpreterLogger
                 }
             }
         }
-        catch (InvalidSyntaxException e)
+        catch (InvalidSyntaxException)
         {
-            _logger.Warning(e.Message); //todo - warning or whatever here
-            //throw new InvalidSyntaxException($"Invalid block within function!", _currentLine);
+            _logger.Warning("No parameters found");
         }
 
         FunctionTable.Add(identifier, parameters);
@@ -435,7 +463,7 @@ public class Parser : InterpreterLogger
         }
     }
 
-    private void FunctionParameter(ParseNode node) //todo - either rename here or in EBNF
+    private void Parameter(ParseNode node) //todo - either rename here or in EBNF
     {
         // Check for 'var' keyword
         if (Match(TokenType.Word) && CheckKeyword("var"))
@@ -514,7 +542,7 @@ public class Parser : InterpreterLogger
                 }
                 else
                 {
-                    throw new SyntaxErrorException("Parameter is not the correct value"); //todo - make this better
+                    throw new SyntaxErrorException($"Parameter is not the correct value, expected '{VariableTable.GetType(param.Trim()).ToString()}'");
                 }
 
                 if (!Match(TokenType.Comma))
@@ -536,7 +564,7 @@ public class Parser : InterpreterLogger
                 throw new SyntaxErrorException($"Mismatched parentheses, expected ')'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
             }
 
-            //Check for ';'
+            // Check for ';'
             if (Match(TokenType.SemiColon))
             {
                 node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));

@@ -21,7 +21,7 @@ public enum NodeType //will be added to
     String,
     FunctionDefinition,
     FunctionIdentifier,
-    FunctionParameter,
+    Parameter,
     FunctionCall,
     Block
 }
