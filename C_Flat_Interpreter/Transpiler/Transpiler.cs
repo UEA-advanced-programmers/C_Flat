@@ -46,7 +46,14 @@ public class Transpiler : InterpreterLogger
         {
             try
             {
-                TranspileStatement(node);
+                if (node.GetChild().type is NodeType.TopLevelStatement)
+                {
+                    TranspileTopLevelStatement(node.GetChild());                    
+                }
+                else
+                {
+                    TranspileControlStatement(node.GetChild());
+                }
             }
             catch (Exception e)
             {
@@ -68,21 +75,46 @@ public class Transpiler : InterpreterLogger
         switch (statement.type)
         {
             //If and Whiles are functionally the same except while doesn't contain else
-            case NodeType.ConditionalStatement:
-            case NodeType.WhileStatement:
-                TranspileConditionalStatement(statement);
+            case NodeType.ControlStatement:
+                TranspileControlStatement(statement);
                 break;
-            case NodeType.VariableDeclaration:
-                TranspileVariableDeclaration(statement);
-                break;
-            case NodeType.VariableAssignment:
-                TranspileVariableAssignment(statement);
+            case NodeType.TopLevelStatement:
+                TranspileTopLevelStatement(statement);
                 break;
             default:
                 throw new Exception("Unhandled statement");
         }
     }
 
+    private void TranspileControlStatement(ParseNode node)
+    {
+        var controlStatement = node.GetChild();
+        switch (controlStatement.type)
+        {
+            //If and Whiles are functionally the same except while doesn't contain else
+            case NodeType.ConditionalStatement:
+            case NodeType.WhileStatement:
+                TranspileConditionalStatement(controlStatement);
+                break;
+            case NodeType.VariableDeclaration:
+                TranspileVariableDeclaration(controlStatement);
+                break;
+            case NodeType.VariableAssignment:
+                TranspileVariableAssignment(controlStatement);
+                break;
+            case NodeType.FunctionCall:
+                TranspileFunctionCall(controlStatement);
+                break;
+            default:
+                throw new Exception("Unhandled statement");
+        }
+    }
+
+    private void TranspileTopLevelStatement(ParseNode node)
+    {
+        var topLevelStatement = node.GetChild();
+        TranspileFunctionDefinition(topLevelStatement);
+    }
     private void TranspileExpression(ParseNode node)
     {
         List<ParseNode> terminals = new List<ParseNode>();
@@ -255,7 +287,7 @@ public class Transpiler : InterpreterLogger
         PrintTerminal(children.First());
         foreach (var statement in children.Where(child => child.type == NodeType.Statement))
         {
-            TranspileStatement(statement);
+            TranspileControlStatement(statement);
         }
         //Print R Curly
         PrintTerminal(children.Last());
@@ -285,6 +317,98 @@ public class Transpiler : InterpreterLogger
         PrintTerminal(children[5]);
         //Transpile block
         TranspileBlock(children.Last());
+    }
+    
+    private void TranspileFunctionDefinition(ParseNode node)
+    {
+        var children = node.GetChildren();
+        
+        //Print first child replacing the word
+        if (children.First().token?.ToString() is "func")
+        {
+            var token = children.First().token ?? throw new Exception("func token empty");
+            token.Word = token.Word.Replace("func", "void");
+        }
+        PrintTerminal(children.First());
+        
+        //Transpile identifier
+        TranspileIdentifier(children[1]);
+        
+        //  Print left paren
+        PrintTerminal(children[2]);
+        
+        //  count parameters
+        var paramNodes = children.Where(child => child.type is NodeType.Parameter).ToList();
+        
+        //  Transpile all parameters adding commas between them
+        for (int i = 0; i < paramNodes.Count; i++)
+        {
+            TranspileParameter(paramNodes[i]);
+            if (i + 1 < paramNodes.Count - 1)
+                Program += ",";
+        }
+
+        // Print right paren
+        PrintTerminal(children.Last(child => child.type is NodeType.Terminal));
+
+        // Transpile block
+        TranspileBlock(children.Last());
+    }
+
+    private void TranspileParameter(ParseNode node)
+    {
+        //  Determine type of parameter
+        var identifierString = node.GetChild(1).GetChild().token?.ToString() ?? "";
+        if (VariableTable.Exists(identifierString))
+        {
+            var paramType = VariableTable.GetType(identifierString);
+            switch (paramType)
+            {
+                case NodeType.Expression:
+                    Program += "float";
+                    break;
+                case NodeType.String:
+                    Program += "string";
+                    break;
+                case NodeType.LogicStatement:
+                    Program += "bool";
+                    break;
+                default:
+                    throw new Exception("Invalid parameter type");
+            }
+        }
+        
+        //  Transpile identifier
+        TranspileIdentifier(node.GetChild(1));
+    }
+
+    private void TranspileFunctionCall(ParseNode node)
+    {
+        var children = node.GetChildren();
+        
+        //  Transpile function identifier
+        TranspileIdentifier(children.First());
+        
+        //  Print left paren
+        PrintTerminal(children[1]);
+        
+        //  Transpile arguments
+        var argumentNodes = children.Where(child => child.type is NodeType.AssignmentValue).ToList();
+        
+        //  Transpile all arguments adding commas between them
+        for (int i = 0; i < argumentNodes.Count; i++)
+        {
+            TranspileVariableAssignmentValue(argumentNodes[i]);
+            if (i + 1 < argumentNodes.Count - 1)
+                Program += ",";
+        }
+
+        //  Print right paren
+        PrintTerminal(children.Last(x=> x.type is NodeType.Terminal && x.token!.Type is TokenType.RightParen));
+        
+        //  Print semi-colon
+        PrintTerminal(children.Last());
+
     }
 
     public string GetProgramPath()
