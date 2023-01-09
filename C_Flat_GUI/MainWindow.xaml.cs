@@ -4,6 +4,8 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
+using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -16,6 +18,7 @@ using C_Flat_Interpreter.Lexer;
 using C_Flat_Interpreter.Parser;
 using C_Flat_Interpreter.Transpiler;
 using Microsoft.Win32;
+using Serilog.Core;
 using Serilog.Events;
 using Wpf.Ui.Common;
 using Button = Wpf.Ui.Controls.Button;
@@ -274,49 +277,77 @@ namespace C_Flat
                     WorkingDirectory = @"../../../../C_Flat_Output/"
                 }
             };
-            proc.Start();
-
-            //store process output logs
-            var output = await proc.StandardOutput.ReadToEndAsync();
-            await proc.WaitForExitAsync();
-
-            //End execution animation
-            _executionAnim?.Stop(this);
-            Mouse.OverrideCursor = Cursors.Arrow;
-
-            //Check for errors and format stored output logs
-            if (proc.ExitCode != 0)
+            var output = new StringBuilder();
+            proc.OutputDataReceived += (sender, e) =>
             {
-                _executionOutput.Inlines.Clear();
-                OutputBorder.BorderBrush = new SolidColorBrush(Colors.DarkRed);
-                OutputBorder.BorderThickness = new Thickness(2);
-                var errorLogs = output.Split("\r\n", StringSplitOptions.RemoveEmptyEntries);
-                foreach (var error in errorLogs)
+                if (e.Data != null)
                 {
-                    var start = error.IndexOf("Program.cs", 0, StringComparison.Ordinal);
-                    var end = error.LastIndexOf('[');
-                    var trimmedError = error.Substring(start, end - start);
-                    _executionOutput.Inlines.Add(new Run()
-                    {
-                        Text = trimmedError + "\n",
-                        Background = trimmedError.Contains("error") ? Brushes.DarkRed : Brushes.Goldenrod,
-                    });
+                    output.AppendLine(e.Data);
                 }
+            };
+            proc.Start();
+            proc.BeginOutputReadLine();
+            //Start process and kill after 5 seconds
+            try
+            {
+                var tokenSource = new CancellationTokenSource(5000);
+                await proc.WaitForExitAsync(tokenSource.Token);
+                var programOutput = output.ToString();
+                //  If we get a non-zero exit code, print error logs
+                if (proc.ExitCode != 0)
+                {
+                    _executionOutput.Inlines.Clear();
+                    OutputBorder.BorderBrush = new SolidColorBrush(Colors.DarkRed);
+                    OutputBorder.BorderThickness = new Thickness(2);
+                    var errorLogs = programOutput.Split("\r\n", StringSplitOptions.RemoveEmptyEntries);
+                    foreach (var error in errorLogs)
+                    {
+                        var start = error.IndexOf("Program.cs", 0, StringComparison.Ordinal);
+                        var end = error.LastIndexOf('[');
+                        var trimmedError = error.Substring(start, end - start);
+                        _executionOutput.Inlines.Add(new Run()
+                        {
+                            Text = trimmedError + "\n",
+                            Background = trimmedError.Contains("error") ? Brushes.DarkRed : Brushes.Goldenrod,
+                        });
+                    }
+
+                    // Then disable buttons
+                    ExecuteButton.IsEnabled = false;
+                    TranspileButton.IsEnabled = true;
+                    OutputBorder.BorderBrush = Brushes.DarkRed;
+                    Snackbar.Appearance = ControlAppearance.Danger;
+                    Snackbar.Show("Execution Failed!");
+                }
+                else
+                {
+                    //  Otherwise just copy output directly to text-box and apply a green "success border"
+                    _executionOutput.Text = programOutput;
+                    OutputBorder.BorderBrush = Brushes.LawnGreen;
+                    OutputBorder.BorderThickness = new Thickness(2);
+                    TranspileButton.IsEnabled = true;
+                    ExecuteButton.IsEnabled = true;
+                    Snackbar.Appearance = ControlAppearance.Success;
+                    Snackbar.Show("Execution Successful!");
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                //  Task has been cancelled so kill process
+                proc.Kill();
+                Snackbar.Appearance = ControlAppearance.Danger;
+                Snackbar.Show("Error!", $"Execution timed out", SymbolRegular.ErrorCircle20);
+                _executionOutput.Text = output.ToString();
                 ExecuteButton.IsEnabled = false;
                 TranspileButton.IsEnabled = true;
                 OutputBorder.BorderBrush = Brushes.DarkRed;
-                Snackbar.Appearance = ControlAppearance.Danger;
-                Snackbar.Show("Execution Failed!");
-                return;
             }
-            //  Otherwise just copy output directly to text-box and apply a green "success border"
-            _executionOutput.Text = output;
-            OutputBorder.BorderBrush = Brushes.LawnGreen;
-            OutputBorder.BorderThickness = new Thickness(2);
-            Snackbar.Appearance = ControlAppearance.Success;
-            Snackbar.Show("Execution Successful!");
-            TranspileButton.IsEnabled = true;
-            ExecuteButton.IsEnabled = true;
+            finally
+            {
+                //End execution animation
+                _executionAnim?.Stop(this);
+                Mouse.OverrideCursor = Cursors.Arrow;
+            }
         }
 
         private void ConstructParseTree(List<ParseNode> parseNodes)
