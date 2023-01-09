@@ -202,7 +202,7 @@ public class TranspilerUnit : TestLogger
         assignmentNode.AddChild(identifierNode);
         assignmentNode.AddChild(new ParseNode(NodeType.Terminal, new Token(TokenType.Assignment, " =")));
         
-        var assignmentValueNode = new ParseNode(NodeType.VariableAssignmentValue);
+        var assignmentValueNode = new ParseNode(NodeType.AssignmentValue);
         
         var stringNode = new ParseNode(NodeType.String);
         stringNode.AddChild(new ParseNode(NodeType.Terminal, new Token(TokenType.String, " \"Hello World!\"")));
