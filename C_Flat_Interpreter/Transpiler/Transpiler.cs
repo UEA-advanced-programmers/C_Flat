@@ -333,10 +333,12 @@ public class Transpiler : InterpreterLogger
         
         //Transpile identifier
         TranspileIdentifier(children[1]);
+        var functionIdentifier = children[1].GetChild().token?.ToString() ?? "";
+
         
         //  Print left paren
         PrintTerminal(children[2]);
-        
+        VariableTable.EnterFunction(functionIdentifier);
         //  count parameters
         var paramNodes = children.Where(child => child.type is NodeType.Parameter).ToList();
         
@@ -347,7 +349,7 @@ public class Transpiler : InterpreterLogger
             if (i + 1 < paramNodes.Count)
                 Program += ",";
         }
-
+        VariableTable.LeaveFunction();
         // Print right paren
         PrintTerminal(children.Last(child => child.type is NodeType.Terminal));
 

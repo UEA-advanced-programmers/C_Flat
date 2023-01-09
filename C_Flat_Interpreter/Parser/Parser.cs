@@ -544,7 +544,7 @@ public class Parser : InterpreterLogger
                 {
                     throw new SyntaxErrorException($"Parameter is not the correct value, expected '{VariableTable.GetType(param).ToString()}'");
                 }
-
+                //TODO: After assigning the value, update the entry in the variable table!
                 if (!Match(TokenType.Comma))
                 {
                     break;
