@@ -33,7 +33,8 @@ public class Lexer : InterpreterLogger
         { '&', TokenType.And },
         { '|', TokenType.Or },
         { '<', TokenType.Less },
-        { '>', TokenType.More }
+        { '>', TokenType.More },
+        { ',', TokenType.Comma }
     };
 
     //constructor

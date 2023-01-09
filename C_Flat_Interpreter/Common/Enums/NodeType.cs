@@ -4,6 +4,8 @@ public enum NodeType //will be added to
 {
     Null,
     Statement,
+    TopLevelStatement,
+    ControlStatement,
     Expression,
     Term,
     Factor,
@@ -19,5 +21,9 @@ public enum NodeType //will be added to
     VariableAssignment,
     AssignmentValue,
     String,
+    FunctionDefinition,
+    FunctionIdentifier,
+    Parameter,
+    FunctionCall,
     Block
 }
