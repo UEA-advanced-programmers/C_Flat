@@ -81,6 +81,10 @@ public class Lexer : InterpreterLogger
                         whitespace += c;
                         newToken = null;
                         break;
+                    case '\t':
+                        whitespace += "    ";
+                        newToken = null;
+                        break;
                     case '!':
                         if (nextChar == '=')
                         {
@@ -201,7 +205,7 @@ public class Lexer : InterpreterLogger
                 break;
             }
         }
-        return wordString.ToLower();
+        return wordString;
     }
 
 
@@ -219,6 +223,6 @@ public class Lexer : InterpreterLogger
                 break;
             }
         }
-        return wordString.ToLower();
+        return wordString;
     }
 }

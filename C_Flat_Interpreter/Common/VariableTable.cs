@@ -7,28 +7,17 @@ public static class VariableTable
 {
     private static Dictionary<string, NodeType> _table = new();
 
-    public static void Add(string word, ParseNode? node = null)
+    public static void Add(string identifier, NodeType type = NodeType.Null)
     {
-        if (node == null)
+        if (ReservedWords.Reserved(identifier))
+            throw new Exception($"Cannot create variable with reserved word {identifier}");
+        if (_table.ContainsKey(identifier))
         {
-            if (_table.ContainsKey(word))
-                _table[word] = NodeType.Null;
-            else
-                _table.Add(word, NodeType.Null);
+            _table[identifier] = type;
             return;
         }
         
-        if (_table.ContainsKey(word))
-        {
-            _table[word] = node.type;
-            return;
-        }
-
-        if (node.type == NodeType.VariableIdentifier)
-        {
-            _table.Add(word, GetType(node.token?.Word  ?? throw new SyntaxErrorException("Identifier node token is null")));
-        }
-        _table.Add(word, node.type);
+        _table.Add(identifier, type);
     }
 
     public static bool Exists(string identifier)
@@ -40,7 +29,7 @@ public static class VariableTable
     {
         return _table[identifier];
     }
-
+    
     public static void Clear()
     {
         _table.Clear();
