@@ -101,6 +101,8 @@ public class Parser : InterpreterLogger
 
     public int Parse(List<Token> tokens)
     {
+        if (tokens.Count == 0)
+            return 1;
         _tokens = tokens;
         _totalTokens = tokens.Count;
         _parseTree = new List<ParseNode>();
