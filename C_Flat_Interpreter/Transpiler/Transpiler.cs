@@ -80,6 +80,7 @@ public class Transpiler : InterpreterLogger
                 break;
             case NodeType.FunctionCall:
                 TranspileFunctionCall(statement);
+                PrintTerminal(node.GetLastChild());
                 break;
             default:
                 throw new Exception("Unhandled statement");
@@ -188,8 +189,8 @@ public class Transpiler : InterpreterLogger
             case NodeType.LogicStatement:
                 TranspileLogicStatement(valueNode);
                 break;
-            case NodeType.VariableIdentifier:
-                TranspileIdentifier(valueNode);
+            case NodeType.FunctionCall:
+                TranspileFunctionCall(valueNode);
                 break;
         }
     }
@@ -292,32 +293,14 @@ public class Transpiler : InterpreterLogger
         //Transpile block
         TranspileBlock(children.Last());
     }
-    
-    private void TranspileFunctionIdentifier(ParseNode node)
-    {
-        var identifierNode = node.GetChild();
-        switch (identifierNode.token?.ToString())
-        {
-            case "Print":
-                //  Handle print function
-                identifierNode.token.Word = identifierNode.token.Word.Replace("Print", "Console.Out.WriteLine");
-                break;
-            default:
-             throw new NotImplementedException($"Function '{node.GetChild().token}' has not been implemented!");
-        }
-        PrintTerminal(identifierNode);
-    }
 
-    private void TranspileFunctionCall(ParseNode node)
+    private void TranspileFunctionArguments(List<ParseNode> arguments)
     {
-        var children = node.GetChildren();
-        TranspileFunctionIdentifier(children.First());
-        
         //  Print left parentheses
-        PrintTerminal(children[1]);
+        PrintTerminal(arguments[1]);
         
         //  Transpile function arguments
-        var argumentNodes = children.Where(child => child.type is NodeType.AssignmentValue).ToList();
+        var argumentNodes = arguments.Where(child => child.type is NodeType.AssignmentValue).ToList();
         
         //  Transpile all arguments adding commas between them
         for (int i = 0; i < argumentNodes.Count; i++)
@@ -328,10 +311,37 @@ public class Transpiler : InterpreterLogger
         }
         
         //  Print right paren
-        PrintTerminal(children.Last(x=> x.type is NodeType.Terminal && x.token!.Type is TokenType.RightParen));
+        PrintTerminal(arguments.Last(x=> x.type is NodeType.Terminal && x.token!.Type is TokenType.RightParen));
+    }
+    
+    private void TranspileFunctionCall(ParseNode node)
+    {
+        var children = node.GetChildren();
         
-        //  Print semi-colon
-        PrintTerminal(children.Last());
+        var identifierNode = children.First().GetChild();
+        switch (identifierNode.token?.ToString())
+        {
+            case "Print":
+                //  Handle print function
+                identifierNode.token.Word = identifierNode.token.Word.Replace("Print", "Console.Out.WriteLine");
+                PrintTerminal(identifierNode);
+                TranspileFunctionArguments(children);
+                break;
+            case "Concatenate":
+                identifierNode.token.Word = identifierNode.token.Word.Replace("Concatenate", "string.Concat");
+                PrintTerminal(identifierNode);
+                TranspileFunctionArguments(children);
+                break;
+            case "Stringify":
+                identifierNode.token.Word = identifierNode.token.Word.Replace("Stringify", ".ToString()").TrimStart();
+                TranspileFunctionArguments(children);
+                PrintTerminal(identifierNode);
+                break;
+            default:
+                throw new NotImplementedException($"Function '{node.GetChild().token}' has not been implemented!");
+        }
+        
+
     }
 
     public string GetProgramPath()

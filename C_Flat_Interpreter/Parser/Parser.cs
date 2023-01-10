@@ -28,13 +28,13 @@ public class Parser : InterpreterLogger
         _statementsDictionary.Add(NodeType.ConditionalStatement, ConditionalStatement);
         _statementsDictionary.Add(NodeType.WhileStatement, WhileStatement);
         _statementsDictionary.Add(NodeType.VariableDeclaration, VariableDeclaration);
-        _statementsDictionary.Add(NodeType.FunctionCall, FunctionCall);
         
         
         // Add all variable assignment values
         _assignmentValueDictionary.Add(NodeType.LogicStatement, LogicStatement);
         _assignmentValueDictionary.Add(NodeType.Expression, Expression);
         _assignmentValueDictionary.Add(NodeType.String, String);
+        _assignmentValueDictionary.Add(NodeType.FunctionCall, FunctionCall);
         
         _tokens = new List<Token>();
     }
@@ -105,7 +105,6 @@ public class Parser : InterpreterLogger
         VariableTable.Clear();
         _scopeManager.Reset();
         Reset();
-        //TODO - investigate better way to do this
         try
         {
             while (_currentIndex < _totalTokens)
@@ -154,6 +153,28 @@ public class Parser : InterpreterLogger
                 return;
             }
             throw new InvalidSyntaxException($"Invalid variable assignment! Variable '{_tokens.ElementAtOrDefault(_currentIndex)}' has not been declared!", _currentLine);
+        }
+        catch (InvalidSyntaxException e)
+        {
+            _logger.Debug(e.Message);
+            Reset(currentIndex);
+        }
+
+        try
+        {
+            node.AddChild(CreateNode(NodeType.FunctionCall, FunctionCall));
+            currentIndex = _currentIndex;
+            // Check for ';'
+            if (Match(TokenType.SemiColon))
+            {
+                node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
+                Advance();
+            }
+            else
+            {
+                throw new SyntaxErrorException($"Unterminated assignment, expected ';'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
+            }
+            return;
         }
         catch (InvalidSyntaxException e)
         {
@@ -253,15 +274,26 @@ public class Parser : InterpreterLogger
             var identifier = identifierNode.GetChild().token?.ToString() ?? throw new SyntaxErrorException("Variable has no identifier", _currentLine);
             var valueNode = CreateNode(NodeType.AssignmentValue, AssignmentValue);
             var assignmentValue = valueNode.GetChild();
+            
+            var assignmentValueType = assignmentValue.type;
+            if(assignmentValueType is NodeType.FunctionCall)
+            {
+                var functionIdentifier = assignmentValue.GetChild().GetChild().token?.ToString() ?? "";
+                var returnType = FunctionTable.GetReturnType(functionIdentifier);
+                if (returnType is NodeType.Null)
+                    throw new IncorrectTypeException("You cannot assign a function which returns null here!", _currentLine);
+                assignmentValueType = returnType;
+            }
+
             //	Check whether the value node is of the same type and is in scope
             if (VariableTable.Exists(identifier))
             {
                 if (_scopeManager.InScope(identifier))
                 {
                     var existingType = VariableTable.GetType(identifier);
-                    if (existingType != NodeType.Null && existingType != assignmentValue.type)
+                    if (existingType != NodeType.Null && existingType != assignmentValueType)
                     {
-                        throw new SyntaxErrorException($"Invalid variable assignment! Type '{assignmentValue.type}' cannot be assigned to '{identifier}' of type '{existingType}'", _currentLine);
+                        throw new SyntaxErrorException($"Invalid variable assignment! Type '{assignmentValueType}' cannot be assigned to '{identifier}' of type '{existingType}'", _currentLine);
                     }
                 }
                 else
@@ -269,7 +301,7 @@ public class Parser : InterpreterLogger
                     throw new OutOfScopeException($"Variable '{identifier}' does not exist in this context", _currentLine);
                 }
             }
-            VariableTable.Add(identifier, assignmentValue);
+            VariableTable.Add(identifier, assignmentValueType);
             //	Only add if the assignment is valid
             node.AddChild(valueNode);
         }
@@ -323,9 +355,15 @@ public class Parser : InterpreterLogger
         else if(Match(TokenType.Word))
         {
             var identifier = _tokens[_currentIndex].ToString();
-            if (!VariableTable.Exists(identifier) || VariableTable.GetType(identifier) is not NodeType.String) 
-                throw new IncorrectTypeException($"Variable '{identifier}' is type '{VariableTable.GetType(identifier)}' expected a string");
-            node.AddChild(CreateNode(NodeType.VariableIdentifier, VariableIdentifier));
+            if (VariableTable.Exists(identifier))
+            {
+                if(VariableTable.GetType(identifier) is not NodeType.String)
+                    throw new IncorrectTypeException($"Variable '{identifier}' is type '{VariableTable.GetType(identifier)}' expected a string");
+                node.AddChild(CreateNode(NodeType.VariableIdentifier, VariableIdentifier));
+
+            }
+            else
+                throw new InvalidSyntaxException("Variable does not exist in table", _currentLine);
         }
         else
         {
@@ -375,14 +413,25 @@ public class Parser : InterpreterLogger
             {
                 var functionArgument = CreateNode(NodeType.AssignmentValue, AssignmentValue);
 
+                var argumentValue = functionArgument.GetChild();
+                var argumentType = argumentValue.type;
+                if(argumentType is NodeType.FunctionCall)
+                {
+                    var functionIdentifier = argumentValue.GetChild().GetChild().token?.ToString() ?? "";
+                    var returnType = FunctionTable.GetReturnType(functionIdentifier);
+                    if (returnType is NodeType.Null)
+                        throw new IncorrectTypeException("You cannot pass a function which returns null here!");
+                    argumentType = returnType;
+                }
+                
                 //  Ensure argument is same type or the parameter has a null argument type
-                if (functionArgument.GetChild().type == param || param is NodeType.Null)
+                if (argumentType == param || param is NodeType.Null)
                 {
                     node.AddChild(functionArgument);
                 }
                 else
                 {
-                    throw new SyntaxErrorException($"Argument type '{functionArgument.GetChild().type}' is not the correct type, expected type '{param}'");
+                    throw new SyntaxErrorException($"Argument type '{argumentValue.type}' is not the correct type, expected type '{param}'");
                 }
                 
                 if (!Match(TokenType.Comma))
@@ -402,17 +451,6 @@ public class Parser : InterpreterLogger
             else
             {
                 throw new SyntaxErrorException($"Mismatched parentheses, expected ')'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
-            }
-
-            // Check for ';'
-            if (Match(TokenType.SemiColon))
-            {
-                node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
-                Advance();
-            }
-            else
-            {
-                throw new SyntaxErrorException($"Unterminated assignment, expected ';'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
             }
         }
         catch (SyntaxErrorException e)
@@ -483,9 +521,13 @@ public class Parser : InterpreterLogger
             var identifierNode = CreateNode(NodeType.VariableIdentifier, VariableIdentifier);
             //	Check whether the value node is of the same type
             var identifier = identifierNode.GetChild().token?.ToString() ?? throw new SyntaxErrorException("Variable has no identifier", _currentLine);
-            // Check whether type is correct
-            if (!(VariableTable.GetType(identifier) is NodeType.Expression or NodeType.Null))
-                throw new IncorrectTypeException($"Variable {identifier} is not of type 'Expression'");
+            if (VariableTable.Exists(identifier))
+            {
+                if (VariableTable.GetType(identifier) is not NodeType.Expression)
+                    throw new IncorrectTypeException($"Variable {identifier} is not of type 'Logic Statement'", _currentLine);
+            }
+            else 
+                throw new InvalidSyntaxException("Variable does not exist in table", _currentLine);
             node.AddChild(identifierNode);
         }
         else if (Match(TokenType.Sub))
@@ -583,9 +625,14 @@ public class Parser : InterpreterLogger
                 var identifierNode = CreateNode(NodeType.VariableIdentifier, VariableIdentifier);
                 var identifier = identifierNode.GetChild().token?.ToString()?? throw new SyntaxErrorException("Variable has no identifier", _currentLine);
                 // Check whether type is correct
-                if (!(VariableTable.GetType(identifier) is NodeType.LogicStatement or NodeType.Null))
-                    throw new IncorrectTypeException($"Variable {identifier} is not of type 'Logic Statement'", _currentLine);
-                node.AddChild(identifierNode);
+                if (VariableTable.Exists(identifier))
+                {
+                    if (VariableTable.GetType(identifier) is not NodeType.LogicStatement)
+                        throw new IncorrectTypeException($"Variable {identifier} is not of type 'Logic Statement'", _currentLine);
+                    node.AddChild(identifierNode);
+                }
+                else
+                    throw new InvalidSyntaxException("Variable does not exist in table", _currentLine);
                 return;
             }
             catch (InvalidSyntaxException e)

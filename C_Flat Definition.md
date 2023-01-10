@@ -199,7 +199,7 @@ Functions will be declared using the keyword `func`, followed by a function name
 
 ### Statements:
 
-`<Statement>::= <Variable-Declaration> | <Variable-Assignment> | <Function-Call> | <Conditional-Statement> | <While-Loop>`
+`<Statement>::= <Variable-Declaration> | <Variable-Assignment> | <Function-Call> ';' | <Conditional-Statement> | <While-Loop>`
 
 ### Numerical expressions:
 
@@ -237,7 +237,7 @@ Functions will be declared using the keyword `func`, followed by a function name
 
 `<Variable-Assignment>::= <Variable-Identifier> '=' <Assignment-Value> ‘;’`
 
-`<Assignment-Value>::= (<Expression> | <String> | <Logic-Statement>)`
+`<Assignment-Value>::= (<Expression> | <String> | <Logic-Statement> | <Function-Call>)`
 
 `<Variable-Identifier>::= <Word>`
 
@@ -247,7 +247,7 @@ Functions will be declared using the keyword `func`, followed by a function name
 
 ### Functions:
 
-`<Function-Call>::= <Function-Identifier> '(' {#<Assignment-Value>} ')' ';'`
+`<Function-Call>::= <Function-Identifier> '(' {#<Assignment-Value>} ')'`
 
 `<Function-Identifier>::= <Word>`
 

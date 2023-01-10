@@ -6,9 +6,12 @@ public static class FunctionTable
 {
     //  We need to statically declare the function dictionary with our standard library of functions
 
-    private static readonly Dictionary<string, List<NodeType>> FunctionLibrary = new()
+    //  Key = Function identifier, Value = Tuple<Parameters : Return type>
+    private static readonly Dictionary<string, Tuple<List<NodeType>, NodeType>> FunctionLibrary = new()
     {
-        { "Print", new List<NodeType>() {NodeType.Null}},
+        { "Print", new Tuple<List<NodeType>, NodeType>(new List<NodeType>() {NodeType.Null}, NodeType.Null)},
+        { "Concatenate", new Tuple<List<NodeType>, NodeType>(new List<NodeType>() {NodeType.String, NodeType.String}, NodeType.String)},
+        { "Stringify", new Tuple<List<NodeType>, NodeType>(new List<NodeType>() {NodeType.Null}, NodeType.String)},
     };
 
     public static bool Exists(string identifier)
@@ -18,6 +21,10 @@ public static class FunctionTable
 
     public static List<NodeType> GetParams(string identifier)
     {
-        return FunctionLibrary[identifier];
+        return FunctionLibrary[identifier].Item1;
+    }
+    public static NodeType GetReturnType(string identifier)
+    {
+        return FunctionLibrary[identifier].Item2;
     }
 }
