@@ -158,7 +158,7 @@ public class TranspilerUnit : TestLogger
         _parseTree.Add(statement);
         
         //  Add a false variable type of terminal
-        VariableTable.Add(variableIdentifier, new ParseNode(NodeType.Terminal));
+        VariableTable.Add(variableIdentifier,  NodeType.Terminal);
 
 
         //Act
@@ -216,7 +216,7 @@ public class TranspilerUnit : TestLogger
         statementTwo.AddChild(assignmentNode);
         _parseTree.Add(statementTwo);
         
-        VariableTable.Add(variableIdentifier, stringNode);
+        VariableTable.Add(variableIdentifier, NodeType.String);
         
         
         //Act
