@@ -80,10 +80,10 @@ public class Transpiler : InterpreterLogger
                 TranspileConditionalStatement(statement);
                 break;
             case NodeType.VariableDeclaration:
-                TranspileDeclaration(statement);
+                TranspileVariableDeclaration(statement);
                 break;
             case NodeType.VariableAssignment:
-                TranspileAssignment(statement);
+                TranspileVariableAssignment(statement);
                 break;
             default:
                 throw new Exception("Unhandled statement");
@@ -174,7 +174,7 @@ public class Transpiler : InterpreterLogger
         PrintTerminal(node.GetChild());
     }
 
-    private void TranspileAssignmentValue(ParseNode node)
+    private void TranspileVariableAssignmentValue(ParseNode node)
     {
         var valueNode = node.GetChild();
         //TODO: Add handling for other assignment types
@@ -195,7 +195,7 @@ public class Transpiler : InterpreterLogger
         }
     }
 
-    private void TranspileAssignment(ParseNode node)
+    private void TranspileVariableAssignment(ParseNode node)
     {
         var children = node.GetChildren();
         TranspileIdentifier(children.First());
@@ -203,12 +203,12 @@ public class Transpiler : InterpreterLogger
         //Print assignment terminal
         PrintTerminal(children[1]);
 
-        TranspileAssignmentValue(children[2]);
+        TranspileVariableAssignmentValue(children[2]);
 
         //Print semicolon terminal
         PrintTerminal(children.Last());
     }
-    private void TranspileDeclaration(ParseNode node)
+    private void TranspileVariableDeclaration(ParseNode node)
     {
         var children = node.GetChildren();
 
@@ -231,7 +231,7 @@ public class Transpiler : InterpreterLogger
         else
         {
             PrintTerminal(children.First());
-            TranspileAssignment(children.Last());
+            TranspileVariableAssignment(children.Last());
         }
     }
 
