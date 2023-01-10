@@ -292,10 +292,46 @@ public class Transpiler : InterpreterLogger
         //Transpile block
         TranspileBlock(children.Last());
     }
+    
+    private void TranspileFunctionIdentifier(ParseNode node)
+    {
+        var identifierNode = node.GetChild();
+        switch (identifierNode.token?.ToString())
+        {
+            case "print":
+                //  Handle print function
+                identifierNode.token.Word = identifierNode.token.Word.Replace("print", "Console.Out.WriteLine");
+                break;
+            default:
+             throw new NotImplementedException($"Function '{node.GetChild().token}' has not been implemented!");
+        }
+        PrintTerminal(identifierNode);
+    }
 
     private void TranspileFunctionCall(ParseNode node)
     {
-        throw new NotImplementedException("Function calls aren't implemented");
+        var children = node.GetChildren();
+        TranspileFunctionIdentifier(children.First());
+        
+        //  Print left parentheses
+        PrintTerminal(children[1]);
+        
+        //  Transpile function arguments
+        var argumentNodes = children.Where(child => child.type is NodeType.AssignmentValue).ToList();
+        
+        //  Transpile all arguments adding commas between them
+        for (int i = 0; i < argumentNodes.Count; i++)
+        {
+            TranspileVariableAssignmentValue(argumentNodes[i]);
+            if (i + 1 < argumentNodes.Count)
+                Program += ",";
+        }
+        
+        //  Print right paren
+        PrintTerminal(children.Last(x=> x.type is NodeType.Terminal && x.token!.Type is TokenType.RightParen));
+        
+        //  Print semi-colon
+        PrintTerminal(children.Last());
     }
 
     public string GetProgramPath()
