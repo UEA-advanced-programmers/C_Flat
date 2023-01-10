@@ -137,7 +137,7 @@ public class Parser : InterpreterLogger
             }
             catch (InvalidSyntaxException e)
             {
-                _logger.Warning(e.Message);
+                _logger.Debug(e.Message);
                 Reset(currentIndex);
             }
         }
@@ -395,76 +395,73 @@ public class Parser : InterpreterLogger
     private void FunctionCall(ParseNode node)
     {
         //Check for function identifier
-        try
+        var identifierNode = CreateNode(NodeType.FunctionIdentifier, Identifier);
+        var identifier = identifierNode.GetChild().token?.ToString() ??
+                         throw new InvalidSyntaxException("Function has no identifier", _currentLine);
+        if (!FunctionTable.Exists(identifier))
+            throw new InvalidSyntaxException($"Function '{identifier}' does not exist!", _currentLine);
+        node.AddChild(identifierNode);
+        
+        // Check correct arguments are being passed
+        var parameters = FunctionTable.GetParams(identifier);
+        // Check for '('
+        if (Match(TokenType.LeftParen))
         {
-            var identifierNode = CreateNode(NodeType.FunctionIdentifier, Identifier);
-            var identifier = identifierNode.GetChild().token?.ToString() ??
-                             throw new SyntaxErrorException("Function has no identifier", _currentLine);
-            if (!FunctionTable.Exists(identifier))
-                throw new InvalidSyntaxException($"Function '{identifier}' does not exist!", _currentLine);
-            node.AddChild(identifierNode);
-            
-            // Check correct arguments are being passed
-            var parameters = FunctionTable.GetParams(identifier);
-            // Check for '('
-            if (Match(TokenType.LeftParen))
-            {
-                node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
-                Advance();
-            }
-            else
-            {
-                throw new InvalidSyntaxException("Unexpected token, unable to parse a function call!");
-            }
-            
-            foreach (var param in parameters)
-            {
-                var functionArgument = CreateNode(NodeType.AssignmentValue, AssignmentValue);
-
-                var argumentValue = functionArgument.GetChild();
-                var argumentType = argumentValue.type;
-                if(argumentType is NodeType.FunctionCall)
-                {
-                    var functionIdentifier = argumentValue.GetChild().GetChild().token?.ToString() ?? "";
-                    var returnType = FunctionTable.GetReturnType(functionIdentifier);
-                    if (returnType is NodeType.Null)
-                        throw new IncorrectTypeException("You cannot pass a function which returns null here!");
-                    argumentType = returnType;
-                }
-                
-                //  Ensure argument is same type or the parameter has a null argument type
-                if (argumentType == param || param is NodeType.Null)
-                {
-                    node.AddChild(functionArgument);
-                }
-                else
-                {
-                    throw new SyntaxErrorException($"Argument type '{argumentValue.type}' is not the correct type, expected type '{param}'");
-                }
-                
-                if (!Match(TokenType.Comma))
-                {
-                    break;
-                }
-                node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
-                Advance();
-            }
-
-            // Check for ')'
-            if (Match(TokenType.RightParen))
-            {
-                node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
-                Advance();
-            }
-            else
-            {
-                throw new SyntaxErrorException($"Mismatched parentheses, expected ')'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
-            }
+            node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
+            Advance();
         }
-        catch (SyntaxErrorException e)
+        else
         {
-            _logger.Warning(e.Message);
-            throw new InvalidSyntaxException($"Invalid function!", _currentLine);
+            throw new InvalidSyntaxException("Unexpected token, unable to parse a function call!");
+        }
+
+        var paramCount = 0;
+        foreach (var param in parameters)
+        {
+            
+            var functionArgument = CreateNode(NodeType.AssignmentValue, AssignmentValue);
+
+            var argumentValue = functionArgument.GetChild();
+            var argumentType = argumentValue.type;
+            if(argumentType is NodeType.FunctionCall)
+            {
+                var functionIdentifier = argumentValue.GetChild().GetChild().token?.ToString() ?? "";
+                var returnType = FunctionTable.GetReturnType(functionIdentifier);
+                if (returnType is NodeType.Null)
+                    throw new IncorrectTypeException("You cannot pass a function which returns null here!");
+                argumentType = returnType;
+            }
+            
+            //  Ensure argument is same type or the parameter has a null argument type
+            if (argumentType == param || param is NodeType.Null)
+            {
+                node.AddChild(functionArgument);
+                paramCount++;
+            }
+            else
+            {
+                throw new SyntaxErrorException($"Argument type '{argumentValue.type}' is incorrect, expected type '{param}'", _currentLine);
+            }
+            
+            if (!Match(TokenType.Comma))
+            {
+                break;
+            }
+            node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
+            Advance();
+        }
+        if(paramCount != parameters.Count)
+            throw new SyntaxErrorException($"Function '{identifier}' expects {parameters.Count} arguments, received {paramCount }", _currentLine);
+
+        // Check for ')'
+        if (Match(TokenType.RightParen))
+        {
+            node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
+            Advance();
+        }
+        else
+        {
+            throw new SyntaxErrorException($"Mismatched parentheses, expected ')'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
         }
     }
 
