@@ -207,7 +207,7 @@ Functions will be declared using the keyword `func`, followed by a function name
 
 `<Term>::= <Factor> *{('*'|'/') <Factor}`
 
-`<Factor>::= '('<Expression>')' | <Number> | '-'<Factor> | <Variable-Identifier>`
+`<Factor>::= '('<Expression>')' | <Number> | '-'<Factor> | <Identifier>`
 
 `<Number>::= <Digit> { '.' <Digit>}`
 
@@ -219,7 +219,7 @@ Functions will be declared using the keyword `func`, followed by a function name
 
 `<Condition>::= ( '==' | '!=' | '&' | '|' ) <Boolean>`
 
-`<Boolean>::= '!’<Logic-Statement> | 'true' | 'false' | <Expression-Query> | '('<Logic-Statement>')' | <Variable-Identifier>`
+`<Boolean>::= '!’<Logic-Statement> | 'true' | 'false' | <Expression-Query> | '('<Logic-Statement>')' | <Identifier>`
 
 `<Expression-Query> ::= (<Expression>) ( '==' | '!=' | '>'| '<' ) (<Expression>)`
 
@@ -233,21 +233,18 @@ Functions will be declared using the keyword `func`, followed by a function name
 
 ### Variables:
 
-`<Variable-Declaration>::= 'var’ (<Variable-Identifier> ';'| <Variable-Assignment>)`
+`<Variable-Declaration>::= 'var’ (<Identifier> ';'| <Variable-Assignment>)`
 
-`<Variable-Assignment>::= <Variable-Identifier> '=' <Assignment-Value> ‘;’`
+`<Variable-Assignment>::= <Identifier> '=' <Assignment-Value> ‘;’`
 
 `<Assignment-Value>::= (<Expression> | <String> | <Logic-Statement> | <Function-Call>)`
 
-`<Variable-Identifier>::= <Word>`
+`<String> = <Identifier> | (' " ' <Word> ' " ') `
 
-`<String> = <Variable-Identifier> | (' " ' <Word> ' " ')  `
-
-`<Word>::= 1*(a-zA-Z) - <Keywords>`
 
 ### Functions:
 
-`<Function-Call>::= <Function-Identifier> '(' {#<Assignment-Value>} ')'`
+`<Function-Call>::= <Identifier> '(' {#<Assignment-Value>} ')'`
 
 `<Function-Identifier>::= <Word>`
 
@@ -257,4 +254,8 @@ Functions will be declared using the keyword `func`, followed by a function name
 
 ### Keywords:
 
-`<Keyword>::= 'if' | 'else' | 'while' | 'var' | 'true' | 'false'`
+`<Identifier>::= <Word> - <Keyword>`
+
+`<Word>::= 1*(a-zA-Z)`
+
+`<Keyword>::= 'if' | 'else' | 'while' | 'var' | 'true' | 'false' | 'func' `
