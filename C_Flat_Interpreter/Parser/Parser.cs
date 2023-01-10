@@ -35,7 +35,6 @@ public class Parser : InterpreterLogger
         _assignmentValueDictionary.Add(NodeType.LogicStatement, LogicStatement);
         _assignmentValueDictionary.Add(NodeType.Expression, Expression);
         _assignmentValueDictionary.Add(NodeType.String, String);
-        _assignmentValueDictionary.Add(NodeType.VariableIdentifier, VariableIdentifier);
         
         _tokens = new List<Token>();
     }
@@ -104,7 +103,6 @@ public class Parser : InterpreterLogger
         _totalTokens = tokens.Count;
         _parseTree = new List<ParseNode>();
         VariableTable.Clear();
-        FunctionTable.Clear();
         _scopeManager.Reset();
         Reset();
         //TODO - investigate better way to do this
@@ -128,40 +126,6 @@ public class Parser : InterpreterLogger
 
     private void Statement(ParseNode node)
     {
-        var currentIndex = _currentIndex;
-        try
-        {
-            node.AddChild(CreateNode(NodeType.ControlStatement, ControlStatement));
-            return;
-        }
-        catch (InvalidSyntaxException e)
-        {
-            _logger.Debug(e.Message);
-            Reset(currentIndex);
-        }
-
-        try
-        {
-            node.AddChild(CreateNode(NodeType.TopLevelStatement, TopLevelStatement));
-            return;
-        }
-        catch (InvalidSyntaxException e)
-        {
-            _logger.Warning(e.Message);
-            Reset(currentIndex);
-        }
-
-        throw new SyntaxErrorException("Unable to parse statement or definition, failing");
-    }
-
-    private void TopLevelStatement(ParseNode node)
-    {
-        node.AddChild(CreateNode(NodeType.FunctionDefinition, FunctionDefinition));
-    }
-
-    //EBNF Functions
-    private void ControlStatement(ParseNode node)
-    {
         int currentIndex = _currentIndex;
 
         foreach (var statement in _statementsDictionary)
@@ -174,7 +138,7 @@ public class Parser : InterpreterLogger
             }
             catch (InvalidSyntaxException e)
             {
-                _logger.Debug(e.Message);
+                _logger.Warning(e.Message);
                 Reset(currentIndex);
             }
         }
@@ -356,110 +320,19 @@ public class Parser : InterpreterLogger
             node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
             Advance();
         }
+        else if(Match(TokenType.Word))
+        {
+            var identifier = _tokens[_currentIndex].ToString();
+            if (!VariableTable.Exists(identifier) || VariableTable.GetType(identifier) is not NodeType.String) 
+                throw new IncorrectTypeException($"Variable '{identifier}' is type '{VariableTable.GetType(identifier)}' expected a string");
+            node.AddChild(CreateNode(NodeType.VariableIdentifier, VariableIdentifier));
+        }
         else
         {
             throw new InvalidSyntaxException($"Invalid string, expected type 'String'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
         }
     }
 
-    private void FunctionDefinition(ParseNode node)
-    {
-        // Check for 'func' keyword
-        if (Match(TokenType.Word) && CheckKeyword("func"))
-        {
-            node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
-            Advance();
-        }
-        else
-        {
-            throw new InvalidSyntaxException($"Expected keyword 'func'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
-        }
-        
-        // Check for Function Identifier
-        var identifier = _tokens[_currentIndex].ToString();
-        VariableTable.EnterFunction(identifier);
-
-        //	Throw syntax error if function already exists
-        if (FunctionTable.Exists(identifier))
-            throw new SyntaxErrorException($"Function '{_tokens.ElementAtOrDefault(_currentIndex)}' has already been declared!", _currentLine);
-        
-        node.AddChild(CreateNode(NodeType.FunctionIdentifier, FunctionIdentifier));
-        
-        //  Save current scopeCount
-        var scopeCount = _scopeManager.ScopeCount();
-        
-        // Check for '('
-        if (Match(TokenType.LeftParen))
-        {
-            node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
-            Advance();
-        }
-        else
-        {
-            throw new SyntaxErrorException($"Unexpected token, expected '('. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
-        }
-        
-        // Check for (optional) parameters
-        List<string> parameters = new List<string>();
-        
-        try
-        {
-            node.AddChild(CreateNode(NodeType.Parameter, Parameter));
-            parameters.Add(_tokens[_currentIndex - 1].ToString());
-
-            while (_currentIndex < _totalTokens && !Match(TokenType.RightParen))
-            {
-                try
-                {
-                    if (!Match(TokenType.Comma)) continue;
-                    node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
-                    Advance();
-                    
-                    node.AddChild(CreateNode(NodeType.Parameter, Parameter));
-                    parameters.Add(_tokens[_currentIndex - 1].ToString());
-                }
-                catch (InvalidSyntaxException e)
-                {
-                    _logger.Warning(e.Message);
-                    throw new SyntaxErrorException($"Invalid function parameter within function!", _currentLine);
-                }
-            }
-        }
-        catch (InvalidSyntaxException)
-        {
-            _logger.Warning("No parameters found");
-        }
-
-        FunctionTable.Add(identifier, parameters);
-        
-        // Check for ')'
-        if (Match(TokenType.RightParen))
-        {
-            node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
-            Advance();
-        }
-        else
-        {
-            throw new SyntaxErrorException($"Mismatched parentheses, expected ')'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
-        }
-            
-        // Check for Block
-        try
-        {
-            node.AddChild(CreateNode(NodeType.Block, Block));
-            //  After creating the block, de-scope all function parameters 
-            _scopeManager.DeScope(scopeCount);
-            VariableTable.LeaveFunction();
-        }
-        catch (ParserException e)
-        {
-            _logger.Warning(e.Message);
-            throw new SyntaxErrorException($"Invalid block within function!", _currentLine);
-        }
-        //todo - parameter table! - parameters should only be in scope for the function
-        //todo - parameters need to use the value of the argument
-    }
-    
     private void FunctionIdentifier(ParseNode node)
     {
         if (Match(TokenType.Word))
@@ -473,50 +346,19 @@ public class Parser : InterpreterLogger
         }
     }
 
-    private void Parameter(ParseNode node) //todo - either rename here or in EBNF
-    {
-        // Check for 'var' keyword
-        if (Match(TokenType.Word) && CheckKeyword("var"))
-        {
-            node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
-            Advance();
-        }
-        else
-        {
-            throw new InvalidSyntaxException($"Expected keyword 'var'. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
-        }
-        
-        //Append function name to variable identifier
-        var identifier =_tokens[_currentIndex].ToString();
-        //	Throw syntax error if variable already exists
-        if (_scopeManager.InScope(identifier))
-        {
-          if (VariableTable.Exists(identifier))
-              throw new SyntaxErrorException($"Variable '{_tokens.ElementAtOrDefault(_currentIndex)}' has already been declared!", _currentLine);
-        }
-        else
-        {
-            _scopeManager.AddToScope(identifier);
-        }
-        node.AddChild(CreateNode(NodeType.VariableIdentifier, VariableIdentifier));
-        VariableTable.Add(identifier);
-    }
-
     private void FunctionCall(ParseNode node)
     {
-        //todo - sort exceptions here!
         //Check for function identifier
         try
         {
             var identifierNode = CreateNode(NodeType.FunctionIdentifier, FunctionIdentifier);
             var identifier = identifierNode.GetChild().token?.ToString() ??
                              throw new SyntaxErrorException("Function has no identifier", _currentLine);
-            // Check whether type is correct
             if (!FunctionTable.Exists(identifier))
-                throw new SyntaxErrorException($"Function {identifier} has not been defined", _currentLine);
+                throw new InvalidSyntaxException($"Function '{identifier}' does not exist!", _currentLine);
             node.AddChild(identifierNode);
             
-            
+            // Check correct arguments are being passed
             var parameters = FunctionTable.GetParams(identifier);
             // Check for '('
             if (Match(TokenType.LeftParen))
@@ -531,20 +373,18 @@ public class Parser : InterpreterLogger
             
             foreach (var param in parameters)
             {
-                var assignmentValue = CreateNode(NodeType.AssignmentValue, AssignmentValue);
-                VariableTable.EnterFunction(identifier);
-                var paramType = VariableTable.GetType(param);
-                VariableTable.LeaveFunction();
+                var functionArgument = CreateNode(NodeType.AssignmentValue, AssignmentValue);
 
-                if (assignmentValue.GetChild().type == paramType || paramType == NodeType.Null)
+                //  Ensure argument is same type or the parameter has a null argument type
+                if (functionArgument.GetChild().type == param || param is NodeType.Null)
                 {
-                    node.AddChild(assignmentValue);
+                    node.AddChild(functionArgument);
                 }
                 else
                 {
-                    throw new SyntaxErrorException($"Parameter is not the correct value, expected '{VariableTable.GetType(param).ToString()}'");
+                    throw new SyntaxErrorException($"Argument type '{functionArgument.GetChild().type}' is not the correct type, expected type '{param}'");
                 }
-                //TODO: After assigning the value, update the entry in the variable table!
+                
                 if (!Match(TokenType.Comma))
                 {
                     break;
@@ -969,7 +809,7 @@ public class Parser : InterpreterLogger
         {
             try
             {
-                node.AddChild(CreateNode(NodeType.Statement, ControlStatement));
+                node.AddChild(CreateNode(NodeType.Statement, Statement));
             }
             catch (InvalidSyntaxException e)
             {

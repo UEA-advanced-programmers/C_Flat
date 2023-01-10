@@ -191,11 +191,8 @@ A loop can be created using the keyword `while`, followed by a logic statement w
 ## Simplified EBNF:
 
 ### Statements:
-`<Statement>::= <Control-Statement> | <Top-Level-Statement>`
 
-`<Control-Statement>::= <Variable-Declaration> | <Variable-Assignment> | <Function-Call> | <Conditional-Statement> | <While-Loop>`
-
-`<Top-Level-Statement>::= <Function-Definition>`
+`<Statement>::= <Variable-Declaration> | <Variable-Assignment> | <Function-Call> | <Conditional-Statement> | <While-Loop>`
 
 ### Numerical expressions:
 
@@ -233,28 +230,24 @@ A loop can be created using the keyword `while`, followed by a logic statement w
 
 `<Variable-Assignment>::= <Variable-Identifier> '=' <Assignment-Value> ‘;’`
 
-`<Assignment-Value>::= (<Expression> | <String> | <Logic-Statement> | <Variable-Identifier>)`
+`<Assignment-Value>::= (<Expression> | <String> | <Logic-Statement>)`
 
 `<Variable-Identifier>::= <Word>`
 
-`<String> = ' " ' <Word> ' " '`
+`<String> = <Variable-Identifier> | (' " ' <Word> ' " ')  `
 
 `<Word>::= 1*(a-zA-Z) - <Keywords>`
 
 ### Functions:
 
-`<Function-Definition>::= 'func' <Function-Identifier> '('#<Parameter>')' <Block>`
+`<Function-Call>::= <Function-Identifier> '(' {#<Assignment-Value>} ')' ';'`
 
 `<Function-Identifier>::= <Word>`
 
-`<Parameter>::= 'var' <Variable-Identifier>`
-
-`<Function-Call>::= <Function-Identifier> '(' *{<Assignment-Value>} ')' ';'`
-
 ### Blocks:
 
-`<Block>::= '{' *{<statement>} '}'`
+`<Block>::= '{' *{<Statement>} '}'`
 
 ### Keywords:
 
-`<Keyword>::= 'if' | 'else' | 'while' | 'var' | 'func' | 'true' | 'false'`
+`<Keyword>::= 'if' | 'else' | 'while' | 'var' | 'true' | 'false'`
