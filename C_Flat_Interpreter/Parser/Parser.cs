@@ -211,7 +211,14 @@ public class Parser : InterpreterLogger
             //	Re-declare if previously declared.
             if (VariableTable.Exists(identifier))
             {
-                VariableTable.Add(identifier);
+                try
+                {
+                    VariableTable.Add(identifier);
+                }
+                catch (Exception e)
+                {
+                    throw new SyntaxErrorException(e.Message, _currentLine);
+                }
             }
             _scopeManager.AddToScope(identifier);
         }
@@ -229,9 +236,16 @@ public class Parser : InterpreterLogger
             _logger.Warning(e.Message);
         }
 
-        node.AddChild(CreateNode(NodeType.VariableIdentifier, VariableIdentifier));
+        node.AddChild(CreateNode(NodeType.VariableIdentifier, Identifier));
 
-        VariableTable.Add(identifier);
+        try
+        {
+            VariableTable.Add(identifier);
+        }
+        catch (Exception e)
+        {
+            throw new SyntaxErrorException(e.Message, _currentLine);
+        }
 
         if (Match(TokenType.SemiColon))
         {
@@ -244,7 +258,7 @@ public class Parser : InterpreterLogger
         }
     }
 
-    private void VariableIdentifier(ParseNode node)
+    private void Identifier(ParseNode node)
     {
         if (Match(TokenType.Word))
         {
@@ -253,13 +267,13 @@ public class Parser : InterpreterLogger
         }
         else
         {
-            throw new InvalidSyntaxException($"Invalid variable identifier! Expected token type word. Actual: '{_tokenType}'", _currentLine);
+            throw new InvalidSyntaxException($"Invalid identifier! Expected token type word. Actual: '{_tokenType}'", _currentLine);
         }
     }
     private void VariableAssignment(ParseNode node)
     {
         // check for identifier
-        var identifierNode = CreateNode(NodeType.VariableIdentifier, VariableIdentifier);
+        var identifierNode = CreateNode(NodeType.VariableIdentifier, Identifier);
         node.AddChild(identifierNode);
         
         if (!Match(TokenType.Assignment))
@@ -301,7 +315,14 @@ public class Parser : InterpreterLogger
                     throw new OutOfScopeException($"Variable '{identifier}' does not exist in this context", _currentLine);
                 }
             }
-            VariableTable.Add(identifier, assignmentValueType);
+            try
+            {
+                VariableTable.Add(identifier, assignmentValueType);
+            }
+            catch (Exception e)
+            {
+                throw new SyntaxErrorException(e.Message, _currentLine);
+            }
             //	Only add if the assignment is valid
             node.AddChild(valueNode);
         }
@@ -359,7 +380,7 @@ public class Parser : InterpreterLogger
             {
                 if(VariableTable.GetType(identifier) is not NodeType.String)
                     throw new IncorrectTypeException($"Variable '{identifier}' is type '{VariableTable.GetType(identifier)}' expected a string");
-                node.AddChild(CreateNode(NodeType.VariableIdentifier, VariableIdentifier));
+                node.AddChild(CreateNode(NodeType.VariableIdentifier, Identifier));
 
             }
             else
@@ -371,25 +392,12 @@ public class Parser : InterpreterLogger
         }
     }
 
-    private void FunctionIdentifier(ParseNode node)
-    {
-        if (Match(TokenType.Word))
-        {
-            node.AddChild(new ParseNode(NodeType.Terminal, _tokens[_currentIndex]));
-            Advance();
-        }
-        else
-        {
-            throw new InvalidSyntaxException($"Invalid function identifier! Expected token type word. Actual: '{_tokenType}'", _currentLine);
-        }
-    }
-
     private void FunctionCall(ParseNode node)
     {
         //Check for function identifier
         try
         {
-            var identifierNode = CreateNode(NodeType.FunctionIdentifier, FunctionIdentifier);
+            var identifierNode = CreateNode(NodeType.FunctionIdentifier, Identifier);
             var identifier = identifierNode.GetChild().token?.ToString() ??
                              throw new SyntaxErrorException("Function has no identifier", _currentLine);
             if (!FunctionTable.Exists(identifier))
@@ -518,7 +526,7 @@ public class Parser : InterpreterLogger
         }
         else if (Match(TokenType.Word))
         {
-            var identifierNode = CreateNode(NodeType.VariableIdentifier, VariableIdentifier);
+            var identifierNode = CreateNode(NodeType.VariableIdentifier, Identifier);
             //	Check whether the value node is of the same type
             var identifier = identifierNode.GetChild().token?.ToString() ?? throw new SyntaxErrorException("Variable has no identifier", _currentLine);
             if (VariableTable.Exists(identifier))
@@ -622,7 +630,7 @@ public class Parser : InterpreterLogger
             //	Try and parse variable identifier
             try
             {
-                var identifierNode = CreateNode(NodeType.VariableIdentifier, VariableIdentifier);
+                var identifierNode = CreateNode(NodeType.VariableIdentifier, Identifier);
                 var identifier = identifierNode.GetChild().token?.ToString()?? throw new SyntaxErrorException("Variable has no identifier", _currentLine);
                 // Check whether type is correct
                 if (VariableTable.Exists(identifier))

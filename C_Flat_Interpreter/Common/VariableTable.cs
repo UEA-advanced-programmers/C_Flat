@@ -9,7 +9,8 @@ public static class VariableTable
 
     public static void Add(string identifier, NodeType type = NodeType.Null)
     {
-
+        if (ReservedWords.Reserved(identifier))
+            throw new Exception($"Cannot create variable with reserved word {identifier}");
         if (_table.ContainsKey(identifier))
         {
             _table[identifier] = type;
