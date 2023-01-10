@@ -1,5 +1,5 @@
-﻿using System.Diagnostics;
-using C_Flat_Interpreter.Common.Enums;
+﻿using C_Flat_Interpreter.Common.Enums;
+using C_Flat_Interpreter.Common.Exceptions;
 
 namespace C_Flat_Interpreter.Common;
 
@@ -11,7 +11,10 @@ public static class VariableTable
     {
         if (node == null)
         {
-            _table.Add(word, NodeType.Null);
+            if (_table.ContainsKey(word))
+                _table[word] = NodeType.Null;
+            else
+                _table.Add(word, NodeType.Null);
             return;
         }
         
@@ -23,7 +26,7 @@ public static class VariableTable
 
         if (node.type == NodeType.VariableIdentifier)
         {
-            _table.Add(word, GetType(node.token?.Word  ?? throw new Exception("Identifier node token is null")));
+            _table.Add(word, GetType(node.token?.Word  ?? throw new SyntaxErrorException("Identifier node token is null")));
         }
         _table.Add(word, node.type);
     }

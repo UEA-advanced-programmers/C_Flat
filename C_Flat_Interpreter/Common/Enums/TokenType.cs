@@ -23,5 +23,6 @@ public enum TokenType //will be added to later, names not final
     More,
     NotEqual,
     Assignment,
-    String
+    String,
+    Comma
 }

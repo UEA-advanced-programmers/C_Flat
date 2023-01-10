@@ -19,7 +19,7 @@ public class Lexer : InterpreterLogger
     private string[] _lines;
 
     // All TokenTypes that can simply be added as a token without the need for extra checks
-    private Dictionary<char, TokenType> _tokenTypes = new()
+    private readonly Dictionary<char, TokenType> _tokenTypes = new()
     {
         { ';', TokenType.SemiColon },
         { '+', TokenType.Add },
@@ -33,7 +33,8 @@ public class Lexer : InterpreterLogger
         { '&', TokenType.And },
         { '|', TokenType.Or },
         { '<', TokenType.Less },
-        { '>', TokenType.More }
+        { '>', TokenType.More },
+        { ',', TokenType.Comma }
     };
 
     //constructor

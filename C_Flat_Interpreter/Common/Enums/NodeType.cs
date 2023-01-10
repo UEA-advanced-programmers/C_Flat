@@ -4,6 +4,8 @@ public enum NodeType //will be added to
 {
     Null,
     Statement,
+    TopLevelStatement,
+    ControlStatement,
     Expression,
     Term,
     Factor,
@@ -13,11 +15,15 @@ public enum NodeType //will be added to
     Boolean,
     ExpressionQuery,
     ConditionalStatement,
+    WhileStatement,
     VariableDeclaration,
     VariableIdentifier,
     VariableAssignment,
-    VariableAssignmentValue,
+    AssignmentValue,
     String,
-    WhileStatement,
+    FunctionDefinition,
+    FunctionIdentifier,
+    Parameter,
+    FunctionCall,
     Block
 }
