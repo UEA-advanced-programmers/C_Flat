@@ -81,6 +81,10 @@ public class Lexer : InterpreterLogger
                         whitespace += c;
                         newToken = null;
                         break;
+                    case '\t':
+                        whitespace += "    ";
+                        newToken = null;
+                        break;
                     case '!':
                         if (nextChar == '=')
                         {
