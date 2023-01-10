@@ -8,7 +8,7 @@ public static class FunctionTable
 
     private static readonly Dictionary<string, List<NodeType>> FunctionLibrary = new()
     {
-        { "print", new List<NodeType>() {NodeType.Null}},
+        { "Print", new List<NodeType>() {NodeType.Null}},
     };
 
     public static bool Exists(string identifier)

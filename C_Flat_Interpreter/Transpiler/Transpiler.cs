@@ -298,9 +298,9 @@ public class Transpiler : InterpreterLogger
         var identifierNode = node.GetChild();
         switch (identifierNode.token?.ToString())
         {
-            case "print":
+            case "Print":
                 //  Handle print function
-                identifierNode.token.Word = identifierNode.token.Word.Replace("print", "Console.Out.WriteLine");
+                identifierNode.token.Word = identifierNode.token.Word.Replace("Print", "Console.Out.WriteLine");
                 break;
             default:
              throw new NotImplementedException($"Function '{node.GetChild().token}' has not been implemented!");

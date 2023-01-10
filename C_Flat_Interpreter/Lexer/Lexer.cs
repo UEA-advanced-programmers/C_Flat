@@ -201,7 +201,7 @@ public class Lexer : InterpreterLogger
                 break;
             }
         }
-        return wordString.ToLower();
+        return wordString;
     }
 
 
@@ -219,6 +219,6 @@ public class Lexer : InterpreterLogger
                 break;
             }
         }
-        return wordString.ToLower();
+        return wordString;
     }
 }
