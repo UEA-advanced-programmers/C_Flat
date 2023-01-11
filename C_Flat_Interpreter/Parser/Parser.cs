@@ -102,6 +102,7 @@ public class Parser : InterpreterLogger
         _tokens = tokens;
         _totalTokens = tokens.Count;
         _parseTree = new List<ParseNode>();
+        ClearLogs();
         VariableTable.Clear();
         _scopeManager.Reset();
         
@@ -239,7 +240,7 @@ public class Parser : InterpreterLogger
         catch (InvalidSyntaxException e)
         {
             Reset(currentIndex);
-            _logger.Warning(e.Message);
+            _logger.Debug(e.Message);
         }
 
         node.AddChild(CreateNode(NodeType.VariableIdentifier, Identifier));

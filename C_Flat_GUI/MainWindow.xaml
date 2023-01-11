@@ -100,12 +100,33 @@
                                         <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
                                 <ui:Card Background="#38006b" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch">
-                                        <Grid Name="TestGrid">
+                                        <Grid>
                                                 <Grid.RowDefinitions>
                                                         <RowDefinition Height="Auto" />
                                                         <RowDefinition Height="*" />
                                                 </Grid.RowDefinitions>
-                                                <Label Grid.Row="0" HorizontalAlignment="Center" Name="OutputWindowLabel" Foreground="#C8FFFFFF">Transpiler Output</Label>
+                                                <StackPanel Grid.Row="0" VerticalAlignment="Top" Margin="0, 0,0,5" Orientation="Horizontal" HorizontalAlignment="Stretch">
+                                                        <ComboBox Background="#2CFFFFFF"  SelectionChanged="OnViewChanged" Name="ViewSelector" HorizontalAlignment="Left">
+                                                                <ComboBoxItem IsSelected="True" Name="TranspileViewOption">Transpiled code view </ComboBoxItem>
+                                                                <ComboBoxItem IsEnabled="True" Name="LogsViewOption">Logs output </ComboBoxItem>
+                                                                <ComboBoxItem IsEnabled="False" Name="TreeViewOption">Parse tree view</ComboBoxItem>
+                                                                <ComboBoxItem IsEnabled="False" Name="ExecutionViewOption">Execution output view </ComboBoxItem>
+                                                        </ComboBox>
+                                                        <Button HorizontalAlignment="Center" Name="ExpandAll" Click="ExpandAll_Click" Margin="5,0,0,0">
+                                                                <ui:SymbolIcon
+                                                                        Symbol="ArrowMaximizeVertical20"
+                                                                        Filled="False"
+                                                                        FontSize="20"
+                                                                        Foreground="White"/>
+                                                        </Button>
+                                                        <Button  HorizontalAlignment="Right" Name="SaveOutput" Click="SaveOutput_OnClick" Margin="5,0,0,0">
+                                                                <ui:SymbolIcon
+                                                                        Symbol="Save20"
+                                                                        Filled="False"
+                                                                        FontSize="20"
+                                                                        Foreground="White"/>
+                                                        </Button>
+                                                </StackPanel>
                                                 <Grid Grid.Row="1" VerticalAlignment="Stretch">
                                                         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" VerticalAlignment="Stretch" Background="Transparent">
                                                                 <Border Name="OutputBorder" CornerRadius="3" Background="#2CFFFFFF" Padding="5" BorderBrush="#2CFFFFFF" BorderThickness="2">
@@ -118,38 +139,11 @@
                                                                                 />  
                                                                 </Border>
                                                         </ScrollViewer>
-                                                        <Button Grid.Row="0" Margin="0,10,20,0" VerticalAlignment="Top" HorizontalAlignment="Right" Name="ExpandAll" Click="ExpandAll_Click">
-                                                                <ui:SymbolIcon
-                                                                        Symbol="ArrowMaximizeVertical20"
-                                                                        Filled="False"
-                                                                        FontSize="20"
-                                                                        Foreground="White"/>
-                                                        </Button>
-                                                        <Button Grid.Row="0" Margin="0,10,20,0" VerticalAlignment="Top" HorizontalAlignment="Right" Visibility="Hidden" Name="SaveOutput" Click="SaveOutput_OnClick">
-                                                                <ui:SymbolIcon
-                                                                        Symbol="Save20"
-                                                                        Filled="False"
-                                                                        FontSize="20"
-                                                                        Foreground="White"/>
-                                                        </Button>
                                                 </Grid>
                                         </Grid>
                                 </ui:Card>
-                                <Grid Grid.Row="1" Margin="0,10">
-                                        <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <ui:Card Grid.Column="0" Name="LeftButton" VerticalAlignment="Center" Background="Transparent" Padding="2,10" BorderThickness="0">
-                                                <ui:Button Margin="5" HorizontalAlignment="Stretch" Background="#C86A1B9A"> Placeholder </ui:Button>
-                                        </ui:Card>
-                                        <ui:Card Grid.Column="1" Name="RightButton" VerticalAlignment="Center" Background="Transparent" Padding="2,10" BorderThickness="0">
-                                                <ui:Button Margin="5" HorizontalAlignment="Stretch" Background="#C86A1B9A"> Placeholder </ui:Button>
-                                        </ui:Card>
-                                </Grid>
-                                
                         </Grid>
-                        <ui:Snackbar Grid.Column="0" Grid.ColumnSpan="2" VerticalAlignment="Top" HorizontalAlignment="Right" MinWidth="200" Name="Snackbar"></ui:Snackbar>
+                        <ui:Snackbar Grid.Column="0" Grid.ColumnSpan="2" VerticalAlignment="Top" Timeout="5000" HorizontalAlignment="Right" MinWidth="200" Name="Snackbar"></ui:Snackbar>
                 </Grid>
         </Grid>
 </ui:UiWindow>
