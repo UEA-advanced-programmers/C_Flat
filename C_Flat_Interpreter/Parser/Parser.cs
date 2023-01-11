@@ -369,7 +369,7 @@ public class Parser : InterpreterLogger
                 _logger.Debug(e.Message);
             }
         }
-        throw new SyntaxErrorException("Unable to parse assignment value'", _currentLine); 
+        throw new SyntaxErrorException("Unable to parse assignment value", _currentLine); 
     }
 
     private void String(ParseNode node)
@@ -424,8 +424,15 @@ public class Parser : InterpreterLogger
         var paramCount = 0;
         foreach (var param in parameters)
         {
-            
-            var functionArgument = CreateNode(NodeType.AssignmentValue, AssignmentValue);
+            ParseNode functionArgument;
+            try
+            {
+                functionArgument = CreateNode(NodeType.AssignmentValue, AssignmentValue);
+            }
+            catch (SyntaxErrorException)
+            {
+                throw new SyntaxErrorException($"Expected argument. Actual: '{_tokens.ElementAtOrDefault(_currentIndex)}'", _currentLine);
+            }
 
             var argumentValue = functionArgument.GetChild();
             var argumentType = argumentValue.type;
