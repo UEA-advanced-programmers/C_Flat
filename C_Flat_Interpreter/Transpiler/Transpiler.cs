@@ -64,6 +64,14 @@ public class Transpiler : InterpreterLogger
                 return 1;
             }
         }
+
+        if (Program == string.Empty)
+        {
+            _logger.Error("Cannot transpile an empty program! Failing");
+            writer.Write(Program);
+            writer.Close();
+            return 1;
+        }
         writer.Write(Program);
         writer.Close();
         return 0;
