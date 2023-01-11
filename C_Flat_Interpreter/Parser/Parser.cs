@@ -236,7 +236,7 @@ public class Parser : InterpreterLogger
         catch (InvalidSyntaxException e)
         {
             Reset(currentIndex);
-            _logger.Warning(e.Message);
+            _logger.Debug(e.Message);
         }
 
         node.AddChild(CreateNode(NodeType.VariableIdentifier, Identifier));
