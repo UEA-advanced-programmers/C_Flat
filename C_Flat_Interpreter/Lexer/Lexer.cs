@@ -114,17 +114,21 @@ public class Lexer : InterpreterLogger
                     case '"':
                         newToken.Type = TokenType.String;
                         var tokenWord = whitespace + c;
-                        var substring = ParseString(j, ++i);
-                        tokenWord += substring;
-                        i += substring.Length - 1;
+                        string substring;
                         if (_lines[j].ElementAtOrDefault(i + 1) != '"')
                         {
-                            _logger.Error("Invalid lexeme encountered! Disregarding: {invalidToken}", newToken);
-                            newToken = null;
-                            _failed = true;
+                            substring = ParseString(j, ++i);
+                            tokenWord += substring;
+                            i += substring.Length - 1;
+                            if (_lines[j].ElementAtOrDefault(i + 1) != '"')
+                            {
+                                _logger.Error("Invalid lexeme encountered! Disregarding: {invalidToken}", newToken);
+                                newToken = null;
+                                _failed = true;
+                                break;
+                            }
                         }
-                        else
-                            newToken.Word = tokenWord + _lines[j][++i];
+                        newToken.Word = tokenWord + _lines[j][++i];
                         break;
                     default:
                         if (char.IsDigit(c))
