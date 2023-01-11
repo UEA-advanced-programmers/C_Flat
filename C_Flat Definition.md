@@ -30,7 +30,7 @@ if (myNumber == 1)
 
 ## Language Syntax:
 
-### Variables (In Progress):
+### Variables:
 <table>
     <tr>
         <th>Input Type</th>
@@ -60,21 +60,6 @@ This can later be assigned a value.
 
 Variable declaration and assignment should always be followed by a semicolon.
 
-### Functions (Not yet implemented):
-
-Functions are declared using the keyword `func`, followed by a function name and any parameters in parentheses
-
-<pre>func myFunction(var myParameter)
-{
-    var doSomething;
-} </pre>
-
-When we call this function, we simply using the function name and supply the correct parameters, if any are required.
-
-<pre>myFunc(myParameter);</pre>
-
-A function call should always be followed by a semicolon.
-
 ### Conditional Statement (In Progress):
 
 A simple conditional statement starts with the keyword `if`, followed by a logic statement in parentheses. After this we can have as many statements as we want, inside curly braces.
@@ -103,6 +88,28 @@ A loop can be created using the keyword `while`, followed by a logic statement w
 {
     var doSomething;
 }</pre>
+
+### Function Calls:
+Functions can be called by using the function identifier, passing the required arguments (comma separated) between arguments 
+
+<pre>Print(myString);</pre>
+
+A function call should always be followed by a semicolon.
+
+### Function Declarations (Not yet implemented):
+Functions will be declared using the keyword `func`, followed by a function name and any parameters (comma separated) in parentheses
+
+<pre>func PrintBigger(var first, var second)
+{
+    if(first > second)
+    {
+        Print(first);
+    }
+    else
+    {
+        Print(second);
+    }
+} </pre>
 
 ### Operations (Lower precedence evaluates first):
 <table>
@@ -191,11 +198,8 @@ A loop can be created using the keyword `while`, followed by a logic statement w
 ## Simplified EBNF:
 
 ### Statements:
-`<Statement>::= <Control-Statement> | <Top-Level-Statement>`
 
-`<Control-Statement>::= <Variable-Declaration> | <Variable-Assignment> | <Function-Call> | <Conditional-Statement> | <While-Loop>`
-
-`<Top-Level-Statement>::= <Function-Definition>`
+`<Statement>::= <Variable-Declaration> | <Variable-Assignment> | <Function-Call> ';' | <Conditional-Statement> | <While-Loop>`
 
 ### Numerical expressions:
 
@@ -203,7 +207,7 @@ A loop can be created using the keyword `while`, followed by a logic statement w
 
 `<Term>::= <Factor> *{('*'|'/') <Factor}`
 
-`<Factor>::= '('<Expression>')' | <Number> | '-'<Factor> | <Variable-Identifier>`
+`<Factor>::= '('<Expression>')' | <Number> | '-'<Factor> | <Identifier>`
 
 `<Number>::= <Digit> { '.' <Digit>}`
 
@@ -215,7 +219,7 @@ A loop can be created using the keyword `while`, followed by a logic statement w
 
 `<Condition>::= ( '==' | '!=' | '&' | '|' ) <Boolean>`
 
-`<Boolean>::= '!’<Logic-Statement> | 'true' | 'false' | <Expression-Query> | '('<Logic-Statement>')' | <Variable-Identifier>`
+`<Boolean>::= '!’<Logic-Statement> | 'true' | 'false' | <Expression-Query> | '('<Logic-Statement>')' | <Identifier>`
 
 `<Expression-Query> ::= (<Expression>) ( '==' | '!=' | '>'| '<' ) (<Expression>)`
 
@@ -229,32 +233,29 @@ A loop can be created using the keyword `while`, followed by a logic statement w
 
 ### Variables:
 
-`<Variable-Declaration>::= 'var’ (<Variable-Identifier> ';'| <Variable-Assignment>)`
+`<Variable-Declaration>::= 'var’ (<Identifier> ';'| <Variable-Assignment>)`
 
-`<Variable-Assignment>::= <Variable-Identifier> '=' <Assignment-Value> ‘;’`
+`<Variable-Assignment>::= <Identifier> '=' <Assignment-Value> ‘;’`
 
-`<Assignment-Value>::= (<Expression> | <String> | <Logic-Statement> | <Variable-Identifier>)`
+`<Assignment-Value>::= (<Expression> | <String> | <Logic-Statement> | <Function-Call>)`
 
-`<Variable-Identifier>::= <Word>`
+`<String> = <Identifier> | (' " ' <Word> ' " ') `
 
-`<String> = ' " ' <Word> ' " '`
-
-`<Word>::= 1*(a-zA-Z) - <Keywords>`
 
 ### Functions:
 
-`<Function-Definition>::= 'func' <Function-Identifier> '('#<Parameter>')' <Block>`
+`<Function-Call>::= <Identifier> '(' {#<Assignment-Value>} ')'`
 
 `<Function-Identifier>::= <Word>`
 
-`<Parameter>::= 'var' <Variable-Identifier>`
-
-`<Function-Call>::= <Function-Identifier> '(' *{<Assignment-Value>} ')' ';'`
-
 ### Blocks:
 
-`<Block>::= '{' *{<statement>} '}'`
+`<Block>::= '{' *{<Statement>} '}'`
 
 ### Keywords:
 
-`<Keyword>::= 'if' | 'else' | 'while' | 'var' | 'func' | 'true' | 'false'`
+`<Identifier>::= <Word> - <Keyword>`
+
+`<Word>::= 1*(a-zA-Z)`
+
+`<Keyword>::= 'if' | 'else' | 'while' | 'var' | 'true' | 'false' | 'func' `

@@ -42,6 +42,13 @@ public class Transpiler : InterpreterLogger
         _currentLine = 0;
         ClearLogs();
         var writer = File.CreateText(GetProgramPath());
+        if (parseTree.Count == 0)
+        {
+            _logger.Warning("Parse tree is empty, terminating.");
+            writer.Write(Program);
+            writer.Close();
+            return 0;
+        }
         foreach (var node in parseTree)
         {
             try
@@ -78,11 +85,15 @@ public class Transpiler : InterpreterLogger
             case NodeType.VariableAssignment:
                 TranspileVariableAssignment(statement);
                 break;
+            case NodeType.FunctionCall:
+                TranspileFunctionCall(statement);
+                PrintTerminal(node.GetLastChild());
+                break;
             default:
                 throw new Exception("Unhandled statement");
         }
     }
-
+    
     private void TranspileExpression(ParseNode node)
     {
         List<ParseNode> terminals = new List<ParseNode>();
@@ -159,7 +170,10 @@ public class Transpiler : InterpreterLogger
 
     private void TranspileString(ParseNode node)
     {
-        PrintTerminal(node.GetChild());
+        if(node.GetChild().type is NodeType.VariableIdentifier)
+            TranspileIdentifier(node.GetChild());
+        else
+            PrintTerminal(node.GetChild());
     }
 
     private void TranspileIdentifier(ParseNode node)
@@ -182,8 +196,8 @@ public class Transpiler : InterpreterLogger
             case NodeType.LogicStatement:
                 TranspileLogicStatement(valueNode);
                 break;
-            case NodeType.VariableIdentifier:
-                TranspileIdentifier(valueNode);
+            case NodeType.FunctionCall:
+                TranspileFunctionCall(valueNode);
                 break;
         }
     }
@@ -285,6 +299,56 @@ public class Transpiler : InterpreterLogger
         PrintTerminal(children[5]);
         //Transpile block
         TranspileBlock(children.Last());
+    }
+
+    private void TranspileFunctionArguments(List<ParseNode> arguments)
+    {
+        //  Print left parentheses
+        PrintTerminal(arguments[1]);
+        
+        //  Transpile function arguments
+        var argumentNodes = arguments.Where(child => child.type is NodeType.AssignmentValue).ToList();
+        
+        //  Transpile all arguments adding commas between them
+        for (int i = 0; i < argumentNodes.Count; i++)
+        {
+            TranspileVariableAssignmentValue(argumentNodes[i]);
+            if (i + 1 < argumentNodes.Count)
+                Program += ",";
+        }
+        
+        //  Print right paren
+        PrintTerminal(arguments.Last(x=> x.type is NodeType.Terminal && x.token!.Type is TokenType.RightParen));
+    }
+    
+    private void TranspileFunctionCall(ParseNode node)
+    {
+        var children = node.GetChildren();
+        
+        var identifierNode = children.First().GetChild();
+        switch (identifierNode.token?.ToString())
+        {
+            case "Print":
+                //  Handle print function
+                identifierNode.token.Word = identifierNode.token.Word.Replace("Print", "Console.Out.WriteLine");
+                PrintTerminal(identifierNode);
+                TranspileFunctionArguments(children);
+                break;
+            case "Concatenate":
+                identifierNode.token.Word = identifierNode.token.Word.Replace("Concatenate", "string.Concat");
+                PrintTerminal(identifierNode);
+                TranspileFunctionArguments(children);
+                break;
+            case "Stringify":
+                identifierNode.token.Word = identifierNode.token.Word.Replace("Stringify", ".ToString()").TrimStart();
+                TranspileFunctionArguments(children);
+                PrintTerminal(identifierNode);
+                break;
+            default:
+                throw new NotImplementedException($"Function '{node.GetChild().token}' has not been implemented!");
+        }
+        
+
     }
 
     public string GetProgramPath()

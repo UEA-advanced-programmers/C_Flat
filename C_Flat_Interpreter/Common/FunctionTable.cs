@@ -1,29 +1,30 @@
-﻿using System.Diagnostics;
+﻿using C_Flat_Interpreter.Common.Enums;
 
 namespace C_Flat_Interpreter.Common;
 
 public static class FunctionTable
 {
-    private static Dictionary<string, List<string>> _table = new();
+    //  We need to statically declare the function dictionary with our standard library of functions
 
-    public static void Add(string identifier, List<string> parameters)
+    //  Key = Function identifier, Value = Tuple<Parameters : Return type>
+    private static readonly Dictionary<string, Tuple<List<NodeType>, NodeType>> FunctionLibrary = new()
     {
-        if(!_table.ContainsKey(identifier))
-            _table.Add(identifier, parameters);
-    }
+        { "Print", new Tuple<List<NodeType>, NodeType>(new List<NodeType>() {NodeType.Null}, NodeType.Null)},
+        { "Concatenate", new Tuple<List<NodeType>, NodeType>(new List<NodeType>() {NodeType.String, NodeType.String}, NodeType.String)},
+        { "Stringify", new Tuple<List<NodeType>, NodeType>(new List<NodeType>() {NodeType.Null}, NodeType.String)},
+    };
 
     public static bool Exists(string identifier)
     {
-        return _table.ContainsKey(identifier);
+        return FunctionLibrary.ContainsKey(identifier);
     }
 
-    public static List<string> GetParams(string identifier)
+    public static List<NodeType> GetParams(string identifier)
     {
-        return _table[identifier];
+        return FunctionLibrary[identifier].Item1;
     }
-
-    public static void Clear()
+    public static NodeType GetReturnType(string identifier)
     {
-        _table.Clear();
+        return FunctionLibrary[identifier].Item2;
     }
 }
