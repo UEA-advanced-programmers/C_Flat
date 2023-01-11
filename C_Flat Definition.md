@@ -10,7 +10,7 @@ Comparatively, C-Flat is Transpiled into C# which handles garbage collection its
 This results in C_Flat being much more intuitive and user-friendly, making it a good choice to use within education, where user-decipherable errors and intuitiveness reign supreme over the additional performance and low-level control C provides.
 
 Furthering the user-friendliness of C_Flat is the use of implicit typing for variables.
-When quickly prototyping is is a burden to have to explicitly consider the type of each variable.
+When quickly prototyping it is a burden to have to explicitly consider the type of each variable.
 C_Flat removes this burden by making all types implicitly declared using the `var` keyword.
 This means that the variables type is chosen at the time of being transpiled to C# which places the burden on the transpiler instead of the developer.
 
@@ -60,7 +60,7 @@ This can later be assigned a value.
 
 Variable declaration and assignment should always be followed by a semicolon.
 
-### Conditional Statement (In Progress):
+### Conditional Statement:
 
 A simple conditional statement starts with the keyword `if`, followed by a logic statement in parentheses. After this we can have as many statements as we want, inside curly braces.
 
@@ -80,7 +80,7 @@ else
     var doSomethingElse;
 }</pre>
 
-### Loops (In Progress):
+### Loops:
 
 A loop can be created using the keyword `while`, followed by a logic statement wrapped in parentheses. In turn, this is followed by as many statements as we like, inside curly braces.
 
@@ -90,7 +90,7 @@ A loop can be created using the keyword `while`, followed by a logic statement w
 }</pre>
 
 ### Function Calls:
-Functions can be called by using the function identifier, passing the required arguments (comma separated) between arguments 
+Functions can be called by using the function identifier, passing the required arguments (comma separated) between parentheses
 
 <pre>Print(myString);</pre>
 
@@ -205,7 +205,7 @@ Functions will be declared using the keyword `func`, followed by a function name
 
 `<Expression>::= <Term> *{('+'|'-') <Term>}`
 
-`<Term>::= <Factor> *{('*'|'/') <Factor}`
+`<Term>::= <Factor> *{('*'|'/') <Factor>}`
 
 `<Factor>::= '('<Expression>')' | <Number> | '-'<Factor> | <Identifier>`
 
@@ -219,13 +219,13 @@ Functions will be declared using the keyword `func`, followed by a function name
 
 `<Condition>::= ( '==' | '!=' | '&' | '|' ) <Boolean>`
 
-`<Boolean>::= '!’<Logic-Statement> | 'true' | 'false' | <Expression-Query> | '('<Logic-Statement>')' | <Identifier>`
+`<Boolean>::= '!'<Logic-Statement> | 'true' | 'false' | <Expression-Query> | '('<Logic-Statement>')' | <Identifier>`
 
-`<Expression-Query> ::= (<Expression>) ( '==' | '!=' | '>'| '<' ) (<Expression>)`
+`<Expression-Query> ::= <Expression> ( '==' | '!=' | '>' | '<' ) <Expression>`
 
 ### Conditional Statements:
 
-`<Conditional-Statement>::='if’ ‘('<Logic-Statement>’)’ <Block> {'else' <Block> }`
+`<Conditional-Statement>::='if' '('<Logic-Statement>')' <Block> {'else' <Block> }`
 
 ### Loops:
 
@@ -235,7 +235,7 @@ Functions will be declared using the keyword `func`, followed by a function name
 
 `<Variable-Declaration>::= 'var’ (<Identifier> ';'| <Variable-Assignment>)`
 
-`<Variable-Assignment>::= <Identifier> '=' <Assignment-Value> ‘;’`
+`<Variable-Assignment>::= <Identifier> '=' <Assignment-Value> ';'`
 
 `<Assignment-Value>::= (<Expression> | <String> | <Logic-Statement> | <Function-Call>)`
 
@@ -245,8 +245,6 @@ Functions will be declared using the keyword `func`, followed by a function name
 ### Functions:
 
 `<Function-Call>::= <Identifier> '(' {#<Assignment-Value>} ')'`
-
-`<Function-Identifier>::= <Word>`
 
 ### Blocks:
 

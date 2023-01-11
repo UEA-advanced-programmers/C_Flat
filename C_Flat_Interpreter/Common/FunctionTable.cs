@@ -12,6 +12,8 @@ public static class FunctionTable
         { "Print", new Tuple<List<NodeType>, NodeType>(new List<NodeType>() {NodeType.Null}, NodeType.Null)},
         { "Concatenate", new Tuple<List<NodeType>, NodeType>(new List<NodeType>() {NodeType.String, NodeType.String}, NodeType.String)},
         { "Stringify", new Tuple<List<NodeType>, NodeType>(new List<NodeType>() {NodeType.Null}, NodeType.String)},
+        { "Root", new Tuple<List<NodeType>, NodeType>(new List<NodeType>() {NodeType.Expression}, NodeType.Expression)},
+        { "Power", new Tuple<List<NodeType>, NodeType>(new List<NodeType>() {NodeType.Expression, NodeType.Expression}, NodeType.Expression)},
     };
 
     public static bool Exists(string identifier)

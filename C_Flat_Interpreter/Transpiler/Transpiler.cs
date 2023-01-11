@@ -184,7 +184,6 @@ public class Transpiler : InterpreterLogger
     private void TranspileVariableAssignmentValue(ParseNode node)
     {
         var valueNode = node.GetChild();
-        //TODO: Add handling for other assignment types
         switch (valueNode.type)
         {
             case NodeType.Expression:
@@ -343,6 +342,16 @@ public class Transpiler : InterpreterLogger
                 identifierNode.token.Word = identifierNode.token.Word.Replace("Stringify", ".ToString()").TrimStart();
                 TranspileFunctionArguments(children);
                 PrintTerminal(identifierNode);
+                break;
+            case "Root":
+                identifierNode.token.Word = identifierNode.token.Word.Replace("Root", "Math.Sqrt");
+                PrintTerminal(identifierNode);
+                TranspileFunctionArguments(children);
+                break;
+            case "Power":
+                identifierNode.token.Word = identifierNode.token.Word.Replace("Power", "Math.Pow");
+                PrintTerminal(identifierNode);
+                TranspileFunctionArguments(children);
                 break;
             default:
                 throw new NotImplementedException($"Function '{node.GetChild().token}' has not been implemented!");
