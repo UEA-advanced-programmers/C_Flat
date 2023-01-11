@@ -205,7 +205,7 @@ Functions will be declared using the keyword `func`, followed by a function name
 
 `<Expression>::= <Term> *{('+'|'-') <Term>}`
 
-`<Term>::= <Factor> *{('*'|'/') <Factor}`
+`<Term>::= <Factor> *{('*'|'/') <Factor>}`
 
 `<Factor>::= '('<Expression>')' | <Number> | '-'<Factor> | <Identifier>`
 
@@ -219,13 +219,13 @@ Functions will be declared using the keyword `func`, followed by a function name
 
 `<Condition>::= ( '==' | '!=' | '&' | '|' ) <Boolean>`
 
-`<Boolean>::= '!’<Logic-Statement> | 'true' | 'false' | <Expression-Query> | '('<Logic-Statement>')' | <Identifier>`
+`<Boolean>::= '!'<Logic-Statement> | 'true' | 'false' | <Expression-Query> | '('<Logic-Statement>')' | <Identifier>`
 
-`<Expression-Query> ::= (<Expression>) ( '==' | '!=' | '>'| '<' ) (<Expression>)`
+`<Expression-Query> ::= <Expression> ( '==' | '!=' | '>' | '<' ) <Expression>`
 
 ### Conditional Statements:
 
-`<Conditional-Statement>::='if’ ‘('<Logic-Statement>’)’ <Block> {'else' <Block> }`
+`<Conditional-Statement>::='if' '('<Logic-Statement>')' <Block> {'else' <Block> }`
 
 ### Loops:
 
@@ -235,7 +235,7 @@ Functions will be declared using the keyword `func`, followed by a function name
 
 `<Variable-Declaration>::= 'var’ (<Identifier> ';'| <Variable-Assignment>)`
 
-`<Variable-Assignment>::= <Identifier> '=' <Assignment-Value> ‘;’`
+`<Variable-Assignment>::= <Identifier> '=' <Assignment-Value> ';'`
 
 `<Assignment-Value>::= (<Expression> | <String> | <Logic-Statement> | <Function-Call>)`
 
@@ -245,8 +245,6 @@ Functions will be declared using the keyword `func`, followed by a function name
 ### Functions:
 
 `<Function-Call>::= <Identifier> '(' {#<Assignment-Value>} ')'`
-
-`<Function-Identifier>::= <Word>`
 
 ### Blocks:
 
