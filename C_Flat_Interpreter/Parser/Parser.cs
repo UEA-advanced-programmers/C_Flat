@@ -107,7 +107,14 @@ public class Parser : InterpreterLogger
         VariableTable.Clear();
         FunctionTable.Clear();
         _scopeManager.Reset();
+        
+        if (_totalTokens == 0)
+        {
+            _logger.Error("Parser found no tokens");
+            return 1;
+        }
         Reset();
+
         //TODO - investigate better way to do this
         try
         {
