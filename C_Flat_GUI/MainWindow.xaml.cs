@@ -444,7 +444,7 @@ namespace C_Flat
         {
             var logsTree = new TreeView();
             logsTree.PreviewMouseWheel += treeView_PreviewMouseWheel;
-            foreach (var levelCategory in _currentLogs.Select(log => log.Level).Distinct())
+            foreach (var levelCategory in _currentLogs.Select(log => log.Level).Distinct().OrderByDescending(x => x))
             {
                 var categorisedLogs = _currentLogs.Where(log => log.Level == levelCategory);
                 var levelSubtree = new TreeViewItem()
