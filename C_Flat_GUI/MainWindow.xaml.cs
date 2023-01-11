@@ -18,10 +18,8 @@ using C_Flat_Interpreter.Lexer;
 using C_Flat_Interpreter.Parser;
 using C_Flat_Interpreter.Transpiler;
 using Microsoft.Win32;
-using Serilog.Core;
 using Serilog.Events;
 using Wpf.Ui.Common;
-using Button = Wpf.Ui.Controls.Button;
 using MessageBox = System.Windows.MessageBox;
 using TreeViewItem = System.Windows.Controls.TreeViewItem;
 
@@ -40,62 +38,18 @@ namespace C_Flat
         private LinearGradientBrush? _executionBrush;
         private Storyboard? _executionAnim;
 
+        private readonly List<LogEvent> _currentLogs = new();
         private TreeView? _parseTree;
-        private readonly Button _showTree;
         private readonly TextBlock _codeView;
-        private readonly Button _showCode;
         private TextBlock? _executionOutput;
-        private readonly Button _showOutput;
 
         public MainWindow()
         {
-            InitializeComponent();
             _lexer = new();
             _parser = new();
             _transpiler = new();
-            CreateExecuteAnimation();
 
-            ExecuteButton.IsEnabled = false;
-
-            //  Button component setup
-            _showTree = new Button()
-            {
-                Content = "Show parse tree",
-                Margin = new Thickness(5),
-                IsEnabled = false,
-                Visibility = Visibility.Visible,
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                Background = new SolidColorBrush(Color.FromRgb(106, 27, 154)),
-            };
-            _showTree.Click += ShowTree_Click;
-
-            _showOutput = new Button()
-            {
-                Content = "Show execution output",
-                Margin = new Thickness(5),
-                IsEnabled = false,
-                Visibility = Visibility.Visible,
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                Background = new SolidColorBrush(Color.FromRgb(106, 27, 154)),
-            };
-            _showOutput.Click += ShowOutput_Click;
-
-            _showCode = new Button()
-            {
-                Content = "Show transpiled code",
-                Margin = new Thickness(5),
-                IsEnabled = true,
-                Visibility = Visibility.Visible,
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                Background = new SolidColorBrush(Color.FromRgb(106, 27, 154)),
-            };
-            _showCode.Click += ShowCode_Click;
-
-            //  Initial buttons
-            LeftButton.Content = _showTree;
-            RightButton.Content = _showOutput;
-
-
+            
             // Create component for viewing code output
             _codeView = new TextBlock()
             {
@@ -105,18 +59,30 @@ namespace C_Flat
                 TextWrapping = TextWrapping.NoWrap,
                 IsEnabled = false,
             };
+            
+            InitializeComponent();
+            
+            //  Disable buttons to begin with
+            ExecuteButton.IsEnabled = false;
+            SaveOutput.IsEnabled = false;
+
+            
+            //  Create execution animation
+            CreateExecuteAnimation();
+
             //  Initialize output window to show code output
             OutputBorder.Child = _codeView;
-            ExpandAll.Visibility = Visibility.Hidden;
+            ExpandAll.Visibility = Visibility.Collapsed;
 
             //  Setup handling for line numbers
             SourceInput.TextChanged += UpdateLineNumbers;
             LineNumbers.FontSize = SourceInput.FontSize;
+
+
         }
 
         private void UpdateLineNumbers(object sender, TextChangedEventArgs e)
         {
-
             //  Recreate line numbers if source line count changes
             if (LineNumbers.Inlines.Count != SourceInput.LineCount)
             {
@@ -132,6 +98,7 @@ namespace C_Flat
         {
             //  Set code view text to blank and reset border thickness
             _codeView.Text = "";
+            _codeView.HorizontalAlignment = HorizontalAlignment.Left;
             SourceInput.BorderThickness = new Thickness(0);
             OutputBorder.BorderThickness = new Thickness(0);
 
@@ -141,26 +108,26 @@ namespace C_Flat
             //  Null all relevant variables
             _executionOutput = null;
             _parseTree = null;
+            
+            //  Clear stored logs
+            _currentLogs.Clear();
 
-            //  Clear lexer logs before lexing input
-            _lexer.ClearLogs();
-            if (_lexer.Tokenise(SourceInput.Text) != 0)
+            var success = _lexer.Tokenise(SourceInput.Text);
+            _currentLogs.AddRange(_lexer.GetInMemoryLogs().ToList());
+            if (success != 0)
             {
                 // Lexer failed!
-                FailTranspile("Lexing", _lexer.GetInMemoryLogs()
-                    .Where(log => log.Level > LogEventLevel.Information));
+                FailTranspile("Lexing");
                 return;
             }
 
             var tokens = _lexer.GetTokens();
-
-            _parser.ClearLogs();
-
-            if (_parser.Parse(tokens) != 0)
+            success = _parser.Parse(tokens);
+            _currentLogs.AddRange(_parser.GetInMemoryLogs().ToList());
+            if (success != 0)
             {
                 //  Parser failed!
-                FailTranspile("Parsing", _parser.GetInMemoryLogs()
-                    .Where(log => log.Level > LogEventLevel.Information));
+                FailTranspile("Parsing");
                 return;
             }
 
@@ -168,18 +135,20 @@ namespace C_Flat
             var parseNodes = _parser.GetParseTree();
             ConstructParseTree(parseNodes);
 
-            if (_transpiler.Transpile(parseNodes) != 0)
+            success = _transpiler.Transpile(parseNodes);
+            _currentLogs.AddRange(_transpiler.GetInMemoryLogs().ToList());
+            
+            if (success != 0)
             {
                 //  Transpilation failed!
-                FailTranspile("Transpilation", _transpiler.GetInMemoryLogs()
-                    .Where(log => log.Level > LogEventLevel.Information));
+                FailTranspile("Transpilation");
                 return;
             }
 
             if (_transpiler.GetInMemoryLogs().Any(log => log.Level > LogEventLevel.Information))
             {
                 Snackbar.Appearance = ControlAppearance.Caution;
-                Snackbar.Show("Caution!", "Transpile succeeded but with warnings...", SymbolRegular.CheckboxWarning20);
+                Snackbar.Show("Caution!", "Transpile succeeded but with warnings...\n See logs for details", SymbolRegular.CheckboxWarning20);
                 SourceInput.BorderBrush = new SolidColorBrush(Colors.Goldenrod);
                 SourceInput.BorderThickness = new Thickness(2);
             }
@@ -194,51 +163,41 @@ namespace C_Flat
             _unsavedChanges = true;
 
             var transpiledProgram = _transpiler.Program;
+            SaveOutput.IsEnabled = true;
             ExecuteButton.IsEnabled = true;
             _codeView.Text = $"{transpiledProgram}";
-            ShowCode_Click(default!, default!);
+            ViewSelector.SelectedItem = TranspileViewOption;
         }
 
-        private void FailTranspile(string stage, IEnumerable<LogEvent> logs)
+        private void FailTranspile(string stage)
         {
             //  Transpile failed!
             // Clear output text and print logs
             _codeView.Inlines.Clear();
+            _codeView.HorizontalAlignment = HorizontalAlignment.Center;
             _codeView.Inlines.Add(new Run()
             {
-                Text = $"{stage} Failed! Printing logs: \n",
-                FontWeight = FontWeights.DemiBold,
+                Text = $"{stage} Failed! See logs for details... \n",
+                FontWeight = FontWeights.Medium,
                 TextDecorations = TextDecorations.Underline,
                 FontSize = 24,
                 Background = Brushes.Transparent,
                 Foreground = Brushes.White,
             });
-            foreach (var errorMessage in logs)
-            {
-                _codeView.Inlines.Add(new Run()
-                {
-                    Text = $"{errorMessage.RenderMessage()} \n",
-                    Background = errorMessage.Level switch
-                    {
-                        LogEventLevel.Warning => new SolidColorBrush(Colors.Goldenrod),
-                        _ => Brushes.DarkRed
-                    },
-                });
-            }
 
             //  Set input border to red to indicate failure
             SourceInput.BorderBrush = new SolidColorBrush(Colors.DarkRed);
             SourceInput.BorderThickness = new Thickness(2);
 
             //  Disable parse tree view
-            _showTree.IsEnabled = false;
+            TreeViewOption.IsEnabled = false;
             //  Show a message indicating failed lexing
             Snackbar.Appearance = ControlAppearance.Danger;
             Snackbar.Show("Fail!", $"Transpile failed at {stage.ToLower()} stage!", SymbolRegular.ErrorCircle20);
 
+            SaveOutput.IsEnabled = false;
             //  Show code view
-            ShowCode_Click(default!, default!);
-            SaveOutput.Visibility = Visibility.Hidden;
+            ViewSelector.SelectedItem = TranspileViewOption;
         }
 
         private async void ButtonExecuteCode_Click(object sender, RoutedEventArgs e)
@@ -255,8 +214,7 @@ namespace C_Flat
                 IsEnabled = false,
                 Text = "Execution in progress..."
             };
-            ShowOutput_Click(default!, default!);
-
+            
             //Begin execution text box animation
             Mouse.OverrideCursor = Cursors.Wait;
             OutputBorder.BorderBrush = _executionBrush;
@@ -278,11 +236,11 @@ namespace C_Flat
                 }
             };
             var output = new StringBuilder();
-            proc.OutputDataReceived += (sender, e) =>
+            proc.OutputDataReceived += (_, args) =>
             {
-                if (e.Data != null)
+                if (args.Data != null)
                 {
-                    output.AppendLine(e.Data);
+                    output.AppendLine(args.Data);
                 }
             };
             proc.Start();
@@ -346,6 +304,7 @@ namespace C_Flat
             {
                 //End execution animation
                 _executionAnim?.Stop(this);
+                ViewSelector.SelectedItem = ExecutionViewOption;
                 Mouse.OverrideCursor = Cursors.Arrow;
             }
         }
@@ -377,6 +336,7 @@ namespace C_Flat
                 }
                 _parseTree.Items.Add(treeItem);
             }
+            TreeViewOption.IsEnabled = true;
         }
 
         private void treeView_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
@@ -388,7 +348,7 @@ namespace C_Flat
                 eventArg.RoutedEvent = UIElement.MouseWheelEvent;
                 eventArg.Source = sender;
                 var parent = ((Control)sender).Parent as UIElement;
-                parent.RaiseEvent(eventArg);
+                parent?.RaiseEvent(eventArg);
             }
         }
 
@@ -410,46 +370,104 @@ namespace C_Flat
 
         private void ExpandAll_Click(object sender, RoutedEventArgs e)
         {
-            if (_parseTree != null && _parseTree.Items.Count > 0)
+            var selectedItem = ViewSelector.SelectedItem as ComboBoxItem;
+            switch (selectedItem?.Name)
             {
-                foreach (TreeViewItem treeItem in _parseTree.Items)
-                {
-                    treeItem.ExpandSubtree();
-                }
+                case "TreeViewOption":
+                    if (_parseTree != null && _parseTree.Items.Count > 0)
+                    {
+                        foreach (TreeViewItem treeItem in _parseTree.Items)
+                        {
+                            treeItem.ExpandSubtree();
+                        }
+                    }
+                    break;
+                case "LogsViewOption":
+                    if (OutputBorder.Child is TreeView view)
+                    {
+                        foreach (TreeViewItem treeItem in view.Items)
+                        {
+                            treeItem.ExpandSubtree();
+                        }
+                    }
+                    break;
+            }
+            
+        }
+        
+        private void OnViewChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (Snackbar == null)
+                return;
+            var selectedItem = ViewSelector.SelectedItem as ComboBoxItem;
+            switch (selectedItem?.Name)
+            {
+                case "TranspileViewOption":
+                    //Show transpile view
+                    if (TreeViewOption != null && ExecutionViewOption != null)
+                    {
+                        TreeViewOption.IsEnabled = _parseTree != null;
+                        ExecutionViewOption.IsEnabled = _executionOutput != null;
+                    }
+                    OutputBorder.Child = _codeView;
+                    ExpandAll.Visibility = Visibility.Collapsed;
+                    SaveOutput.Visibility = Visibility.Visible;
+                    break;
+                case "TreeViewOption":
+                    //Show parse tree
+                    if (ExecutionViewOption != null)
+                    {
+                        ExecutionViewOption.IsEnabled = _executionOutput != null;
+                    }
+                    OutputBorder.Child = _parseTree;
+                    ExpandAll.Visibility = Visibility.Visible;
+                    SaveOutput.Visibility = Visibility.Collapsed;
+                    break;
+                case "ExecutionViewOption":
+                    //Show execution output
+                    OutputBorder.Child = _executionOutput;
+                    ExpandAll.Visibility = Visibility.Collapsed;
+                    SaveOutput.Visibility = Visibility.Collapsed;
+                    break;
+                case "LogsViewOption":
+                    //Show logs output
+                    OutputBorder.Child = CreateLogsView();
+                    ExpandAll.Visibility = Visibility.Visible;
+                    SaveOutput.Visibility = Visibility.Collapsed;
+                    break;
+                default:
+                    throw new Exception("Combobox item has invalid name");
             }
         }
-        private void ShowTree_Click(object sender, RoutedEventArgs e)
-        {
-            _showOutput.IsEnabled = _executionOutput != null;
-            LeftButton.Content = _showOutput;
-            RightButton.Content = _showCode;
-            OutputBorder.Child = _parseTree;
-            OutputWindowLabel.Content = "Parse Tree Output";
-            ExpandAll.Visibility = Visibility.Visible;
-            SaveOutput.Visibility = Visibility.Hidden;
-        }
 
-        private void ShowOutput_Click(object sender, RoutedEventArgs e)
+        private TreeView CreateLogsView()
         {
-            LeftButton.Content = _showCode;
-            RightButton.Content = _showTree;
-            OutputBorder.Child = _executionOutput;
-            OutputWindowLabel.Content = "Execution Output";
-            ExpandAll.Visibility = Visibility.Hidden;
-            SaveOutput.Visibility = Visibility.Hidden;
+            var logsTree = new TreeView();
+            logsTree.PreviewMouseWheel += treeView_PreviewMouseWheel;
+            foreach (var levelCategory in _currentLogs.Select(log => log.Level).Distinct())
+            {
+                var categorisedLogs = _currentLogs.Where(log => log.Level == levelCategory);
+                var levelSubtree = new TreeViewItem()
+                {
+                    Header = levelCategory.ToString(),
+                    Background = levelCategory switch
+                    {
+                        LogEventLevel.Warning => new SolidColorBrush(Colors.Goldenrod),
+                        LogEventLevel.Error => Brushes.DarkRed,
+                        _ => Brushes.Transparent,
+                    },
+                };
+                foreach (var log in categorisedLogs)
+                {
+                    levelSubtree.Items.Add(new TreeViewItem()
+                    {
+                        Header = log.RenderMessage()
+                    });
+                }
+                logsTree.Items.Add(levelSubtree);
+            }
 
-        }
-
-        private void ShowCode_Click(object sender, RoutedEventArgs e)
-        {
-            _showTree.IsEnabled = _parseTree != null;
-            LeftButton.Content = _showTree;
-            _showOutput.IsEnabled = _executionOutput != null;
-            RightButton.Content = _showOutput;
-            OutputBorder.Child = _codeView;
-            OutputWindowLabel.Content = "Transpiled code Output";
-            ExpandAll.Visibility = Visibility.Hidden;
-            SaveOutput.Visibility = Visibility.Visible;
+            return logsTree;
         }
 
         private void CreateExecuteAnimation()

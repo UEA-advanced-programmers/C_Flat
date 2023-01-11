@@ -58,7 +58,7 @@ public class Lexer : InterpreterLogger
     {
         _failed = false;
         _tokens.Clear();
-
+        ClearLogs();
         var whitespace = "";
 
         input = input.Replace("\r", "");

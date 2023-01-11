@@ -1,4 +1,5 @@
 ﻿using Serilog;
+using Serilog.Core;
 using Serilog.Events;
 using Serilog.Sinks.InMemory;
 
@@ -7,7 +8,7 @@ namespace C_Flat_Interpreter.Common;
 public abstract class InterpreterLogger
 {
     private InMemorySink memorySink;
-    protected ILogger _logger;
+    protected Logger _logger;
     private string _category;
     protected void GetLogger(string category)
     {
@@ -24,7 +25,7 @@ public abstract class InterpreterLogger
 
     public void ClearLogs()
     {
-        memorySink.Dispose();
+        _logger.Dispose();
         GetLogger(_category);
     }
 }
