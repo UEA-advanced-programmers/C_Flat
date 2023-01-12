@@ -65,7 +65,7 @@ public class TranspilerUnit : TestLogger
     }
     
     [Test]
-    public void Transpiler_Transpile_UnusedDeclaration_SucceedsWithWarning()
+    public void Transpiler_Transpile_UnusedDeclaration_Fails()
     {
         //  Log
         _logger.Information("Testing Transpile() with a variable declaration which is never used");
@@ -95,7 +95,7 @@ public class TranspilerUnit : TestLogger
         //Assert
         Assert.Multiple(() =>
         {
-            Assert.That(success, Is.EqualTo(0));
+            Assert.That(success, Is.EqualTo(1));
             Assert.That(logs.Any(log => log.Level is LogEventLevel.Warning), Is.True);
             Assert.That(testOutput, Is.EqualTo(string.Empty));
         });
