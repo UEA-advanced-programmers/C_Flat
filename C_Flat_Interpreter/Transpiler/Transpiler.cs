@@ -160,7 +160,7 @@ public class Transpiler : InterpreterLogger
         if (conditionComparison.token?.Type is TokenType.And or TokenType.Or)
         {
             //For and/or we add the token word twice because we don't do bitwise logic
-            Program += conditionComparison.token?.Word;
+            Program += conditionComparison.token.ToString();
         }
         var conditionBoolean = node.GetLastChild();
         TranspileBoolean(conditionBoolean);
