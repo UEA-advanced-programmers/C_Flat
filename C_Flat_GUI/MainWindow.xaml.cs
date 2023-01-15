@@ -291,8 +291,12 @@ namespace C_Flat
             }
             catch (OperationCanceledException)
             {
-                //  Task has been cancelled so kill process
+                //  Task has been cancelled so kill both cmd and child process(es)
                 proc.Kill();
+                foreach( var p in Process.GetProcessesByName("C_Flat_Output"))
+                {
+                    p.Kill();
+                }
                 Snackbar.Appearance = ControlAppearance.Danger;
                 Snackbar.Show("Error!", $"Execution timed out", SymbolRegular.ErrorCircle20);
                 _executionOutput.Text = output.ToString();
